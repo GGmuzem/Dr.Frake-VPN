@@ -63,7 +63,7 @@ public:
     explicit CoreController(const QSharedPointer<VpnConnection> &vpnConnection, const std::shared_ptr<Settings> &settings,
                             QQmlApplicationEngine *engine, QObject *parent = nullptr);
 
-    QSharedPointer<PageController> pageController() const;
+    PageController* pageController() const;
     void setQmlRoot();
 
     void openConnectionByIndex(int serverIndex);
@@ -109,7 +109,7 @@ private:
 
     QScopedPointer<ConnectionController> m_connectionController;
     QScopedPointer<FocusController> m_focusController;
-    QSharedPointer<PageController> m_pageController; // TODO
+    QScopedPointer<PageController> m_pageController;
     QScopedPointer<InstallController> m_installController;
     QScopedPointer<ImportController> m_importController;
     QScopedPointer<ExportController> m_exportController;

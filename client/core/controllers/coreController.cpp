@@ -496,9 +496,9 @@ void CoreController::initStrictKillSwitchHandler()
             &VpnConnection::onKillSwitchModeChanged);
 }
 
-QSharedPointer<PageController> CoreController::pageController() const
+PageController* CoreController::pageController() const
 {
-    return m_pageController;
+    return m_pageController.get();
 }
 
 void CoreController::openConnectionByIndex(int serverIndex)
