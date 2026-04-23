@@ -253,6 +253,10 @@ jobs:
       CXX: c++
       IOS_APP_PROVISIONING_PROFILE: ${{ secrets.IOS_APP_PROVISIONING_PROFILE }}
       IOS_NE_PROVISIONING_PROFILE: ${{ secrets.IOS_NE_PROVISIONING_PROFILE }}
+      IOS_APP_PROVISIONING_PROFILE: ${{ secrets.IOS_APP_PROVISIONING_PROFILE }}
+      IOS_NE_PROVISIONING_PROFILE: ${{ secrets.IOS_NE_PROVISIONING_PROFILE }}
+      IOS_APP_PROVISIONING_PROFILE: ${{ secrets.IOS_APP_PROVISIONING_PROFILE }}
+      IOS_NE_PROVISIONING_PROFILE: ${{ secrets.IOS_NE_PROVISIONING_PROFILE }}
       PROD_AGW_PUBLIC_KEY: ${{ secrets.PROD_AGW_PUBLIC_KEY }}
       PROD_S3_ENDPOINT: ${{ secrets.PROD_S3_ENDPOINT }}
       DEV_AGW_PUBLIC_KEY: ${{ secrets.DEV_AGW_PUBLIC_KEY }}
@@ -273,7 +277,7 @@ jobs:
         version: ${{ env.QT_VERSION }}
         host: 'mac'
         target: 'desktop'
-        modules: 'qtremoteobjects qt5compat qtshadertools qtmultimedia'
+        modules: 'qtremoteobjects qt5compat qtshadertools qtmultimedia qtquick3d qtquick3d'
         arch: 'clang_64'
         dir: ${{ runner.temp }}
         set-env: 'true'
@@ -285,7 +289,7 @@ jobs:
         version: ${{ env.QT_VERSION }}
         host: 'mac'
         target: 'ios'
-        modules: 'qtremoteobjects qt5compat qtshadertools qtmultimedia qtquick3d'
+        modules: 'qtremoteobjects qt5compat qtshadertools qtmultimedia qtquick3d qtquick3d'
         dir: ${{ runner.temp }}
         setup-python: 'true'
         set-env: 'true'
@@ -358,6 +362,24 @@ jobs:
       MAC_APP_CERT_CERT: ${{ secrets.MAC_APP_CERT_CERT }}
       MAC_SIGNER_ID: ${{ secrets.MAC_SIGNER_ID }}
       MAC_APP_CERT_PW: ${{ secrets.MAC_APP_CERT_PW }}
+
+      MAC_TRUST_CERT_BASE64: ${{ secrets.MAC_TRUST_CERT_BASE64 }}
+      MAC_SIGNING_CERT_BASE64: ${{ secrets.MAC_SIGNING_CERT_BASE64 }}
+      MAC_SIGNING_CERT_PASSWORD: ${{ secrets.MAC_SIGNING_CERT_PASSWORD }}
+      MAC_APP_PROVISIONING_PROFILE: ${{ secrets.MAC_APP_PROVISIONING_PROFILE }}
+      MAC_NE_PROVISIONING_PROFILE: ${{ secrets.MAC_NE_PROVISIONING_PROFILE }}
+
+      MAC_TRUST_CERT_BASE64: ${{ secrets.MAC_TRUST_CERT_BASE64 }}
+      MAC_SIGNING_CERT_BASE64: ${{ secrets.MAC_SIGNING_CERT_BASE64 }}
+      MAC_SIGNING_CERT_PASSWORD: ${{ secrets.MAC_SIGNING_CERT_PASSWORD }}
+      MAC_APP_PROVISIONING_PROFILE: ${{ secrets.MAC_APP_PROVISIONING_PROFILE }}
+      MAC_NE_PROVISIONING_PROFILE: ${{ secrets.MAC_NE_PROVISIONING_PROFILE }}
+
+      MAC_TRUST_CERT_BASE64: ${{ secrets.MAC_TRUST_CERT_BASE64 }}
+      MAC_SIGNING_CERT_BASE64: ${{ secrets.MAC_SIGNING_CERT_BASE64 }}
+      MAC_SIGNING_CERT_PASSWORD: ${{ secrets.MAC_SIGNING_CERT_PASSWORD }}
+      MAC_APP_PROVISIONING_PROFILE: ${{ secrets.MAC_APP_PROVISIONING_PROFILE }}
+      MAC_NE_PROVISIONING_PROFILE: ${{ secrets.MAC_NE_PROVISIONING_PROFILE }}
 
       MAC_INSTALLER_SIGNER_CERT: ${{ secrets.MAC_INSTALLER_SIGNER_CERT }}
       MAC_INSTALLER_SIGNER_ID: ${{ secrets.MAC_INSTALLER_SIGNER_ID }}
@@ -435,6 +457,24 @@ jobs:
       MAC_APP_CERT_CERT: ${{ secrets.MAC_APP_CERT_CERT }}
       MAC_SIGNER_ID: ${{ secrets.MAC_SIGNER_ID }}
       MAC_APP_CERT_PW: ${{ secrets.MAC_APP_CERT_PW }}
+
+      MAC_TRUST_CERT_BASE64: ${{ secrets.MAC_TRUST_CERT_BASE64 }}
+      MAC_SIGNING_CERT_BASE64: ${{ secrets.MAC_SIGNING_CERT_BASE64 }}
+      MAC_SIGNING_CERT_PASSWORD: ${{ secrets.MAC_SIGNING_CERT_PASSWORD }}
+      MAC_APP_PROVISIONING_PROFILE: ${{ secrets.MAC_APP_PROVISIONING_PROFILE }}
+      MAC_NE_PROVISIONING_PROFILE: ${{ secrets.MAC_NE_PROVISIONING_PROFILE }}
+
+      MAC_TRUST_CERT_BASE64: ${{ secrets.MAC_TRUST_CERT_BASE64 }}
+      MAC_SIGNING_CERT_BASE64: ${{ secrets.MAC_SIGNING_CERT_BASE64 }}
+      MAC_SIGNING_CERT_PASSWORD: ${{ secrets.MAC_SIGNING_CERT_PASSWORD }}
+      MAC_APP_PROVISIONING_PROFILE: ${{ secrets.MAC_APP_PROVISIONING_PROFILE }}
+      MAC_NE_PROVISIONING_PROFILE: ${{ secrets.MAC_NE_PROVISIONING_PROFILE }}
+
+      MAC_TRUST_CERT_BASE64: ${{ secrets.MAC_TRUST_CERT_BASE64 }}
+      MAC_SIGNING_CERT_BASE64: ${{ secrets.MAC_SIGNING_CERT_BASE64 }}
+      MAC_SIGNING_CERT_PASSWORD: ${{ secrets.MAC_SIGNING_CERT_PASSWORD }}
+      MAC_APP_PROVISIONING_PROFILE: ${{ secrets.MAC_APP_PROVISIONING_PROFILE }}
+      MAC_NE_PROVISIONING_PROFILE: ${{ secrets.MAC_NE_PROVISIONING_PROFILE }}
 
       MAC_INSTALLER_SIGNER_CERT: ${{ secrets.MAC_INSTALLER_SIGNER_CERT }}
       MAC_INSTALLER_SIGNER_ID: ${{ secrets.MAC_INSTALLER_SIGNER_ID }}
@@ -530,6 +570,18 @@ jobs:
       MAC_APP_PROVISIONING_PROFILE: ${{ secrets.MAC_APP_PROVISIONING_PROFILE }}
       MAC_NE_PROVISIONING_PROFILE: ${{ secrets.MAC_NE_PROVISIONING_PROFILE }}
 
+      MAC_TRUST_CERT_BASE64: ${{ secrets.MAC_TRUST_CERT_BASE64 }}
+      MAC_SIGNING_CERT_BASE64: ${{ secrets.MAC_SIGNING_CERT_BASE64 }}
+      MAC_SIGNING_CERT_PASSWORD: ${{ secrets.MAC_SIGNING_CERT_PASSWORD }}
+      MAC_APP_PROVISIONING_PROFILE: ${{ secrets.MAC_APP_PROVISIONING_PROFILE }}
+      MAC_NE_PROVISIONING_PROFILE: ${{ secrets.MAC_NE_PROVISIONING_PROFILE }}
+
+      MAC_TRUST_CERT_BASE64: ${{ secrets.MAC_TRUST_CERT_BASE64 }}
+      MAC_SIGNING_CERT_BASE64: ${{ secrets.MAC_SIGNING_CERT_BASE64 }}
+      MAC_SIGNING_CERT_PASSWORD: ${{ secrets.MAC_SIGNING_CERT_PASSWORD }}
+      MAC_APP_PROVISIONING_PROFILE: ${{ secrets.MAC_APP_PROVISIONING_PROFILE }}
+      MAC_NE_PROVISIONING_PROFILE: ${{ secrets.MAC_NE_PROVISIONING_PROFILE }}
+
       PROD_AGW_PUBLIC_KEY: ${{ secrets.PROD_AGW_PUBLIC_KEY }}
       PROD_S3_ENDPOINT: ${{ secrets.PROD_S3_ENDPOINT }}
       DEV_AGW_PUBLIC_KEY: ${{ secrets.DEV_AGW_PUBLIC_KEY }}
@@ -550,7 +602,7 @@ jobs:
         version: ${{ env.QT_VERSION }}
         host: 'mac'
         target: 'desktop'
-        modules: 'qtremoteobjects qt5compat qtshadertools qtmultimedia'
+        modules: 'qtremoteobjects qt5compat qtshadertools qtmultimedia qtquick3d qtquick3d'
         arch: 'clang_64'
         dir: ${{ runner.temp }}
         set-env: 'true'
