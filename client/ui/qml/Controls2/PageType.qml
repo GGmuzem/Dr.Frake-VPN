@@ -28,7 +28,10 @@ Item {
         id: timer
         interval: 200 // Milliseconds
         onTriggered: {
-            if (Qt.platform.os === "android" && SettingsController.isTvInterfaceActive) {
+            if (SettingsController.isTvInterfaceActive) {
+                // On Android TV the TV FocusScope (PageTvRoot) owns the focus
+                // chain; pulling focus back to the mobile defaultFocusItem
+                // would eat the D-pad keys.
                 return
             }
             FocusController.resetRootObject()
