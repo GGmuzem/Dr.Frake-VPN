@@ -1,0 +1,2801 @@
+{
+	"artifacts" : 
+	[
+		{
+			"path" : "client/libFBLink_x86_64.so"
+		}
+	],
+	"backtrace" : 4,
+	"backtraceGraph" : 
+	{
+		"commands" : 
+		[
+			"add_library",
+			"_qt_internal_create_executable",
+			"qt6_add_executable",
+			"qt_add_executable",
+			"target_link_libraries",
+			"include",
+			"set_target_properties",
+			"find_package",
+			"find_dependency",
+			"_qt_internal_find_third_party_dependencies",
+			"set_property",
+			"add_definitions",
+			"target_compile_definitions",
+			"add_compile_definitions",
+			"target_include_directories",
+			"include_directories",
+			"target_sources",
+			"qt6_extract_metatypes",
+			"qt6_finalize_target",
+			"qt_finalize_executable"
+		],
+		"files" : 
+		[
+			"C:/Qt/6.10.2/android_x86_64/lib/cmake/Qt6Core/Qt6CoreMacros.cmake",
+			"client/CMakeLists.txt",
+			"client/cmake/3rdparty.cmake",
+			"C:/Qt/6.10.2/android_x86_64/lib/cmake/Qt6Quick/Qt6QuickTargets.cmake",
+			"C:/Qt/6.10.2/android_x86_64/lib/cmake/Qt6Quick/Qt6QuickConfig.cmake",
+			".qtc/package-manager/maintenance_tool_provider.cmake",
+			"C:/Qt/6.10.2/android_x86_64/lib/cmake/Qt6Gui/Qt6GuiTargets.cmake",
+			"C:/Qt/6.10.2/android_x86_64/lib/cmake/Qt6Gui/Qt6GuiConfig.cmake",
+			"C:/Qt/6.10.2/android_x86_64/lib/cmake/Qt6/FindGLESv2.cmake",
+			"C:/Qt/Tools/CMake_64/share/cmake-3.30/Modules/CMakeFindDependencyMacro.cmake",
+			"C:/Qt/6.10.2/android_x86_64/lib/cmake/Qt6/QtPublicDependencyHelpers.cmake",
+			"C:/Qt/6.10.2/android_x86_64/lib/cmake/Qt6Gui/Qt6GuiDependencies.cmake",
+			"C:/Qt/6.10.2/android_x86_64/lib/cmake/Qt6/Qt6Targets.cmake",
+			"C:/Qt/6.10.2/android_x86_64/lib/cmake/Qt6/Qt6Config.cmake",
+			"C:/Qt/6.10.2/android_x86_64/lib/cmake/Qt6Core/Qt6CoreDependencies.cmake",
+			"C:/Qt/6.10.2/android_x86_64/lib/cmake/Qt6Core/Qt6CoreConfig.cmake",
+			"C:/Qt/Tools/CMake_64/share/cmake-3.30/Modules/FindThreads.cmake",
+			"C:/Qt/6.10.2/android_x86_64/lib/cmake/Qt6/Qt6Dependencies.cmake",
+			"client/cmake/QSimpleCrypto.cmake",
+			"client/3rd/qrcodegen/qrcodegen.cmake"
+		],
+		"nodes" : 
+		[
+			{
+				"file" : 1
+			},
+			{
+				"command" : 3,
+				"file" : 1,
+				"line" : 91,
+				"parent" : 0
+			},
+			{
+				"command" : 2,
+				"file" : 0,
+				"line" : 1014,
+				"parent" : 1
+			},
+			{
+				"command" : 1,
+				"file" : 0,
+				"line" : 673,
+				"parent" : 2
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 730,
+				"parent" : 3
+			},
+			{
+				"command" : 4,
+				"file" : 0,
+				"line" : 674,
+				"parent" : 2
+			},
+			{
+				"command" : 5,
+				"file" : 1,
+				"line" : 145,
+				"parent" : 0
+			},
+			{
+				"file" : 2,
+				"parent" : 6
+			},
+			{
+				"command" : 4,
+				"file" : 2,
+				"line" : 132,
+				"parent" : 7
+			},
+			{
+				"command" : 4,
+				"file" : 2,
+				"line" : 135,
+				"parent" : 7
+			},
+			{
+				"command" : 4,
+				"file" : 1,
+				"line" : 248,
+				"parent" : 0
+			},
+			{
+				"command" : 7,
+				"file" : 1,
+				"line" : 69,
+				"parent" : 0
+			},
+			{
+				"command" : 7,
+				"file" : 5,
+				"line" : 315,
+				"parent" : 11
+			},
+			{
+				"file" : 4,
+				"parent" : 12
+			},
+			{
+				"command" : 5,
+				"file" : 4,
+				"line" : 52,
+				"parent" : 13
+			},
+			{
+				"file" : 3,
+				"parent" : 14
+			},
+			{
+				"command" : 6,
+				"file" : 3,
+				"line" : 61,
+				"parent" : 15
+			},
+			{
+				"command" : 7,
+				"file" : 5,
+				"line" : 315,
+				"parent" : 11
+			},
+			{
+				"file" : 7,
+				"parent" : 17
+			},
+			{
+				"command" : 5,
+				"file" : 7,
+				"line" : 52,
+				"parent" : 18
+			},
+			{
+				"file" : 6,
+				"parent" : 19
+			},
+			{
+				"command" : 6,
+				"file" : 6,
+				"line" : 61,
+				"parent" : 20
+			},
+			{
+				"command" : 5,
+				"file" : 7,
+				"line" : 40,
+				"parent" : 18
+			},
+			{
+				"file" : 11,
+				"parent" : 22
+			},
+			{
+				"command" : 9,
+				"file" : 11,
+				"line" : 37,
+				"parent" : 23
+			},
+			{
+				"command" : 8,
+				"file" : 10,
+				"line" : 36,
+				"parent" : 24
+			},
+			{
+				"command" : 7,
+				"file" : 9,
+				"line" : 76,
+				"parent" : 25
+			},
+			{
+				"command" : 7,
+				"file" : 5,
+				"line" : 340,
+				"parent" : 26
+			},
+			{
+				"file" : 8,
+				"parent" : 27
+			},
+			{
+				"command" : 4,
+				"file" : 8,
+				"line" : 85,
+				"parent" : 28
+			},
+			{
+				"command" : 7,
+				"file" : 5,
+				"line" : 315,
+				"parent" : 11
+			},
+			{
+				"file" : 15,
+				"parent" : 30
+			},
+			{
+				"command" : 5,
+				"file" : 15,
+				"line" : 42,
+				"parent" : 31
+			},
+			{
+				"file" : 14,
+				"parent" : 32
+			},
+			{
+				"command" : 8,
+				"file" : 14,
+				"line" : 20,
+				"parent" : 33
+			},
+			{
+				"command" : 7,
+				"file" : 9,
+				"line" : 76,
+				"parent" : 34
+			},
+			{
+				"command" : 7,
+				"file" : 5,
+				"line" : 333,
+				"parent" : 35
+			},
+			{
+				"file" : 13,
+				"parent" : 36
+			},
+			{
+				"command" : 5,
+				"file" : 13,
+				"line" : 49,
+				"parent" : 37
+			},
+			{
+				"file" : 12,
+				"parent" : 38
+			},
+			{
+				"command" : 6,
+				"file" : 12,
+				"line" : 61,
+				"parent" : 39
+			},
+			{
+				"command" : 5,
+				"file" : 13,
+				"line" : 180,
+				"parent" : 37
+			},
+			{
+				"file" : 17,
+				"parent" : 41
+			},
+			{
+				"command" : 9,
+				"file" : 17,
+				"line" : 38,
+				"parent" : 42
+			},
+			{
+				"command" : 8,
+				"file" : 10,
+				"line" : 36,
+				"parent" : 43
+			},
+			{
+				"command" : 7,
+				"file" : 9,
+				"line" : 76,
+				"parent" : 44
+			},
+			{
+				"command" : 7,
+				"file" : 5,
+				"line" : 340,
+				"parent" : 45
+			},
+			{
+				"file" : 16,
+				"parent" : 46
+			},
+			{
+				"command" : 10,
+				"file" : 16,
+				"line" : 238,
+				"parent" : 47
+			},
+			{
+				"command" : 11,
+				"file" : 1,
+				"line" : 36,
+				"parent" : 0
+			},
+			{
+				"command" : 11,
+				"file" : 1,
+				"line" : 35,
+				"parent" : 0
+			},
+			{
+				"command" : 11,
+				"file" : 1,
+				"line" : 37,
+				"parent" : 0
+			},
+			{
+				"command" : 12,
+				"file" : 1,
+				"line" : 94,
+				"parent" : 0
+			},
+			{
+				"command" : 11,
+				"file" : 1,
+				"line" : 39,
+				"parent" : 0
+			},
+			{
+				"command" : 11,
+				"file" : 1,
+				"line" : 30,
+				"parent" : 0
+			},
+			{
+				"command" : 12,
+				"file" : 1,
+				"line" : 249,
+				"parent" : 0
+			},
+			{
+				"command" : 12,
+				"file" : 1,
+				"line" : 171,
+				"parent" : 0
+			},
+			{
+				"command" : 11,
+				"file" : 1,
+				"line" : 40,
+				"parent" : 0
+			},
+			{
+				"command" : 11,
+				"file" : 1,
+				"line" : 32,
+				"parent" : 0
+			},
+			{
+				"command" : 11,
+				"file" : 1,
+				"line" : 33,
+				"parent" : 0
+			},
+			{
+				"command" : 5,
+				"file" : 2,
+				"line" : 7,
+				"parent" : 7
+			},
+			{
+				"file" : 18,
+				"parent" : 60
+			},
+			{
+				"command" : 13,
+				"file" : 18,
+				"line" : 6,
+				"parent" : 61
+			},
+			{
+				"command" : 13,
+				"file" : 2,
+				"line" : 118,
+				"parent" : 7
+			},
+			{
+				"command" : 14,
+				"file" : 1,
+				"line" : 96,
+				"parent" : 0
+			},
+			{
+				"command" : 15,
+				"file" : 18,
+				"line" : 8,
+				"parent" : 61
+			},
+			{
+				"command" : 5,
+				"file" : 2,
+				"line" : 9,
+				"parent" : 7
+			},
+			{
+				"file" : 19,
+				"parent" : 66
+			},
+			{
+				"command" : 15,
+				"file" : 19,
+				"line" : 1,
+				"parent" : 67
+			},
+			{
+				"command" : 15,
+				"file" : 2,
+				"line" : 161,
+				"parent" : 7
+			},
+			{
+				"command" : 15,
+				"file" : 1,
+				"line" : 148,
+				"parent" : 0
+			},
+			{
+				"command" : 15,
+				"file" : 1,
+				"line" : 164,
+				"parent" : 0
+			},
+			{
+				"command" : 15,
+				"file" : 1,
+				"line" : 165,
+				"parent" : 0
+			},
+			{
+				"command" : 15,
+				"file" : 1,
+				"line" : 166,
+				"parent" : 0
+			},
+			{
+				"command" : 16,
+				"file" : 1,
+				"line" : 339,
+				"parent" : 0
+			},
+			{
+				"command" : 19,
+				"file" : 1,
+				"line" : 364,
+				"parent" : 0
+			},
+			{
+				"command" : 18,
+				"file" : 0,
+				"line" : 1022,
+				"parent" : 75
+			},
+			{
+				"command" : 17,
+				"file" : 0,
+				"line" : 909,
+				"parent" : 76
+			},
+			{
+				"command" : 16,
+				"file" : 0,
+				"line" : 1579,
+				"parent" : 77
+			}
+		]
+	},
+	"compileGroups" : 
+	[
+		{
+			"compileCommandFragments" : 
+			[
+				{
+					"fragment" : "-DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security -fexceptions -frtti -stdlib=libc++ -g  -fno-limit-debug-info -std=gnu++17 -fPIC -fvisibility=default -fansi-escape-codes -fcolor-diagnostics"
+				},
+				{
+					"backtrace" : 5,
+					"fragment" : "-fPIC"
+				},
+				{
+					"backtrace" : 5,
+					"fragment" : "-pthread"
+				}
+			],
+			"defines" : 
+			[
+				{
+					"backtrace" : 49,
+					"define" : "DEV_AGW_ENDPOINT=\"\""
+				},
+				{
+					"backtrace" : 50,
+					"define" : "DEV_AGW_PUBLIC_KEY=\"\""
+				},
+				{
+					"backtrace" : 51,
+					"define" : "DEV_S3_ENDPOINT=\"\""
+				},
+				{
+					"backtrace" : 52,
+					"define" : "FBLINK_ANDROID_TV=1"
+				},
+				{
+					"define" : "FBLink_EXPORTS"
+				},
+				{
+					"backtrace" : 53,
+					"define" : "FREE_V2_ENDPOINT=\"\""
+				},
+				{
+					"backtrace" : 54,
+					"define" : "GIT_COMMIT_HASH=\"16f201bb\""
+				},
+				{
+					"backtrace" : 55,
+					"define" : "MZ_ANDROID"
+				},
+				{
+					"backtrace" : 56,
+					"define" : "MZ_DEBUG"
+				},
+				{
+					"backtrace" : 57,
+					"define" : "PREM_V1_ENDPOINT=\"\""
+				},
+				{
+					"backtrace" : 58,
+					"define" : "PROD_AGW_PUBLIC_KEY=\"\""
+				},
+				{
+					"backtrace" : 59,
+					"define" : "PROD_S3_ENDPOINT=\"\""
+				},
+				{
+					"backtrace" : 62,
+					"define" : "QSIMPLECRYPTO_LIBRARY"
+				},
+				{
+					"backtrace" : 10,
+					"define" : "QT_CONCURRENT_LIB"
+				},
+				{
+					"backtrace" : 10,
+					"define" : "QT_CORE5COMPAT_LIB"
+				},
+				{
+					"backtrace" : 5,
+					"define" : "QT_CORE_LIB"
+				},
+				{
+					"backtrace" : 8,
+					"define" : "QT_GUI_LIB"
+				},
+				{
+					"backtrace" : 10,
+					"define" : "QT_NETWORK_LIB"
+				},
+				{
+					"backtrace" : 10,
+					"define" : "QT_OPENGL_LIB"
+				},
+				{
+					"backtrace" : 10,
+					"define" : "QT_QMLINTEGRATION_LIB"
+				},
+				{
+					"backtrace" : 10,
+					"define" : "QT_QML_LIB"
+				},
+				{
+					"backtrace" : 10,
+					"define" : "QT_QUICKCONTROLS2_LIB"
+				},
+				{
+					"backtrace" : 10,
+					"define" : "QT_QUICK_LIB"
+				},
+				{
+					"backtrace" : 10,
+					"define" : "QT_SVG_LIB"
+				},
+				{
+					"backtrace" : 10,
+					"define" : "QT_XML_LIB"
+				},
+				{
+					"backtrace" : 63,
+					"define" : "_WINSOCKAPI_"
+				}
+			],
+			"includes" : 
+			[
+				{
+					"backtrace" : 0,
+					"path" : "C:/Users/PC/Documents/Dr.Frake-VPN/client/FBLink_autogen/include"
+				},
+				{
+					"backtrace" : 64,
+					"path" : "C:/Users/PC/Documents/Dr.Frake-VPN/client"
+				},
+				{
+					"backtrace" : 65,
+					"path" : "C:/Users/PC/Documents/Dr.Frake-VPN/client/cmake/../3rd/QSimpleCrypto/src"
+				},
+				{
+					"backtrace" : 68,
+					"path" : "C:/Users/PC/Documents/Dr.Frake-VPN/client/3rd/qrcodegen"
+				},
+				{
+					"backtrace" : 69,
+					"path" : "C:/Users/PC/Documents/Dr.Frake-VPN/client/cmake/../3rd-prebuilt/3rd-prebuilt/openssl/android/include"
+				},
+				{
+					"backtrace" : 69,
+					"path" : "C:/Users/PC/Documents/Dr.Frake-VPN/client/cmake/../3rd/QSimpleCrypto/src/include"
+				},
+				{
+					"backtrace" : 69,
+					"path" : "C:/Users/PC/Documents/Dr.Frake-VPN/client/cmake/../3rd/qtkeychain/qtkeychain"
+				},
+				{
+					"backtrace" : 69,
+					"path" : "C:/Users/PC/Documents/Dr.Frake-VPN/client/3rd/qtkeychain"
+				},
+				{
+					"backtrace" : 69,
+					"path" : "C:/Users/PC/Documents/Dr.Frake-VPN/client/cmake/../3rd-prebuilt/3rd-prebuilt/libssh/android/x86_64/include"
+				},
+				{
+					"backtrace" : 69,
+					"path" : "C:/Users/PC/Documents/Dr.Frake-VPN/client/cmake/../3rd-prebuilt/3rd-prebuilt/libssh/include"
+				},
+				{
+					"backtrace" : 69,
+					"path" : "C:/Users/PC/Documents/Dr.Frake-VPN/client/cmake/../3rd/libssh/include"
+				},
+				{
+					"backtrace" : 69,
+					"path" : "C:/Users/PC/Documents/Dr.Frake-VPN/client/3rd/libssh/include"
+				},
+				{
+					"backtrace" : 70,
+					"path" : "C:/Users/PC/Documents/Dr.Frake-VPN/client/../ipc"
+				},
+				{
+					"backtrace" : 70,
+					"path" : "C:/Users/PC/Documents/Dr.Frake-VPN/client/../common/logger"
+				},
+				{
+					"backtrace" : 71,
+					"path" : "C:/Users/PC/Documents/Dr.Frake-VPN/client/mozilla"
+				},
+				{
+					"backtrace" : 72,
+					"path" : "C:/Users/PC/Documents/Dr.Frake-VPN/client/mozilla/shared"
+				},
+				{
+					"backtrace" : 73,
+					"path" : "C:/Users/PC/Documents/Dr.Frake-VPN/client/mozilla/models"
+				},
+				{
+					"backtrace" : 8,
+					"path" : "C:/Users/PC/Documents/Dr.Frake-VPN/client/3rd/qtgamepad/src/gamepad/include"
+				},
+				{
+					"backtrace" : 10,
+					"path" : "C:/Users/PC/Documents/Dr.Frake-VPN/client/3rd/SortFilterProxyModel"
+				},
+				{
+					"backtrace" : 10,
+					"path" : "C:/Users/PC/Documents/Dr.Frake-VPN/client/3rd/qtkeychain/qtkeychain/.."
+				},
+				{
+					"backtrace" : 10,
+					"path" : "C:/Users/PC/Documents/Dr.Frake-VPN/client/3rd/qtkeychain/qtkeychain"
+				},
+				{
+					"backtrace" : 5,
+					"isSystem" : true,
+					"path" : "C:/Qt/6.10.2/android_x86_64/include/QtCore"
+				},
+				{
+					"backtrace" : 5,
+					"isSystem" : true,
+					"path" : "C:/Qt/6.10.2/android_x86_64/include"
+				},
+				{
+					"backtrace" : 5,
+					"isSystem" : true,
+					"path" : "C:/Qt/6.10.2/android_x86_64/mkspecs/android-clang"
+				},
+				{
+					"backtrace" : 8,
+					"isSystem" : true,
+					"path" : "C:/Qt/6.10.2/android_x86_64/include/QtGui"
+				},
+				{
+					"backtrace" : 10,
+					"isSystem" : true,
+					"path" : "C:/Qt/6.10.2/android_x86_64/include/QtNetwork"
+				},
+				{
+					"backtrace" : 10,
+					"isSystem" : true,
+					"path" : "C:/Qt/6.10.2/android_x86_64/include/QtXml"
+				},
+				{
+					"backtrace" : 10,
+					"isSystem" : true,
+					"path" : "C:/Qt/6.10.2/android_x86_64/include/QtQuick"
+				},
+				{
+					"backtrace" : 10,
+					"isSystem" : true,
+					"path" : "C:/Qt/6.10.2/android_x86_64/include/QtQml"
+				},
+				{
+					"backtrace" : 10,
+					"isSystem" : true,
+					"path" : "C:/Qt/6.10.2/android_x86_64/include/QtQmlIntegration"
+				},
+				{
+					"backtrace" : 10,
+					"isSystem" : true,
+					"path" : "C:/Qt/6.10.2/android_x86_64/include/QtOpenGL"
+				},
+				{
+					"backtrace" : 10,
+					"isSystem" : true,
+					"path" : "C:/Qt/6.10.2/android_x86_64/include/QtSvg"
+				},
+				{
+					"backtrace" : 10,
+					"isSystem" : true,
+					"path" : "C:/Qt/6.10.2/android_x86_64/include/QtQuickControls2"
+				},
+				{
+					"backtrace" : 10,
+					"isSystem" : true,
+					"path" : "C:/Qt/6.10.2/android_x86_64/include/QtConcurrent"
+				},
+				{
+					"backtrace" : 10,
+					"isSystem" : true,
+					"path" : "C:/Qt/6.10.2/android_x86_64/include/QtCore5Compat"
+				},
+				{
+					"backtrace" : 10,
+					"isSystem" : true,
+					"path" : "C:/Qt/6.10.2/android_x86_64/include/QtCore/6.10.2"
+				},
+				{
+					"backtrace" : 10,
+					"isSystem" : true,
+					"path" : "C:/Qt/6.10.2/android_x86_64/include/QtCore/6.10.2/QtCore"
+				}
+			],
+			"language" : "CXX",
+			"languageStandard" : 
+			{
+				"backtraces" : 
+				[
+					5,
+					5
+				],
+				"standard" : "17"
+			},
+			"sourceIndexes" : 
+			[
+				0,
+				1,
+				2,
+				3,
+				4,
+				5,
+				6,
+				7,
+				8,
+				9,
+				10,
+				11,
+				12,
+				13,
+				14,
+				15,
+				16,
+				17,
+				18,
+				19,
+				20,
+				21,
+				22,
+				23,
+				24,
+				25,
+				26,
+				27,
+				28,
+				29,
+				30,
+				31,
+				32,
+				33,
+				34,
+				35,
+				36,
+				37,
+				38,
+				39,
+				40,
+				41,
+				42,
+				43,
+				44,
+				45,
+				46,
+				47,
+				48,
+				49,
+				50,
+				51,
+				52,
+				53,
+				54,
+				55,
+				56,
+				57,
+				58,
+				59,
+				60,
+				61,
+				62,
+				63,
+				64,
+				65,
+				66,
+				67,
+				68,
+				69,
+				70,
+				71,
+				72,
+				73,
+				74,
+				75,
+				76,
+				77,
+				78,
+				79,
+				80,
+				81,
+				82,
+				83,
+				84,
+				85,
+				86,
+				87,
+				88,
+				89,
+				90,
+				91,
+				92,
+				93,
+				94,
+				95,
+				96,
+				97,
+				197,
+				198
+			],
+			"sysroot" : 
+			{
+				"path" : "C:/Users/PC/AppData/Local/Android/Sdk/ndk/27.2.12479018/toolchains/llvm/prebuilt/windows-x86_64/sysroot"
+			}
+		}
+	],
+	"dependencies" : 
+	[
+		{
+			"backtrace" : 10,
+			"id" : "SortFilterProxyModel::@44f9b71fb6a28e94aad3"
+		},
+		{
+			"backtrace" : 10,
+			"id" : "qt6keychain::@95ea44de8979db819b0e"
+		},
+		{
+			"backtrace" : 8,
+			"id" : "GamepadLegacy::@d3cc642445bf055bf6f4"
+		},
+		{
+			"backtrace" : 9,
+			"id" : "GamepadLegacyQuickPrivate::@85c6c8a454543bd986f9"
+		},
+		{
+			"backtrace" : 0,
+			"id" : "FBLink_autogen::@b0c487aac068df482bf0"
+		},
+		{
+			"id" : "FBLink_autogen_timestamp_deps::@b0c487aac068df482bf0"
+		}
+	],
+	"id" : "FBLink::@b0c487aac068df482bf0",
+	"link" : 
+	{
+		"commandFragments" : 
+		[
+			{
+				"fragment" : "-Wl,--build-id=sha1 -Wl,--no-rosegment -Wl,--no-undefined-version -Wl,--fatal-warnings -Wl,--gc-sections -Qunused-arguments -Wl,--no-undefined",
+				"role" : "flags"
+			},
+			{
+				"backtrace" : 5,
+				"fragment" : "-Wl,-z,max-page-size=16384",
+				"role" : "flags"
+			},
+			{
+				"backtrace" : 8,
+				"fragment" : "client\\3rd\\qtgamepad\\src\\gamepad\\libGamepadLegacy.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 9,
+				"fragment" : "client\\3rd\\qtgamepad\\src\\imports\\gamepad\\libGamepadLegacyQuickPrivate_x86_64.so",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 10,
+				"fragment" : "C:\\Qt\\6.10.2\\android_x86_64\\lib\\libQt6Xml_x86_64.so",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 10,
+				"fragment" : "C:\\Qt\\6.10.2\\android_x86_64\\lib\\libQt6Svg_x86_64.so",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 10,
+				"fragment" : "C:\\Qt\\6.10.2\\android_x86_64\\lib\\libQt6QuickControls2_x86_64.so",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 10,
+				"fragment" : "C:\\Qt\\6.10.2\\android_x86_64\\lib\\libQt6Concurrent_x86_64.so",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 10,
+				"fragment" : "C:\\Qt\\6.10.2\\android_x86_64\\lib\\libQt6Core5Compat_x86_64.so",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 10,
+				"fragment" : "client\\cmake\\..\\3rd-prebuilt\\3rd-prebuilt\\libssh\\\\android\\x86_64\\libssh.so",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 10,
+				"fragment" : "client\\cmake\\..\\3rd-prebuilt\\3rd-prebuilt\\openssl\\\\android\\x86_64\\libssl.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 10,
+				"fragment" : "client\\cmake\\..\\3rd-prebuilt\\3rd-prebuilt\\openssl\\\\android\\x86_64\\libcrypto.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 10,
+				"fragment" : "client\\3rd\\qtkeychain\\qtkeychain\\libqt6keychain.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 10,
+				"fragment" : "-ljnigraphics",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 10,
+				"fragment" : "C:\\Qt\\6.10.2\\android_x86_64\\lib\\libQt6Quick_x86_64.so",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 16,
+				"fragment" : "C:\\Qt\\6.10.2\\android_x86_64\\lib\\libQt6OpenGL_x86_64.so",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 10,
+				"fragment" : "C:\\Qt\\6.10.2\\android_x86_64\\lib\\libQt6Gui_x86_64.so",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 21,
+				"fragment" : "C:\\Users\\PC\\AppData\\Local\\Android\\Sdk\\ndk\\27.2.12479018\\toolchains\\llvm\\prebuilt\\windows-x86_64\\sysroot\\usr\\lib\\x86_64-linux-android\\28\\libGLESv2.so",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 29,
+				"fragment" : "C:\\Users\\PC\\AppData\\Local\\Android\\Sdk\\ndk\\27.2.12479018\\toolchains\\llvm\\prebuilt\\windows-x86_64\\sysroot\\usr\\lib\\x86_64-linux-android\\28\\libEGL.so",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 16,
+				"fragment" : "C:\\Qt\\6.10.2\\android_x86_64\\lib\\libQt6Qml_x86_64.so",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 10,
+				"fragment" : "C:\\Qt\\6.10.2\\android_x86_64\\lib\\libQt6Network_x86_64.so",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 5,
+				"fragment" : "C:\\Qt\\6.10.2\\android_x86_64\\lib\\libQt6Core_x86_64.so",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 40,
+				"fragment" : "-llog",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 48,
+				"fragment" : "-pthread",
+				"role" : "libraries"
+			},
+			{
+				"fragment" : "-Wl,-rpath-link,C:/Qt/6.10.2/android_x86_64/lib  -latomic -lm",
+				"role" : "libraries"
+			}
+		],
+		"language" : "CXX",
+		"sysroot" : 
+		{
+			"path" : "C:/Users/PC/AppData/Local/Android/Sdk/ndk/27.2.12479018/toolchains/llvm/prebuilt/windows-x86_64/sysroot"
+		}
+	},
+	"name" : "FBLink",
+	"nameOnDisk" : "libFBLink_x86_64.so",
+	"paths" : 
+	{
+		"build" : "client",
+		"source" : "client"
+	},
+	"sourceGroups" : 
+	[
+		{
+			"name" : "Source Files\\Generated",
+			"sourceIndexes" : 
+			[
+				0,
+				197,
+				198,
+				200
+			]
+		},
+		{
+			"name" : "Source Files",
+			"sourceIndexes" : 
+			[
+				1,
+				2,
+				3,
+				4,
+				5,
+				6,
+				7,
+				8,
+				9,
+				10,
+				11,
+				12,
+				13,
+				14,
+				15,
+				16,
+				17,
+				18,
+				19,
+				20,
+				21,
+				22,
+				23,
+				24,
+				25,
+				26,
+				27,
+				28,
+				29,
+				30,
+				31,
+				32,
+				33,
+				34,
+				35,
+				36,
+				37,
+				38,
+				39,
+				40,
+				41,
+				42,
+				43,
+				44,
+				45,
+				46,
+				47,
+				48,
+				49,
+				50,
+				51,
+				52,
+				53,
+				54,
+				55,
+				56,
+				57,
+				58,
+				59,
+				60,
+				61,
+				62,
+				63,
+				64,
+				65,
+				66,
+				67,
+				68,
+				69,
+				70,
+				71,
+				72,
+				73,
+				74,
+				75,
+				76,
+				77,
+				78,
+				79,
+				80,
+				81,
+				82,
+				83,
+				84,
+				85,
+				86,
+				87,
+				88,
+				89,
+				90,
+				91,
+				92,
+				93,
+				94,
+				95,
+				96,
+				97
+			]
+		},
+		{
+			"name" : "Header Files",
+			"sourceIndexes" : 
+			[
+				98,
+				99,
+				100,
+				101,
+				102,
+				103,
+				104,
+				105,
+				106,
+				107,
+				108,
+				109,
+				110,
+				111,
+				112,
+				113,
+				114,
+				115,
+				116,
+				117,
+				118,
+				119,
+				120,
+				121,
+				122,
+				123,
+				124,
+				125,
+				126,
+				127,
+				128,
+				129,
+				130,
+				131,
+				132,
+				133,
+				134,
+				135,
+				136,
+				137,
+				138,
+				139,
+				140,
+				141,
+				142,
+				143,
+				144,
+				145,
+				146,
+				147,
+				148,
+				149,
+				150,
+				151,
+				152,
+				153,
+				154,
+				155,
+				156,
+				157,
+				158,
+				159,
+				160,
+				161,
+				162,
+				163,
+				164,
+				165,
+				166,
+				167,
+				168,
+				169,
+				170,
+				171,
+				172,
+				173,
+				174,
+				175,
+				176,
+				177,
+				178,
+				179,
+				180,
+				181,
+				182,
+				183,
+				184,
+				185,
+				186,
+				187,
+				188,
+				189,
+				190,
+				191,
+				192,
+				193,
+				194,
+				195,
+				196
+			]
+		},
+		{
+			"name" : "",
+			"sourceIndexes" : 
+			[
+				199
+			]
+		},
+		{
+			"name" : "Resources",
+			"sourceIndexes" : 
+			[
+				201,
+				202
+			]
+		},
+		{
+			"name" : "CMake Rules",
+			"sourceIndexes" : 
+			[
+				203,
+				204,
+				205,
+				206,
+				207,
+				208,
+				209,
+				210,
+				211,
+				212,
+				213,
+				214,
+				215,
+				216,
+				217,
+				218,
+				219,
+				220,
+				221
+			]
+		},
+		{
+			"name" : "Object Libraries",
+			"sourceIndexes" : 
+			[
+				222,
+				223,
+				224,
+				225,
+				226,
+				227,
+				228,
+				229,
+				230,
+				231,
+				232,
+				233,
+				234,
+				235,
+				236,
+				237,
+				238,
+				239,
+				240,
+				241,
+				242,
+				243,
+				244,
+				245,
+				246,
+				247,
+				248,
+				249,
+				250,
+				251,
+				252
+			]
+		}
+	],
+	"sources" : 
+	[
+		{
+			"backtrace" : 0,
+			"compileGroupIndex" : 0,
+			"isGenerated" : true,
+			"path" : "client/FBLink_autogen/mocs_compilation.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 74,
+			"compileGroupIndex" : 0,
+			"path" : "client/3rd/QSimpleCrypto/src/sources/QAead.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 74,
+			"compileGroupIndex" : 0,
+			"path" : "client/3rd/QSimpleCrypto/src/sources/QBlockCipher.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 74,
+			"compileGroupIndex" : 0,
+			"path" : "client/3rd/QSimpleCrypto/src/sources/QRsa.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 74,
+			"compileGroupIndex" : 0,
+			"path" : "client/3rd/QSimpleCrypto/src/sources/QX509.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 74,
+			"compileGroupIndex" : 0,
+			"path" : "client/3rd/QSimpleCrypto/src/sources/QX509Store.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 74,
+			"compileGroupIndex" : 0,
+			"path" : "client/3rd/qrcodegen/qrcodegen.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 74,
+			"compileGroupIndex" : 0,
+			"path" : "client/migrations.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 74,
+			"compileGroupIndex" : 0,
+			"path" : "client/FBLink_application.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 74,
+			"compileGroupIndex" : 0,
+			"path" : "client/containers/containers_defs.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 74,
+			"compileGroupIndex" : 0,
+			"path" : "client/core/errorstrings.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 74,
+			"compileGroupIndex" : 0,
+			"path" : "client/core/scripts_registry.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 74,
+			"compileGroupIndex" : 0,
+			"path" : "client/core/server_defs.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 74,
+			"compileGroupIndex" : 0,
+			"path" : "client/core/qrCodeUtils.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 74,
+			"compileGroupIndex" : 0,
+			"path" : "client/core/controllers/coreController.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 74,
+			"compileGroupIndex" : 0,
+			"path" : "client/core/controllers/updateController.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 74,
+			"compileGroupIndex" : 0,
+			"path" : "client/core/controllers/gatewayController.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 74,
+			"compileGroupIndex" : 0,
+			"path" : "client/core/controllers/serverController.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 74,
+			"compileGroupIndex" : 0,
+			"path" : "client/core/controllers/vpnConfigurationController.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 74,
+			"compileGroupIndex" : 0,
+			"path" : "client/protocols/protocols_defs.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 74,
+			"compileGroupIndex" : 0,
+			"path" : "client/ui/qautostart.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 74,
+			"compileGroupIndex" : 0,
+			"path" : "client/protocols/vpnprotocol.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 74,
+			"compileGroupIndex" : 0,
+			"path" : "client/core/sshclient.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 74,
+			"compileGroupIndex" : 0,
+			"path" : "client/core/networkUtilities.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 74,
+			"compileGroupIndex" : 0,
+			"path" : "client/core/serialization/outbound.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 74,
+			"compileGroupIndex" : 0,
+			"path" : "client/core/serialization/inbound.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 74,
+			"compileGroupIndex" : 0,
+			"path" : "client/core/serialization/ss.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 74,
+			"compileGroupIndex" : 0,
+			"path" : "client/core/serialization/ssd.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 74,
+			"compileGroupIndex" : 0,
+			"path" : "client/core/serialization/vless.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 74,
+			"compileGroupIndex" : 0,
+			"path" : "client/core/serialization/trojan.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 74,
+			"compileGroupIndex" : 0,
+			"path" : "client/core/serialization/vmess.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 74,
+			"compileGroupIndex" : 0,
+			"path" : "client/core/serialization/vmess_new.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 74,
+			"compileGroupIndex" : 0,
+			"path" : "common/logger/logger.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 74,
+			"compileGroupIndex" : 0,
+			"path" : "client/utils/qmlUtils.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 74,
+			"compileGroupIndex" : 0,
+			"path" : "client/core/api/apiUtils.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 74,
+			"compileGroupIndex" : 0,
+			"path" : "client/core/osSignalHandler.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 74,
+			"compileGroupIndex" : 0,
+			"path" : "client/mozilla/models/server.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 74,
+			"compileGroupIndex" : 0,
+			"path" : "client/mozilla/shared/ipaddress.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 74,
+			"compileGroupIndex" : 0,
+			"path" : "client/mozilla/shared/leakdetector.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 74,
+			"compileGroupIndex" : 0,
+			"path" : "client/platforms/ios/QRCodeReaderBase.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 74,
+			"compileGroupIndex" : 0,
+			"path" : "client/main.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 74,
+			"compileGroupIndex" : 0,
+			"path" : "client/managementserver.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 74,
+			"compileGroupIndex" : 0,
+			"path" : "client/secure_qsettings.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 74,
+			"compileGroupIndex" : 0,
+			"path" : "client/settings.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 74,
+			"compileGroupIndex" : 0,
+			"path" : "client/utilities.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 74,
+			"compileGroupIndex" : 0,
+			"path" : "client/vpnconnection.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 74,
+			"compileGroupIndex" : 0,
+			"path" : "client/configurators/awg_configurator.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 74,
+			"compileGroupIndex" : 0,
+			"path" : "client/configurators/cloak_configurator.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 74,
+			"compileGroupIndex" : 0,
+			"path" : "client/configurators/configurator_base.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 74,
+			"compileGroupIndex" : 0,
+			"path" : "client/configurators/ikev2_configurator.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 74,
+			"compileGroupIndex" : 0,
+			"path" : "client/configurators/openvpn_configurator.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 74,
+			"compileGroupIndex" : 0,
+			"path" : "client/configurators/shadowsocks_configurator.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 74,
+			"compileGroupIndex" : 0,
+			"path" : "client/configurators/ssh_configurator.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 74,
+			"compileGroupIndex" : 0,
+			"path" : "client/configurators/wireguard_configurator.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 74,
+			"compileGroupIndex" : 0,
+			"path" : "client/configurators/xray_configurator.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 74,
+			"compileGroupIndex" : 0,
+			"path" : "client/ui/models/allowed_dns_model.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 74,
+			"compileGroupIndex" : 0,
+			"path" : "client/ui/models/api/apiAccountInfoModel.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 74,
+			"compileGroupIndex" : 0,
+			"path" : "client/ui/models/api/apiCountryModel.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 74,
+			"compileGroupIndex" : 0,
+			"path" : "client/ui/models/api/apiDevicesModel.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 74,
+			"compileGroupIndex" : 0,
+			"path" : "client/ui/models/api/apiServicesModel.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 74,
+			"compileGroupIndex" : 0,
+			"path" : "client/ui/models/appSplitTunnelingModel.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 74,
+			"compileGroupIndex" : 0,
+			"path" : "client/ui/models/clientManagementModel.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 74,
+			"compileGroupIndex" : 0,
+			"path" : "client/ui/models/containers_model.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 74,
+			"compileGroupIndex" : 0,
+			"path" : "client/ui/models/installedAppsModel.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 74,
+			"compileGroupIndex" : 0,
+			"path" : "client/ui/models/languageModel.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 74,
+			"compileGroupIndex" : 0,
+			"path" : "client/ui/models/newsModel.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 74,
+			"compileGroupIndex" : 0,
+			"path" : "client/ui/models/protocols/awgConfigModel.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 74,
+			"compileGroupIndex" : 0,
+			"path" : "client/ui/models/protocols/cloakConfigModel.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 74,
+			"compileGroupIndex" : 0,
+			"path" : "client/ui/models/protocols/ikev2ConfigModel.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 74,
+			"compileGroupIndex" : 0,
+			"path" : "client/ui/models/protocols/openvpnConfigModel.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 74,
+			"compileGroupIndex" : 0,
+			"path" : "client/ui/models/protocols/shadowsocksConfigModel.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 74,
+			"compileGroupIndex" : 0,
+			"path" : "client/ui/models/protocols/wireguardConfigModel.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 74,
+			"compileGroupIndex" : 0,
+			"path" : "client/ui/models/protocols/xrayConfigModel.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 74,
+			"compileGroupIndex" : 0,
+			"path" : "client/ui/models/protocols_model.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 74,
+			"compileGroupIndex" : 0,
+			"path" : "client/ui/models/servers_model.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 74,
+			"compileGroupIndex" : 0,
+			"path" : "client/ui/models/services/sftpConfigModel.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 74,
+			"compileGroupIndex" : 0,
+			"path" : "client/ui/models/services/socks5ProxyConfigModel.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 74,
+			"compileGroupIndex" : 0,
+			"path" : "client/ui/models/sites_model.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 74,
+			"compileGroupIndex" : 0,
+			"path" : "client/ui/controllers/allowedDnsController.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 74,
+			"compileGroupIndex" : 0,
+			"path" : "client/ui/controllers/api/apiConfigsController.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 74,
+			"compileGroupIndex" : 0,
+			"path" : "client/ui/controllers/api/apiNewsController.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 74,
+			"compileGroupIndex" : 0,
+			"path" : "client/ui/controllers/api/apiSettingsController.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 74,
+			"compileGroupIndex" : 0,
+			"path" : "client/ui/controllers/api/fblink_controller.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 74,
+			"compileGroupIndex" : 0,
+			"path" : "client/ui/controllers/appSplitTunnelingController.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 74,
+			"compileGroupIndex" : 0,
+			"path" : "client/ui/controllers/connectionController.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 74,
+			"compileGroupIndex" : 0,
+			"path" : "client/ui/controllers/exportController.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 74,
+			"compileGroupIndex" : 0,
+			"path" : "client/ui/controllers/focusController.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 74,
+			"compileGroupIndex" : 0,
+			"path" : "client/ui/controllers/importController.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 74,
+			"compileGroupIndex" : 0,
+			"path" : "client/ui/controllers/installController.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 74,
+			"compileGroupIndex" : 0,
+			"path" : "client/ui/controllers/listViewFocusController.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 74,
+			"compileGroupIndex" : 0,
+			"path" : "client/ui/controllers/pageController.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 74,
+			"compileGroupIndex" : 0,
+			"path" : "client/ui/controllers/settingsController.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 74,
+			"compileGroupIndex" : 0,
+			"path" : "client/ui/controllers/sitesController.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 74,
+			"compileGroupIndex" : 0,
+			"path" : "client/ui/controllers/systemController.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 74,
+			"compileGroupIndex" : 0,
+			"path" : "client/platforms/android/android_controller.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 74,
+			"compileGroupIndex" : 0,
+			"path" : "client/platforms/android/android_utils.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 74,
+			"compileGroupIndex" : 0,
+			"path" : "client/protocols/android_vpnprotocol.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 74,
+			"compileGroupIndex" : 0,
+			"path" : "client/core/installedAppsImageProvider.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 74,
+			"path" : "client/3rd/QSimpleCrypto/src/include/QAead.h",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 74,
+			"path" : "client/3rd/QSimpleCrypto/src/include/QBlockCipher.h",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 74,
+			"path" : "client/3rd/QSimpleCrypto/src/include/QRsa.h",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 74,
+			"path" : "client/3rd/QSimpleCrypto/src/include/QSimpleCrypto_global.h",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 74,
+			"path" : "client/3rd/QSimpleCrypto/src/include/QX509.h",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 74,
+			"path" : "client/3rd/QSimpleCrypto/src/include/QX509Store.h",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 74,
+			"path" : "client/3rd/qrcodegen/qrcodegen.hpp",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 74,
+			"path" : "client/migrations.h",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 74,
+			"path" : "ipc/ipc.h",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 74,
+			"path" : "client/FBLink_application.h",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 74,
+			"path" : "client/containers/containers_defs.h",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 74,
+			"path" : "client/core/defs.h",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 74,
+			"path" : "client/core/errorstrings.h",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 74,
+			"path" : "client/core/scripts_registry.h",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 74,
+			"path" : "client/core/server_defs.h",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 74,
+			"path" : "client/core/api/apiDefs.h",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 74,
+			"path" : "client/core/qrCodeUtils.h",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 74,
+			"path" : "client/core/controllers/coreController.h",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 74,
+			"path" : "client/core/controllers/updateController.h",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 74,
+			"path" : "client/core/controllers/gatewayController.h",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 74,
+			"path" : "client/core/controllers/serverController.h",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 74,
+			"path" : "client/core/controllers/vpnConfigurationController.h",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 74,
+			"path" : "client/protocols/protocols_defs.h",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 74,
+			"path" : "client/protocols/qml_register_protocols.h",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 74,
+			"path" : "client/ui/pages.h",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 74,
+			"path" : "client/ui/qautostart.h",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 74,
+			"path" : "client/protocols/vpnprotocol.h",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 74,
+			"path" : "client/version.h",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 74,
+			"path" : "client/core/sshclient.h",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 74,
+			"path" : "client/core/networkUtilities.h",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 74,
+			"path" : "client/core/serialization/serialization.h",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 74,
+			"path" : "client/core/serialization/transfer.h",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 74,
+			"path" : "common/logger/logger.h",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 74,
+			"path" : "client/utils/qmlUtils.h",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 74,
+			"path" : "client/core/api/apiUtils.h",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 74,
+			"path" : "client/core/osSignalHandler.h",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 74,
+			"path" : "client/mozilla/models/server.h",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 74,
+			"path" : "client/mozilla/shared/ipaddress.h",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 74,
+			"path" : "client/mozilla/shared/leakdetector.h",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 74,
+			"path" : "client/mozilla/controllerimpl.h",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 74,
+			"path" : "client/platforms/ios/QRCodeReaderBase.h",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 74,
+			"path" : "client/constants.h",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 74,
+			"path" : "client/managementserver.h",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 74,
+			"path" : "client/secure_qsettings.h",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 74,
+			"path" : "client/settings.h",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 74,
+			"path" : "client/utilities.h",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 74,
+			"path" : "client/vpnconnection.h",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 74,
+			"path" : "client/configurators/awg_configurator.h",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 74,
+			"path" : "client/configurators/cloak_configurator.h",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 74,
+			"path" : "client/configurators/configurator_base.h",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 74,
+			"path" : "client/configurators/ikev2_configurator.h",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 74,
+			"path" : "client/configurators/openvpn_configurator.h",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 74,
+			"path" : "client/configurators/shadowsocks_configurator.h",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 74,
+			"path" : "client/configurators/ssh_configurator.h",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 74,
+			"path" : "client/configurators/wireguard_configurator.h",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 74,
+			"path" : "client/configurators/xray_configurator.h",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 74,
+			"path" : "client/ui/models/allowed_dns_model.h",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 74,
+			"path" : "client/ui/models/api/apiAccountInfoModel.h",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 74,
+			"path" : "client/ui/models/api/apiCountryModel.h",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 74,
+			"path" : "client/ui/models/api/apiDevicesModel.h",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 74,
+			"path" : "client/ui/models/api/apiServicesModel.h",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 74,
+			"path" : "client/ui/models/appSplitTunnelingModel.h",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 74,
+			"path" : "client/ui/models/clientManagementModel.h",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 74,
+			"path" : "client/ui/models/containers_model.h",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 74,
+			"path" : "client/ui/models/installedAppsModel.h",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 74,
+			"path" : "client/ui/models/languageModel.h",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 74,
+			"path" : "client/ui/models/newsModel.h",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 74,
+			"path" : "client/ui/models/protocols/awgConfigModel.h",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 74,
+			"path" : "client/ui/models/protocols/cloakConfigModel.h",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 74,
+			"path" : "client/ui/models/protocols/ikev2ConfigModel.h",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 74,
+			"path" : "client/ui/models/protocols/openvpnConfigModel.h",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 74,
+			"path" : "client/ui/models/protocols/shadowsocksConfigModel.h",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 74,
+			"path" : "client/ui/models/protocols/wireguardConfigModel.h",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 74,
+			"path" : "client/ui/models/protocols/xrayConfigModel.h",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 74,
+			"path" : "client/ui/models/protocols_model.h",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 74,
+			"path" : "client/ui/models/servers_model.h",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 74,
+			"path" : "client/ui/models/services/sftpConfigModel.h",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 74,
+			"path" : "client/ui/models/services/socks5ProxyConfigModel.h",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 74,
+			"path" : "client/ui/models/sites_model.h",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 74,
+			"path" : "client/ui/controllers/allowedDnsController.h",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 74,
+			"path" : "client/ui/controllers/api/apiConfigsController.h",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 74,
+			"path" : "client/ui/controllers/api/apiNewsController.h",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 74,
+			"path" : "client/ui/controllers/api/apiSettingsController.h",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 74,
+			"path" : "client/ui/controllers/api/fblink_controller.h",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 74,
+			"path" : "client/ui/controllers/appSplitTunnelingController.h",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 74,
+			"path" : "client/ui/controllers/connectionController.h",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 74,
+			"path" : "client/ui/controllers/exportController.h",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 74,
+			"path" : "client/ui/controllers/focusController.h",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 74,
+			"path" : "client/ui/controllers/importController.h",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 74,
+			"path" : "client/ui/controllers/installController.h",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 74,
+			"path" : "client/ui/controllers/listViewFocusController.h",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 74,
+			"path" : "client/ui/controllers/pageController.h",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 74,
+			"path" : "client/ui/controllers/settingsController.h",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 74,
+			"path" : "client/ui/controllers/sitesController.h",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 74,
+			"path" : "client/ui/controllers/systemController.h",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 74,
+			"path" : "client/platforms/android/android_controller.h",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 74,
+			"path" : "client/platforms/android/android_utils.h",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 74,
+			"path" : "client/protocols/android_vpnprotocol.h",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 74,
+			"path" : "client/core/installedAppsImageProvider.h",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 74,
+			"compileGroupIndex" : 0,
+			"isGenerated" : true,
+			"path" : "client/qrc_resources.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 74,
+			"compileGroupIndex" : 0,
+			"isGenerated" : true,
+			"path" : "client/qrc_translations.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 78,
+			"isGenerated" : true,
+			"path" : "client/meta_types/qt6fblink_metatypes.json.gen",
+			"sourceGroupIndex" : 3
+		},
+		{
+			"backtrace" : 0,
+			"isGenerated" : true,
+			"path" : "client/FBLink_autogen/timestamp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 0,
+			"path" : "client/resources.qrc",
+			"sourceGroupIndex" : 4
+		},
+		{
+			"backtrace" : 0,
+			"path" : "client/translations.qrc",
+			"sourceGroupIndex" : 4
+		},
+		{
+			"backtrace" : 0,
+			"isGenerated" : true,
+			"path" : "client/meta_types/qt6fblink_metatypes.json.gen.rule",
+			"sourceGroupIndex" : 5
+		},
+		{
+			"backtrace" : 0,
+			"isGenerated" : true,
+			"path" : "client/FBLink_autogen/timestamp.rule",
+			"sourceGroupIndex" : 5
+		},
+		{
+			"backtrace" : 0,
+			"isGenerated" : true,
+			"path" : "client/FBLink_ar_EG.qm.rule",
+			"sourceGroupIndex" : 5
+		},
+		{
+			"backtrace" : 0,
+			"isGenerated" : true,
+			"path" : "client/FBLink_fa_IR.qm.rule",
+			"sourceGroupIndex" : 5
+		},
+		{
+			"backtrace" : 0,
+			"isGenerated" : true,
+			"path" : "client/FBLink_hi_IN.qm.rule",
+			"sourceGroupIndex" : 5
+		},
+		{
+			"backtrace" : 0,
+			"isGenerated" : true,
+			"path" : "client/FBLink_my_MM.qm.rule",
+			"sourceGroupIndex" : 5
+		},
+		{
+			"backtrace" : 0,
+			"isGenerated" : true,
+			"path" : "client/FBLink_ru_RU.qm.rule",
+			"sourceGroupIndex" : 5
+		},
+		{
+			"backtrace" : 0,
+			"isGenerated" : true,
+			"path" : "client/FBLink_uk_UA.qm.rule",
+			"sourceGroupIndex" : 5
+		},
+		{
+			"backtrace" : 0,
+			"isGenerated" : true,
+			"path" : "client/FBLink_ur_PK.qm.rule",
+			"sourceGroupIndex" : 5
+		},
+		{
+			"backtrace" : 0,
+			"isGenerated" : true,
+			"path" : "client/FBLink_zh_CN.qm.rule",
+			"sourceGroupIndex" : 5
+		},
+		{
+			"backtrace" : 0,
+			"isGenerated" : true,
+			"path" : "client/meta_types/FBLink_json_file_list.txt.rule",
+			"sourceGroupIndex" : 5
+		},
+		{
+			"backtrace" : 0,
+			"isGenerated" : true,
+			"path" : "client/.lupdate/translations/FBLink_ar_EG.ts.stamp.rule",
+			"sourceGroupIndex" : 5
+		},
+		{
+			"backtrace" : 0,
+			"isGenerated" : true,
+			"path" : "client/.lupdate/translations/FBLink_fa_IR.ts.stamp.rule",
+			"sourceGroupIndex" : 5
+		},
+		{
+			"backtrace" : 0,
+			"isGenerated" : true,
+			"path" : "client/.lupdate/translations/FBLink_hi_IN.ts.stamp.rule",
+			"sourceGroupIndex" : 5
+		},
+		{
+			"backtrace" : 0,
+			"isGenerated" : true,
+			"path" : "client/.lupdate/translations/FBLink_my_MM.ts.stamp.rule",
+			"sourceGroupIndex" : 5
+		},
+		{
+			"backtrace" : 0,
+			"isGenerated" : true,
+			"path" : "client/.lupdate/translations/FBLink_ru_RU.ts.stamp.rule",
+			"sourceGroupIndex" : 5
+		},
+		{
+			"backtrace" : 0,
+			"isGenerated" : true,
+			"path" : "client/.lupdate/translations/FBLink_uk_UA.ts.stamp.rule",
+			"sourceGroupIndex" : 5
+		},
+		{
+			"backtrace" : 0,
+			"isGenerated" : true,
+			"path" : "client/.lupdate/translations/FBLink_ur_PK.ts.stamp.rule",
+			"sourceGroupIndex" : 5
+		},
+		{
+			"backtrace" : 0,
+			"isGenerated" : true,
+			"path" : "client/.lupdate/translations/FBLink_zh_CN.ts.stamp.rule",
+			"sourceGroupIndex" : 5
+		},
+		{
+			"backtrace" : 10,
+			"isGenerated" : true,
+			"path" : "client/3rd/SortFilterProxyModel/CMakeFiles/SortFilterProxyModel.dir/SortFilterProxyModel_autogen/mocs_compilation.cpp.o",
+			"sourceGroupIndex" : 6
+		},
+		{
+			"backtrace" : 10,
+			"isGenerated" : true,
+			"path" : "client/3rd/SortFilterProxyModel/CMakeFiles/SortFilterProxyModel.dir/qqmlsortfilterproxymodel.cpp.o",
+			"sourceGroupIndex" : 6
+		},
+		{
+			"backtrace" : 10,
+			"isGenerated" : true,
+			"path" : "client/3rd/SortFilterProxyModel/CMakeFiles/SortFilterProxyModel.dir/filters/filter.cpp.o",
+			"sourceGroupIndex" : 6
+		},
+		{
+			"backtrace" : 10,
+			"isGenerated" : true,
+			"path" : "client/3rd/SortFilterProxyModel/CMakeFiles/SortFilterProxyModel.dir/filters/filtercontainer.cpp.o",
+			"sourceGroupIndex" : 6
+		},
+		{
+			"backtrace" : 10,
+			"isGenerated" : true,
+			"path" : "client/3rd/SortFilterProxyModel/CMakeFiles/SortFilterProxyModel.dir/filters/rolefilter.cpp.o",
+			"sourceGroupIndex" : 6
+		},
+		{
+			"backtrace" : 10,
+			"isGenerated" : true,
+			"path" : "client/3rd/SortFilterProxyModel/CMakeFiles/SortFilterProxyModel.dir/filters/valuefilter.cpp.o",
+			"sourceGroupIndex" : 6
+		},
+		{
+			"backtrace" : 10,
+			"isGenerated" : true,
+			"path" : "client/3rd/SortFilterProxyModel/CMakeFiles/SortFilterProxyModel.dir/filters/indexfilter.cpp.o",
+			"sourceGroupIndex" : 6
+		},
+		{
+			"backtrace" : 10,
+			"isGenerated" : true,
+			"path" : "client/3rd/SortFilterProxyModel/CMakeFiles/SortFilterProxyModel.dir/filters/regexpfilter.cpp.o",
+			"sourceGroupIndex" : 6
+		},
+		{
+			"backtrace" : 10,
+			"isGenerated" : true,
+			"path" : "client/3rd/SortFilterProxyModel/CMakeFiles/SortFilterProxyModel.dir/filters/rangefilter.cpp.o",
+			"sourceGroupIndex" : 6
+		},
+		{
+			"backtrace" : 10,
+			"isGenerated" : true,
+			"path" : "client/3rd/SortFilterProxyModel/CMakeFiles/SortFilterProxyModel.dir/filters/expressionfilter.cpp.o",
+			"sourceGroupIndex" : 6
+		},
+		{
+			"backtrace" : 10,
+			"isGenerated" : true,
+			"path" : "client/3rd/SortFilterProxyModel/CMakeFiles/SortFilterProxyModel.dir/filters/filtercontainerfilter.cpp.o",
+			"sourceGroupIndex" : 6
+		},
+		{
+			"backtrace" : 10,
+			"isGenerated" : true,
+			"path" : "client/3rd/SortFilterProxyModel/CMakeFiles/SortFilterProxyModel.dir/filters/anyoffilter.cpp.o",
+			"sourceGroupIndex" : 6
+		},
+		{
+			"backtrace" : 10,
+			"isGenerated" : true,
+			"path" : "client/3rd/SortFilterProxyModel/CMakeFiles/SortFilterProxyModel.dir/filters/alloffilter.cpp.o",
+			"sourceGroupIndex" : 6
+		},
+		{
+			"backtrace" : 10,
+			"isGenerated" : true,
+			"path" : "client/3rd/SortFilterProxyModel/CMakeFiles/SortFilterProxyModel.dir/filters/filtersqmltypes.cpp.o",
+			"sourceGroupIndex" : 6
+		},
+		{
+			"backtrace" : 10,
+			"isGenerated" : true,
+			"path" : "client/3rd/SortFilterProxyModel/CMakeFiles/SortFilterProxyModel.dir/sorters/sorter.cpp.o",
+			"sourceGroupIndex" : 6
+		},
+		{
+			"backtrace" : 10,
+			"isGenerated" : true,
+			"path" : "client/3rd/SortFilterProxyModel/CMakeFiles/SortFilterProxyModel.dir/sorters/sortercontainer.cpp.o",
+			"sourceGroupIndex" : 6
+		},
+		{
+			"backtrace" : 10,
+			"isGenerated" : true,
+			"path" : "client/3rd/SortFilterProxyModel/CMakeFiles/SortFilterProxyModel.dir/sorters/rolesorter.cpp.o",
+			"sourceGroupIndex" : 6
+		},
+		{
+			"backtrace" : 10,
+			"isGenerated" : true,
+			"path" : "client/3rd/SortFilterProxyModel/CMakeFiles/SortFilterProxyModel.dir/sorters/stringsorter.cpp.o",
+			"sourceGroupIndex" : 6
+		},
+		{
+			"backtrace" : 10,
+			"isGenerated" : true,
+			"path" : "client/3rd/SortFilterProxyModel/CMakeFiles/SortFilterProxyModel.dir/sorters/expressionsorter.cpp.o",
+			"sourceGroupIndex" : 6
+		},
+		{
+			"backtrace" : 10,
+			"isGenerated" : true,
+			"path" : "client/3rd/SortFilterProxyModel/CMakeFiles/SortFilterProxyModel.dir/sorters/sortersqmltypes.cpp.o",
+			"sourceGroupIndex" : 6
+		},
+		{
+			"backtrace" : 10,
+			"isGenerated" : true,
+			"path" : "client/3rd/SortFilterProxyModel/CMakeFiles/SortFilterProxyModel.dir/proxyroles/proxyrole.cpp.o",
+			"sourceGroupIndex" : 6
+		},
+		{
+			"backtrace" : 10,
+			"isGenerated" : true,
+			"path" : "client/3rd/SortFilterProxyModel/CMakeFiles/SortFilterProxyModel.dir/proxyroles/proxyrolecontainer.cpp.o",
+			"sourceGroupIndex" : 6
+		},
+		{
+			"backtrace" : 10,
+			"isGenerated" : true,
+			"path" : "client/3rd/SortFilterProxyModel/CMakeFiles/SortFilterProxyModel.dir/proxyroles/joinrole.cpp.o",
+			"sourceGroupIndex" : 6
+		},
+		{
+			"backtrace" : 10,
+			"isGenerated" : true,
+			"path" : "client/3rd/SortFilterProxyModel/CMakeFiles/SortFilterProxyModel.dir/proxyroles/switchrole.cpp.o",
+			"sourceGroupIndex" : 6
+		},
+		{
+			"backtrace" : 10,
+			"isGenerated" : true,
+			"path" : "client/3rd/SortFilterProxyModel/CMakeFiles/SortFilterProxyModel.dir/proxyroles/expressionrole.cpp.o",
+			"sourceGroupIndex" : 6
+		},
+		{
+			"backtrace" : 10,
+			"isGenerated" : true,
+			"path" : "client/3rd/SortFilterProxyModel/CMakeFiles/SortFilterProxyModel.dir/proxyroles/proxyrolesqmltypes.cpp.o",
+			"sourceGroupIndex" : 6
+		},
+		{
+			"backtrace" : 10,
+			"isGenerated" : true,
+			"path" : "client/3rd/SortFilterProxyModel/CMakeFiles/SortFilterProxyModel.dir/proxyroles/singlerole.cpp.o",
+			"sourceGroupIndex" : 6
+		},
+		{
+			"backtrace" : 10,
+			"isGenerated" : true,
+			"path" : "client/3rd/SortFilterProxyModel/CMakeFiles/SortFilterProxyModel.dir/proxyroles/regexprole.cpp.o",
+			"sourceGroupIndex" : 6
+		},
+		{
+			"backtrace" : 10,
+			"isGenerated" : true,
+			"path" : "client/3rd/SortFilterProxyModel/CMakeFiles/SortFilterProxyModel.dir/sorters/filtersorter.cpp.o",
+			"sourceGroupIndex" : 6
+		},
+		{
+			"backtrace" : 10,
+			"isGenerated" : true,
+			"path" : "client/3rd/SortFilterProxyModel/CMakeFiles/SortFilterProxyModel.dir/proxyroles/filterrole.cpp.o",
+			"sourceGroupIndex" : 6
+		},
+		{
+			"backtrace" : 10,
+			"isGenerated" : true,
+			"path" : "client/3rd/SortFilterProxyModel/CMakeFiles/SortFilterProxyModel.dir/utils/utils.cpp.o",
+			"sourceGroupIndex" : 6
+		}
+	],
+	"type" : "MODULE_LIBRARY"
+}

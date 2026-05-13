@@ -1,0 +1,1104 @@
+{
+	"artifacts" : 
+	[
+		{
+			"path" : "client/3rd/qtgamepad/src/imports/gamepad/libGamepadLegacyQuickPrivate_x86_64.so"
+		}
+	],
+	"backtrace" : 5,
+	"backtraceGraph" : 
+	{
+		"commands" : 
+		[
+			"add_library",
+			"_qt_internal_add_library",
+			"qt6_add_library",
+			"qt6_add_qml_module",
+			"qt_add_qml_module",
+			"target_link_libraries",
+			"set_target_properties",
+			"include",
+			"find_package",
+			"find_dependency",
+			"_qt_internal_find_qt_dependencies",
+			"_qt_internal_find_third_party_dependencies",
+			"set_property",
+			"add_dependencies",
+			"_qt_internal_write_deferred_qmlls_build_ini_file",
+			"_qt_internal_qml_copy_files_to_build_dir",
+			"add_definitions",
+			"add_compile_definitions",
+			"include_directories",
+			"target_include_directories",
+			"_qt_internal_qml_type_registration",
+			"target_sources",
+			"qt6_extract_metatypes",
+			"__qt_propagate_generated_resource",
+			"_qt_internal_process_resource",
+			"qt6_add_resources",
+			"_qt_internal_expose_deferred_files_to_ide",
+			"qt6_finalize_target"
+		],
+		"files" : 
+		[
+			"C:/Qt/6.10.2/android_x86_64/lib/cmake/Qt6Core/Qt6CoreMacros.cmake",
+			"C:/Qt/6.10.2/android_x86_64/lib/cmake/Qt6Qml/Qt6QmlMacros.cmake",
+			"client/3rd/qtgamepad/src/imports/gamepad/CMakeLists.txt",
+			"C:/Qt/6.10.2/android_x86_64/lib/cmake/Qt6Quick/Qt6QuickTargets.cmake",
+			"C:/Qt/6.10.2/android_x86_64/lib/cmake/Qt6Quick/Qt6QuickConfig.cmake",
+			".qtc/package-manager/maintenance_tool_provider.cmake",
+			"client/CMakeLists.txt",
+			"C:/Qt/6.10.2/android_x86_64/lib/cmake/Qt6Qml/Qt6QmlTargets.cmake",
+			"C:/Qt/6.10.2/android_x86_64/lib/cmake/Qt6Qml/Qt6QmlConfig.cmake",
+			"C:/Qt/Tools/CMake_64/share/cmake-3.30/Modules/CMakeFindDependencyMacro.cmake",
+			"C:/Qt/6.10.2/android_x86_64/lib/cmake/Qt6/QtPublicDependencyHelpers.cmake",
+			"C:/Qt/6.10.2/android_x86_64/lib/cmake/Qt6Quick/Qt6QuickDependencies.cmake",
+			"C:/Qt/6.10.2/android_x86_64/lib/cmake/Qt6Gui/Qt6GuiTargets.cmake",
+			"C:/Qt/6.10.2/android_x86_64/lib/cmake/Qt6Gui/Qt6GuiConfig.cmake",
+			"C:/Qt/6.10.2/android_x86_64/lib/cmake/Qt6/FindGLESv2.cmake",
+			"C:/Qt/6.10.2/android_x86_64/lib/cmake/Qt6Gui/Qt6GuiDependencies.cmake",
+			"C:/Qt/6.10.2/android_x86_64/lib/cmake/Qt6/Qt6Targets.cmake",
+			"C:/Qt/6.10.2/android_x86_64/lib/cmake/Qt6/Qt6Config.cmake",
+			"C:/Qt/6.10.2/android_x86_64/lib/cmake/Qt6Core/Qt6CoreDependencies.cmake",
+			"C:/Qt/6.10.2/android_x86_64/lib/cmake/Qt6Core/Qt6CoreConfig.cmake",
+			"C:/Qt/Tools/CMake_64/share/cmake-3.30/Modules/FindThreads.cmake",
+			"C:/Qt/6.10.2/android_x86_64/lib/cmake/Qt6/Qt6Dependencies.cmake",
+			"C:/Qt/6.10.2/android_x86_64/lib/cmake/Qt6Qml/Qt6QmlMacros.cmake:1099:EVAL",
+			"CMakeLists.txt",
+			"client/cmake/QSimpleCrypto.cmake",
+			"client/cmake/3rdparty.cmake",
+			"client/3rd/qrcodegen/qrcodegen.cmake",
+			"C:/Qt/6.10.2/android_x86_64/lib/cmake/Qt6Core/Qt6CoreMacros.cmake:848:EVAL"
+		],
+		"nodes" : 
+		[
+			{
+				"file" : 2
+			},
+			{
+				"command" : 4,
+				"file" : 2,
+				"line" : 7,
+				"parent" : 0
+			},
+			{
+				"command" : 3,
+				"file" : 1,
+				"line" : 1417,
+				"parent" : 1
+			},
+			{
+				"command" : 2,
+				"file" : 1,
+				"line" : 613,
+				"parent" : 2
+			},
+			{
+				"command" : 1,
+				"file" : 0,
+				"line" : 2806,
+				"parent" : 3
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 2893,
+				"parent" : 4
+			},
+			{
+				"command" : 5,
+				"file" : 1,
+				"line" : 618,
+				"parent" : 2
+			},
+			{
+				"command" : 5,
+				"file" : 2,
+				"line" : 21,
+				"parent" : 0
+			},
+			{
+				"file" : 6
+			},
+			{
+				"command" : 8,
+				"file" : 6,
+				"line" : 69,
+				"parent" : 8
+			},
+			{
+				"command" : 8,
+				"file" : 5,
+				"line" : 315,
+				"parent" : 9
+			},
+			{
+				"file" : 4,
+				"parent" : 10
+			},
+			{
+				"command" : 7,
+				"file" : 4,
+				"line" : 52,
+				"parent" : 11
+			},
+			{
+				"file" : 3,
+				"parent" : 12
+			},
+			{
+				"command" : 6,
+				"file" : 3,
+				"line" : 61,
+				"parent" : 13
+			},
+			{
+				"command" : 7,
+				"file" : 4,
+				"line" : 40,
+				"parent" : 11
+			},
+			{
+				"file" : 11,
+				"parent" : 15
+			},
+			{
+				"command" : 10,
+				"file" : 11,
+				"line" : 50,
+				"parent" : 16
+			},
+			{
+				"command" : 9,
+				"file" : 10,
+				"line" : 142,
+				"parent" : 17
+			},
+			{
+				"command" : 8,
+				"file" : 9,
+				"line" : 76,
+				"parent" : 18
+			},
+			{
+				"command" : 8,
+				"file" : 5,
+				"line" : 333,
+				"parent" : 19
+			},
+			{
+				"file" : 8,
+				"parent" : 20
+			},
+			{
+				"command" : 7,
+				"file" : 8,
+				"line" : 55,
+				"parent" : 21
+			},
+			{
+				"file" : 7,
+				"parent" : 22
+			},
+			{
+				"command" : 6,
+				"file" : 7,
+				"line" : 61,
+				"parent" : 23
+			},
+			{
+				"command" : 8,
+				"file" : 5,
+				"line" : 315,
+				"parent" : 9
+			},
+			{
+				"file" : 13,
+				"parent" : 25
+			},
+			{
+				"command" : 7,
+				"file" : 13,
+				"line" : 52,
+				"parent" : 26
+			},
+			{
+				"file" : 12,
+				"parent" : 27
+			},
+			{
+				"command" : 6,
+				"file" : 12,
+				"line" : 61,
+				"parent" : 28
+			},
+			{
+				"command" : 7,
+				"file" : 13,
+				"line" : 40,
+				"parent" : 26
+			},
+			{
+				"file" : 15,
+				"parent" : 30
+			},
+			{
+				"command" : 11,
+				"file" : 15,
+				"line" : 37,
+				"parent" : 31
+			},
+			{
+				"command" : 9,
+				"file" : 10,
+				"line" : 36,
+				"parent" : 32
+			},
+			{
+				"command" : 8,
+				"file" : 9,
+				"line" : 76,
+				"parent" : 33
+			},
+			{
+				"command" : 8,
+				"file" : 5,
+				"line" : 340,
+				"parent" : 34
+			},
+			{
+				"file" : 14,
+				"parent" : 35
+			},
+			{
+				"command" : 5,
+				"file" : 14,
+				"line" : 85,
+				"parent" : 36
+			},
+			{
+				"command" : 8,
+				"file" : 5,
+				"line" : 315,
+				"parent" : 9
+			},
+			{
+				"file" : 19,
+				"parent" : 38
+			},
+			{
+				"command" : 7,
+				"file" : 19,
+				"line" : 42,
+				"parent" : 39
+			},
+			{
+				"file" : 18,
+				"parent" : 40
+			},
+			{
+				"command" : 9,
+				"file" : 18,
+				"line" : 20,
+				"parent" : 41
+			},
+			{
+				"command" : 8,
+				"file" : 9,
+				"line" : 76,
+				"parent" : 42
+			},
+			{
+				"command" : 8,
+				"file" : 5,
+				"line" : 333,
+				"parent" : 43
+			},
+			{
+				"file" : 17,
+				"parent" : 44
+			},
+			{
+				"command" : 7,
+				"file" : 17,
+				"line" : 49,
+				"parent" : 45
+			},
+			{
+				"file" : 16,
+				"parent" : 46
+			},
+			{
+				"command" : 6,
+				"file" : 16,
+				"line" : 61,
+				"parent" : 47
+			},
+			{
+				"command" : 7,
+				"file" : 17,
+				"line" : 180,
+				"parent" : 45
+			},
+			{
+				"file" : 21,
+				"parent" : 49
+			},
+			{
+				"command" : 11,
+				"file" : 21,
+				"line" : 38,
+				"parent" : 50
+			},
+			{
+				"command" : 9,
+				"file" : 10,
+				"line" : 36,
+				"parent" : 51
+			},
+			{
+				"command" : 8,
+				"file" : 9,
+				"line" : 76,
+				"parent" : 52
+			},
+			{
+				"command" : 8,
+				"file" : 5,
+				"line" : 340,
+				"parent" : 53
+			},
+			{
+				"file" : 20,
+				"parent" : 54
+			},
+			{
+				"command" : 12,
+				"file" : 20,
+				"line" : 238,
+				"parent" : 55
+			},
+			{
+				"file" : 23
+			},
+			{
+				"file" : 23,
+				"line" : -1,
+				"parent" : 57
+			},
+			{
+				"command" : 14,
+				"file" : 22,
+				"line" : 1,
+				"parent" : 58
+			},
+			{
+				"command" : 13,
+				"file" : 1,
+				"line" : 1387,
+				"parent" : 59
+			},
+			{
+				"command" : 15,
+				"file" : 1,
+				"line" : 970,
+				"parent" : 2
+			},
+			{
+				"command" : 13,
+				"file" : 1,
+				"line" : 3083,
+				"parent" : 61
+			},
+			{
+				"command" : 15,
+				"file" : 1,
+				"line" : 976,
+				"parent" : 2
+			},
+			{
+				"command" : 13,
+				"file" : 1,
+				"line" : 3083,
+				"parent" : 63
+			},
+			{
+				"command" : 16,
+				"file" : 6,
+				"line" : 36,
+				"parent" : 8
+			},
+			{
+				"command" : 16,
+				"file" : 6,
+				"line" : 35,
+				"parent" : 8
+			},
+			{
+				"command" : 16,
+				"file" : 6,
+				"line" : 37,
+				"parent" : 8
+			},
+			{
+				"command" : 16,
+				"file" : 6,
+				"line" : 39,
+				"parent" : 8
+			},
+			{
+				"command" : 16,
+				"file" : 6,
+				"line" : 30,
+				"parent" : 8
+			},
+			{
+				"command" : 16,
+				"file" : 6,
+				"line" : 40,
+				"parent" : 8
+			},
+			{
+				"command" : 16,
+				"file" : 6,
+				"line" : 32,
+				"parent" : 8
+			},
+			{
+				"command" : 16,
+				"file" : 6,
+				"line" : 33,
+				"parent" : 8
+			},
+			{
+				"command" : 7,
+				"file" : 6,
+				"line" : 145,
+				"parent" : 8
+			},
+			{
+				"file" : 25,
+				"parent" : 73
+			},
+			{
+				"command" : 7,
+				"file" : 25,
+				"line" : 7,
+				"parent" : 74
+			},
+			{
+				"file" : 24,
+				"parent" : 75
+			},
+			{
+				"command" : 17,
+				"file" : 24,
+				"line" : 6,
+				"parent" : 76
+			},
+			{
+				"command" : 17,
+				"file" : 25,
+				"line" : 118,
+				"parent" : 74
+			},
+			{
+				"command" : 18,
+				"file" : 24,
+				"line" : 8,
+				"parent" : 76
+			},
+			{
+				"command" : 7,
+				"file" : 25,
+				"line" : 9,
+				"parent" : 74
+			},
+			{
+				"file" : 26,
+				"parent" : 80
+			},
+			{
+				"command" : 18,
+				"file" : 26,
+				"line" : 1,
+				"parent" : 81
+			},
+			{
+				"command" : 20,
+				"file" : 1,
+				"line" : 835,
+				"parent" : 2
+			},
+			{
+				"command" : 19,
+				"file" : 1,
+				"line" : 4216,
+				"parent" : 83
+			},
+			{
+				"command" : 19,
+				"file" : 2,
+				"line" : 31,
+				"parent" : 0
+			},
+			{
+				"command" : 19,
+				"file" : 1,
+				"line" : 4246,
+				"parent" : 83
+			},
+			{
+				"command" : 22,
+				"file" : 1,
+				"line" : 4041,
+				"parent" : 83
+			},
+			{
+				"command" : 21,
+				"file" : 0,
+				"line" : 1579,
+				"parent" : 87
+			},
+			{
+				"command" : 21,
+				"file" : 1,
+				"line" : 4207,
+				"parent" : 83
+			},
+			{
+				"command" : 25,
+				"file" : 1,
+				"line" : 887,
+				"parent" : 2
+			},
+			{
+				"command" : 24,
+				"file" : 0,
+				"line" : 405,
+				"parent" : 90
+			},
+			{
+				"command" : 23,
+				"file" : 0,
+				"line" : 2625,
+				"parent" : 91
+			},
+			{
+				"command" : 21,
+				"file" : 0,
+				"line" : 2165,
+				"parent" : 92
+			},
+			{
+				"command" : 21,
+				"file" : 1,
+				"line" : 934,
+				"parent" : 2
+			},
+			{
+				"file" : 2,
+				"line" : -1,
+				"parent" : 0
+			},
+			{
+				"command" : 27,
+				"file" : 27,
+				"line" : 1,
+				"parent" : 95
+			},
+			{
+				"command" : 26,
+				"file" : 0,
+				"line" : 873,
+				"parent" : 96
+			},
+			{
+				"command" : 21,
+				"file" : 0,
+				"line" : 2290,
+				"parent" : 97
+			}
+		]
+	},
+	"compileGroups" : 
+	[
+		{
+			"compileCommandFragments" : 
+			[
+				{
+					"fragment" : "-DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security -fexceptions -frtti -stdlib=libc++ -g  -fno-limit-debug-info -std=gnu++17 -fPIC -fansi-escape-codes -fcolor-diagnostics"
+				},
+				{
+					"backtrace" : 6,
+					"fragment" : "-fPIC"
+				},
+				{
+					"backtrace" : 6,
+					"fragment" : "-pthread"
+				}
+			],
+			"defines" : 
+			[
+				{
+					"backtrace" : 65,
+					"define" : "DEV_AGW_ENDPOINT=\"\""
+				},
+				{
+					"backtrace" : 66,
+					"define" : "DEV_AGW_PUBLIC_KEY=\"\""
+				},
+				{
+					"backtrace" : 67,
+					"define" : "DEV_S3_ENDPOINT=\"\""
+				},
+				{
+					"backtrace" : 68,
+					"define" : "FREE_V2_ENDPOINT=\"\""
+				},
+				{
+					"backtrace" : 69,
+					"define" : "GIT_COMMIT_HASH=\"16f201bb\""
+				},
+				{
+					"define" : "GamepadLegacyQuickPrivate_EXPORTS"
+				},
+				{
+					"backtrace" : 70,
+					"define" : "PREM_V1_ENDPOINT=\"\""
+				},
+				{
+					"backtrace" : 71,
+					"define" : "PROD_AGW_PUBLIC_KEY=\"\""
+				},
+				{
+					"backtrace" : 72,
+					"define" : "PROD_S3_ENDPOINT=\"\""
+				},
+				{
+					"backtrace" : 77,
+					"define" : "QSIMPLECRYPTO_LIBRARY"
+				},
+				{
+					"backtrace" : 6,
+					"define" : "QT_CORE_LIB"
+				},
+				{
+					"backtrace" : 7,
+					"define" : "QT_GUI_LIB"
+				},
+				{
+					"backtrace" : 6,
+					"define" : "QT_NETWORK_LIB"
+				},
+				{
+					"backtrace" : 7,
+					"define" : "QT_OPENGL_LIB"
+				},
+				{
+					"backtrace" : 6,
+					"define" : "QT_QMLINTEGRATION_LIB"
+				},
+				{
+					"backtrace" : 6,
+					"define" : "QT_QML_LIB"
+				},
+				{
+					"backtrace" : 7,
+					"define" : "QT_QUICK_LIB"
+				},
+				{
+					"backtrace" : 78,
+					"define" : "_WINSOCKAPI_"
+				}
+			],
+			"includes" : 
+			[
+				{
+					"backtrace" : 0,
+					"path" : "C:/Users/PC/Documents/Dr.Frake-VPN/client/3rd/qtgamepad/src/imports/gamepad/GamepadLegacyQuickPrivate_autogen/include"
+				},
+				{
+					"backtrace" : 79,
+					"path" : "C:/Users/PC/Documents/Dr.Frake-VPN/client/cmake/../3rd/QSimpleCrypto/src"
+				},
+				{
+					"backtrace" : 82,
+					"path" : "C:/Users/PC/Documents/Dr.Frake-VPN/client/3rd/qrcodegen"
+				},
+				{
+					"backtrace" : 84,
+					"path" : "C:/Users/PC/Documents/Dr.Frake-VPN/client/3rd/qtgamepad/src/imports/gamepad"
+				},
+				{
+					"backtrace" : 85,
+					"path" : "C:/Users/PC/Documents/Dr.Frake-VPN/client/3rd/qtgamepad/src/gamepad/include"
+				},
+				{
+					"backtrace" : 86,
+					"isSystem" : true,
+					"path" : "C:/Qt/6.10.2/android_x86_64/include/QtQml"
+				},
+				{
+					"backtrace" : 86,
+					"isSystem" : true,
+					"path" : "C:/Qt/6.10.2/android_x86_64/include"
+				},
+				{
+					"backtrace" : 86,
+					"isSystem" : true,
+					"path" : "C:/Qt/6.10.2/android_x86_64/include/QtCore"
+				},
+				{
+					"backtrace" : 86,
+					"isSystem" : true,
+					"path" : "C:/Qt/6.10.2/android_x86_64/mkspecs/android-clang"
+				},
+				{
+					"backtrace" : 86,
+					"isSystem" : true,
+					"path" : "C:/Qt/6.10.2/android_x86_64/include/QtQmlIntegration"
+				},
+				{
+					"backtrace" : 86,
+					"isSystem" : true,
+					"path" : "C:/Qt/6.10.2/android_x86_64/include/QtNetwork"
+				},
+				{
+					"backtrace" : 7,
+					"isSystem" : true,
+					"path" : "C:/Qt/6.10.2/android_x86_64/include/QtGui"
+				},
+				{
+					"backtrace" : 7,
+					"isSystem" : true,
+					"path" : "C:/Qt/6.10.2/android_x86_64/include/QtQuick"
+				},
+				{
+					"backtrace" : 7,
+					"isSystem" : true,
+					"path" : "C:/Qt/6.10.2/android_x86_64/include/QtOpenGL"
+				}
+			],
+			"language" : "CXX",
+			"languageStandard" : 
+			{
+				"backtraces" : 
+				[
+					6,
+					6
+				],
+				"standard" : "17"
+			},
+			"sourceIndexes" : 
+			[
+				0,
+				2,
+				3,
+				4
+			],
+			"sysroot" : 
+			{
+				"path" : "C:/Users/PC/AppData/Local/Android/Sdk/ndk/27.2.12479018/toolchains/llvm/prebuilt/windows-x86_64/sysroot"
+			}
+		}
+	],
+	"dependencies" : 
+	[
+		{
+			"backtrace" : 60,
+			"id" : "generate_qmlls_build_ini_file::@6890427a1f51a3e7e1df"
+		},
+		{
+			"backtrace" : 7,
+			"id" : "GamepadLegacy::@d3cc642445bf055bf6f4"
+		},
+		{
+			"backtrace" : 62,
+			"id" : "GamepadLegacyQuickPrivate_copy_qml::@85c6c8a454543bd986f9"
+		},
+		{
+			"backtrace" : 64,
+			"id" : "GamepadLegacyQuickPrivate_copy_res::@85c6c8a454543bd986f9"
+		},
+		{
+			"id" : "GamepadLegacyQuickPrivate_autogen_timestamp_deps::@85c6c8a454543bd986f9"
+		},
+		{
+			"backtrace" : 0,
+			"id" : "GamepadLegacyQuickPrivate_autogen::@85c6c8a454543bd986f9"
+		}
+	],
+	"id" : "GamepadLegacyQuickPrivate::@85c6c8a454543bd986f9",
+	"link" : 
+	{
+		"commandFragments" : 
+		[
+			{
+				"fragment" : "-Wl,--build-id=sha1 -Wl,--no-rosegment -Wl,--no-undefined-version -Wl,--fatal-warnings -Wl,--gc-sections -Qunused-arguments -Wl,--no-undefined",
+				"role" : "flags"
+			},
+			{
+				"backtrace" : 6,
+				"fragment" : "-Wl,-z,max-page-size=16384",
+				"role" : "flags"
+			},
+			{
+				"backtrace" : 7,
+				"fragment" : "C:\\Qt\\6.10.2\\android_x86_64\\lib\\libQt6Quick_x86_64.so",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 7,
+				"fragment" : "client\\3rd\\qtgamepad\\src\\gamepad\\libGamepadLegacy.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 14,
+				"fragment" : "C:\\Qt\\6.10.2\\android_x86_64\\lib\\libQt6OpenGL_x86_64.so",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 6,
+				"fragment" : "C:\\Qt\\6.10.2\\android_x86_64\\lib\\libQt6Qml_x86_64.so",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 24,
+				"fragment" : "C:\\Qt\\6.10.2\\android_x86_64\\lib\\libQt6Network_x86_64.so",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 7,
+				"fragment" : "C:\\Qt\\6.10.2\\android_x86_64\\lib\\libQt6Gui_x86_64.so",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 29,
+				"fragment" : "C:\\Users\\PC\\AppData\\Local\\Android\\Sdk\\ndk\\27.2.12479018\\toolchains\\llvm\\prebuilt\\windows-x86_64\\sysroot\\usr\\lib\\x86_64-linux-android\\28\\libGLESv2.so",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 37,
+				"fragment" : "C:\\Users\\PC\\AppData\\Local\\Android\\Sdk\\ndk\\27.2.12479018\\toolchains\\llvm\\prebuilt\\windows-x86_64\\sysroot\\usr\\lib\\x86_64-linux-android\\28\\libEGL.so",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 7,
+				"fragment" : "C:\\Qt\\6.10.2\\android_x86_64\\lib\\libQt6Core_x86_64.so",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 48,
+				"fragment" : "-llog",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 56,
+				"fragment" : "-pthread",
+				"role" : "libraries"
+			},
+			{
+				"fragment" : "-Wl,-rpath-link,C:/Qt/6.10.2/android_x86_64/lib  -latomic -lm",
+				"role" : "libraries"
+			}
+		],
+		"language" : "CXX",
+		"sysroot" : 
+		{
+			"path" : "C:/Users/PC/AppData/Local/Android/Sdk/ndk/27.2.12479018/toolchains/llvm/prebuilt/windows-x86_64/sysroot"
+		}
+	},
+	"name" : "GamepadLegacyQuickPrivate",
+	"nameOnDisk" : "libGamepadLegacyQuickPrivate_x86_64.so",
+	"paths" : 
+	{
+		"build" : "client/3rd/qtgamepad/src/imports/gamepad",
+		"source" : "client/3rd/qtgamepad/src/imports/gamepad"
+	},
+	"sourceGroups" : 
+	[
+		{
+			"name" : "Source Files\\Generated",
+			"sourceIndexes" : 
+			[
+				0,
+				1,
+				2,
+				3,
+				7,
+				9
+			]
+		},
+		{
+			"name" : "Source Files",
+			"sourceIndexes" : 
+			[
+				4
+			]
+		},
+		{
+			"name" : "Header Files",
+			"sourceIndexes" : 
+			[
+				5,
+				6
+			]
+		},
+		{
+			"name" : "Resources",
+			"sourceIndexes" : 
+			[
+				8
+			]
+		},
+		{
+			"name" : "CMake Rules",
+			"sourceIndexes" : 
+			[
+				10,
+				11,
+				12,
+				13,
+				14
+			]
+		},
+		{
+			"name" : "",
+			"sourceIndexes" : 
+			[
+				15,
+				16,
+				17,
+				18,
+				19,
+				20
+			]
+		}
+	],
+	"sources" : 
+	[
+		{
+			"backtrace" : 0,
+			"compileGroupIndex" : 0,
+			"isGenerated" : true,
+			"path" : "client/3rd/qtgamepad/src/imports/gamepad/GamepadLegacyQuickPrivate_autogen/mocs_compilation.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 88,
+			"isGenerated" : true,
+			"path" : "client/3rd/qtgamepad/src/imports/gamepad/meta_types/qt6gamepadlegacyquickprivate_metatypes.json.gen",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 89,
+			"compileGroupIndex" : 0,
+			"isGenerated" : true,
+			"path" : "client/3rd/qtgamepad/src/imports/gamepad/gamepadlegacyquickprivate_qmltyperegistrations.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 93,
+			"compileGroupIndex" : 0,
+			"isGenerated" : true,
+			"path" : "client/3rd/qtgamepad/src/imports/gamepad/.qt/rcc/qrc_qmake_QtGamepadLegacy.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 94,
+			"compileGroupIndex" : 0,
+			"path" : "client/3rd/qtgamepad/src/imports/gamepad/qgamepadmouseitem.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 94,
+			"path" : "client/3rd/qtgamepad/src/imports/gamepad/qgamepadmouseitem.h",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 94,
+			"path" : "client/3rd/qtgamepad/src/imports/gamepad/qtgamepadquicktypes_p.h",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 98,
+			"isGenerated" : true,
+			"path" : "client/3rd/qtgamepad/src/imports/gamepad/.qt/rcc/qmake_QtGamepadLegacy.qrc",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 98,
+			"isGenerated" : true,
+			"path" : "client/3rd/qtgamepad/src/imports/gamepad/QtGamepadLegacy/qmldir",
+			"sourceGroupIndex" : 3
+		},
+		{
+			"backtrace" : 0,
+			"isGenerated" : true,
+			"path" : "client/3rd/qtgamepad/src/imports/gamepad/GamepadLegacyQuickPrivate_autogen/timestamp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 0,
+			"isGenerated" : true,
+			"path" : "client/3rd/qtgamepad/src/imports/gamepad/meta_types/qt6gamepadlegacyquickprivate_metatypes.json.gen.rule",
+			"sourceGroupIndex" : 4
+		},
+		{
+			"backtrace" : 0,
+			"isGenerated" : true,
+			"path" : "client/3rd/qtgamepad/src/imports/gamepad/gamepadlegacyquickprivate_qmltyperegistrations.cpp.rule",
+			"sourceGroupIndex" : 4
+		},
+		{
+			"backtrace" : 0,
+			"isGenerated" : true,
+			"path" : "client/3rd/qtgamepad/src/imports/gamepad/.qt/rcc/qrc_qmake_QtGamepadLegacy.cpp.rule",
+			"sourceGroupIndex" : 4
+		},
+		{
+			"backtrace" : 0,
+			"isGenerated" : true,
+			"path" : "client/3rd/qtgamepad/src/imports/gamepad/GamepadLegacyQuickPrivate_autogen/timestamp.rule",
+			"sourceGroupIndex" : 4
+		},
+		{
+			"backtrace" : 0,
+			"isGenerated" : true,
+			"path" : "client/3rd/qtgamepad/src/imports/gamepad/meta_types/GamepadLegacyQuickPrivate_json_file_list.txt.rule",
+			"sourceGroupIndex" : 4
+		},
+		{
+			"backtrace" : 6,
+			"path" : "C:/Qt/6.10.2/android_x86_64/metatypes/qt6qml_metatypes.json",
+			"sourceGroupIndex" : 5
+		},
+		{
+			"backtrace" : 6,
+			"path" : "C:/Qt/6.10.2/android_x86_64/metatypes/qt6core_metatypes.json",
+			"sourceGroupIndex" : 5
+		},
+		{
+			"backtrace" : 6,
+			"path" : "C:/Qt/6.10.2/android_x86_64/metatypes/qt6network_metatypes.json",
+			"sourceGroupIndex" : 5
+		},
+		{
+			"backtrace" : 7,
+			"path" : "C:/Qt/6.10.2/android_x86_64/metatypes/qt6gui_metatypes.json",
+			"sourceGroupIndex" : 5
+		},
+		{
+			"backtrace" : 7,
+			"path" : "C:/Qt/6.10.2/android_x86_64/metatypes/qt6quick_metatypes.json",
+			"sourceGroupIndex" : 5
+		},
+		{
+			"backtrace" : 7,
+			"path" : "C:/Qt/6.10.2/android_x86_64/metatypes/qt6opengl_metatypes.json",
+			"sourceGroupIndex" : 5
+		}
+	],
+	"type" : "SHARED_LIBRARY"
+}

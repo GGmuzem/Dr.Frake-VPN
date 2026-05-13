@@ -1,0 +1,75 @@
+{
+	"backtrace" : 0,
+	"backtraceGraph" : 
+	{
+		"commands" : [],
+		"files" : 
+		[
+			"client/3rd/SortFilterProxyModel/CMakeLists.txt"
+		],
+		"nodes" : 
+		[
+			{
+				"file" : 0
+			}
+		]
+	},
+	"dependencies" : 
+	[
+		{
+			"id" : "SortFilterProxyModel_autogen_timestamp_deps::@44f9b71fb6a28e94aad3"
+		}
+	],
+	"folder" : 
+	{
+		"name" : "Autogen"
+	},
+	"id" : "SortFilterProxyModel_autogen::@44f9b71fb6a28e94aad3",
+	"isGeneratorProvided" : true,
+	"name" : "SortFilterProxyModel_autogen",
+	"paths" : 
+	{
+		"build" : "client/3rd/SortFilterProxyModel",
+		"source" : "client/3rd/SortFilterProxyModel"
+	},
+	"sourceGroups" : 
+	[
+		{
+			"name" : "",
+			"sourceIndexes" : 
+			[
+				0
+			]
+		},
+		{
+			"name" : "CMake Rules",
+			"sourceIndexes" : 
+			[
+				1,
+				2
+			]
+		}
+	],
+	"sources" : 
+	[
+		{
+			"backtrace" : 0,
+			"isGenerated" : true,
+			"path" : "client/3rd/SortFilterProxyModel/CMakeFiles/SortFilterProxyModel_autogen",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 0,
+			"isGenerated" : true,
+			"path" : "client/3rd/SortFilterProxyModel/CMakeFiles/SortFilterProxyModel_autogen.rule",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 0,
+			"isGenerated" : true,
+			"path" : "client/3rd/SortFilterProxyModel/SortFilterProxyModel_autogen/timestamp.rule",
+			"sourceGroupIndex" : 1
+		}
+	],
+	"type" : "UTILITY"
+}

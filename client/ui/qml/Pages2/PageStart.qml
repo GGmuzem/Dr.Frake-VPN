@@ -25,7 +25,13 @@ PageType {
         anchors.fill: parent
         active: root.tvInterfaceActive
         visible: active
+        focus: active
         source: active ? "PageTvRoot.qml" : ""
+        onLoaded: Qt.callLater(function() {
+            if (item) {
+                item.forceActiveFocus(Qt.TabFocusReason)
+            }
+        })
         onStatusChanged: console.log("TV root loader status:", status, "source:", source)
     }
 

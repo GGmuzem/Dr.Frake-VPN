@@ -1,0 +1,14 @@
+{
+	"backtraceGraph" : 
+	{
+		"commands" : [],
+		"files" : [],
+		"nodes" : []
+	},
+	"installers" : [],
+	"paths" : 
+	{
+		"build" : "client/3rd/qtgamepad/src/plugins",
+		"source" : "client/3rd/qtgamepad/src/plugins"
+	}
+}

@@ -1,0 +1,35 @@
+{
+	"backtrace" : 1,
+	"backtraceGraph" : 
+	{
+		"commands" : 
+		[
+			"add_custom_target"
+		],
+		"files" : 
+		[
+			"client/3rd/qtkeychain/CMakeLists.txt"
+		],
+		"nodes" : 
+		[
+			{
+				"file" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 136,
+				"parent" : 0
+			}
+		]
+	},
+	"id" : "messages::@38878eb19d6df20e2b75",
+	"name" : "messages",
+	"paths" : 
+	{
+		"build" : "client/3rd/qtkeychain",
+		"source" : "client/3rd/qtkeychain"
+	},
+	"sources" : [],
+	"type" : "UTILITY"
+}

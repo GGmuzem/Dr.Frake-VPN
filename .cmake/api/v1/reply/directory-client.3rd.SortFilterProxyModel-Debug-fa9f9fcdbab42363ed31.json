@@ -1,0 +1,14 @@
+{
+	"backtraceGraph" : 
+	{
+		"commands" : [],
+		"files" : [],
+		"nodes" : []
+	},
+	"installers" : [],
+	"paths" : 
+	{
+		"build" : "client/3rd/SortFilterProxyModel",
+		"source" : "client/3rd/SortFilterProxyModel"
+	}
+}

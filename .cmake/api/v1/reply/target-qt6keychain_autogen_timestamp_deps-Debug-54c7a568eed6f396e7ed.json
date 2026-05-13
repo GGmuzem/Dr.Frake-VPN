@@ -1,0 +1,38 @@
+{
+	"backtrace" : 0,
+	"backtraceGraph" : 
+	{
+		"commands" : [],
+		"files" : 
+		[
+			"client/3rd/qtkeychain/qtkeychain/CMakeLists.txt"
+		],
+		"nodes" : 
+		[
+			{
+				"file" : 0
+			}
+		]
+	},
+	"dependencies" : 
+	[
+		{
+			"backtrace" : 0,
+			"id" : "translations::@38878eb19d6df20e2b75"
+		}
+	],
+	"folder" : 
+	{
+		"name" : "Autogen"
+	},
+	"id" : "qt6keychain_autogen_timestamp_deps::@95ea44de8979db819b0e",
+	"isGeneratorProvided" : true,
+	"name" : "qt6keychain_autogen_timestamp_deps",
+	"paths" : 
+	{
+		"build" : "client/3rd/qtkeychain/qtkeychain",
+		"source" : "client/3rd/qtkeychain/qtkeychain"
+	},
+	"sources" : [],
+	"type" : "UTILITY"
+}

@@ -28,6 +28,9 @@ Item {
         id: timer
         interval: 200 // Milliseconds
         onTriggered: {
+            if (Qt.platform.os === "android" && SettingsController.isTvInterfaceActive) {
+                return
+            }
             FocusController.resetRootObject()
             FocusController.setFocusOnDefaultItem()
         }

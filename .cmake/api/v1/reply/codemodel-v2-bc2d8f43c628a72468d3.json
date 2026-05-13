@@ -1,0 +1,704 @@
+{
+	"configurations" : 
+	[
+		{
+			"directories" : 
+			[
+				{
+					"build" : ".",
+					"childIndexes" : 
+					[
+						1
+					],
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-.-Debug-d0094a50bb2071803777.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.6.0"
+					},
+					"projectIndex" : 0,
+					"source" : ".",
+					"targetIndexes" : 
+					[
+						30,
+						37
+					]
+				},
+				{
+					"build" : "client",
+					"childIndexes" : 
+					[
+						2,
+						3,
+						5
+					],
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-client-Debug-3c37cf1077c78f229df7.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.16"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 1,
+					"source" : "client",
+					"targetIndexes" : 
+					[
+						0,
+						1,
+						2,
+						3,
+						4,
+						5,
+						6,
+						7,
+						8,
+						27,
+						28,
+						29,
+						35,
+						36
+					]
+				},
+				{
+					"build" : "client/3rd/SortFilterProxyModel",
+					"jsonFile" : "directory-client.3rd.SortFilterProxyModel-Debug-fa9f9fcdbab42363ed31.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.16"
+					},
+					"parentIndex" : 1,
+					"projectIndex" : 1,
+					"source" : "client/3rd/SortFilterProxyModel",
+					"targetIndexes" : 
+					[
+						24,
+						25,
+						26
+					]
+				},
+				{
+					"build" : "client/3rd/qtkeychain",
+					"childIndexes" : 
+					[
+						4
+					],
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-client.3rd.qtkeychain-Debug-de718dd40b6b4b08adac.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.16"
+					},
+					"parentIndex" : 1,
+					"projectIndex" : 2,
+					"source" : "client/3rd/qtkeychain",
+					"targetIndexes" : 
+					[
+						38,
+						43
+					]
+				},
+				{
+					"build" : "client/3rd/qtkeychain/qtkeychain",
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-client.3rd.qtkeychain.qtkeychain-Debug-b02bcd0b285bfdd65c8e.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.16"
+					},
+					"parentIndex" : 3,
+					"projectIndex" : 2,
+					"source" : "client/3rd/qtkeychain/qtkeychain",
+					"targetIndexes" : 
+					[
+						39,
+						40,
+						41
+					]
+				},
+				{
+					"build" : "client/3rd/qtgamepad",
+					"childIndexes" : 
+					[
+						6
+					],
+					"jsonFile" : "directory-client.3rd.qtgamepad-Debug-bd315a32be6f99317132.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.16"
+					},
+					"parentIndex" : 1,
+					"projectIndex" : 3,
+					"source" : "client/3rd/qtgamepad"
+				},
+				{
+					"build" : "client/3rd/qtgamepad/src",
+					"childIndexes" : 
+					[
+						7,
+						8,
+						10
+					],
+					"jsonFile" : "directory-client.3rd.qtgamepad.src-Debug-c0f76bb26db8bc4300eb.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.16"
+					},
+					"parentIndex" : 5,
+					"projectIndex" : 3,
+					"source" : "client/3rd/qtgamepad/src"
+				},
+				{
+					"build" : "client/3rd/qtgamepad/src/gamepad",
+					"jsonFile" : "directory-client.3rd.qtgamepad.src.gamepad-Debug-3fc1ecf897c1bf159c9d.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.16"
+					},
+					"parentIndex" : 6,
+					"projectIndex" : 3,
+					"source" : "client/3rd/qtgamepad/src/gamepad",
+					"targetIndexes" : 
+					[
+						9,
+						22,
+						23
+					]
+				},
+				{
+					"build" : "client/3rd/qtgamepad/src/imports",
+					"childIndexes" : 
+					[
+						9
+					],
+					"jsonFile" : "directory-client.3rd.qtgamepad.src.imports-Debug-9a19b5c49d0b2964f931.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.16"
+					},
+					"parentIndex" : 6,
+					"projectIndex" : 3,
+					"source" : "client/3rd/qtgamepad/src/imports"
+				},
+				{
+					"build" : "client/3rd/qtgamepad/src/imports/gamepad",
+					"jsonFile" : "directory-client.3rd.qtgamepad.src.imports.gamepad-Debug-e9088d0687de8a51eb54.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.16"
+					},
+					"parentIndex" : 8,
+					"projectIndex" : 3,
+					"source" : "client/3rd/qtgamepad/src/imports/gamepad",
+					"targetIndexes" : 
+					[
+						10,
+						11,
+						12,
+						13,
+						14,
+						15,
+						16,
+						17,
+						18,
+						19,
+						20,
+						21,
+						31,
+						32,
+						33,
+						34,
+						42
+					]
+				},
+				{
+					"build" : "client/3rd/qtgamepad/src/plugins",
+					"childIndexes" : 
+					[
+						11
+					],
+					"jsonFile" : "directory-client.3rd.qtgamepad.src.plugins-Debug-7123873bf3ed75242f1d.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.16"
+					},
+					"parentIndex" : 6,
+					"projectIndex" : 3,
+					"source" : "client/3rd/qtgamepad/src/plugins"
+				},
+				{
+					"build" : "client/3rd/qtgamepad/src/plugins/gamepads",
+					"childIndexes" : 
+					[
+						12
+					],
+					"jsonFile" : "directory-client.3rd.qtgamepad.src.plugins.gamepads-Debug-dc76e5c0719373d19400.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.16"
+					},
+					"parentIndex" : 10,
+					"projectIndex" : 3,
+					"source" : "client/3rd/qtgamepad/src/plugins/gamepads"
+				},
+				{
+					"build" : "client/3rd/qtgamepad/src/plugins/gamepads/android",
+					"childIndexes" : 
+					[
+						13
+					],
+					"jsonFile" : "directory-client.3rd.qtgamepad.src.plugins.gamepads.android-Debug-4bf17c560b589d9e840b.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.16"
+					},
+					"parentIndex" : 11,
+					"projectIndex" : 3,
+					"source" : "client/3rd/qtgamepad/src/plugins/gamepads/android"
+				},
+				{
+					"build" : "client/3rd/qtgamepad/src/plugins/gamepads/android/src",
+					"jsonFile" : "directory-client.3rd.qtgamepad.src.plugins.gamepads.android.src-Debug-b0b145ffd22d6a3d1330.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.16"
+					},
+					"parentIndex" : 12,
+					"projectIndex" : 3,
+					"source" : "client/3rd/qtgamepad/src/plugins/gamepads/android/src"
+				}
+			],
+			"name" : "Debug",
+			"projects" : 
+			[
+				{
+					"childIndexes" : 
+					[
+						1
+					],
+					"directoryIndexes" : 
+					[
+						0
+					],
+					"name" : "FBLink.VPN",
+					"targetIndexes" : 
+					[
+						30,
+						37
+					]
+				},
+				{
+					"childIndexes" : 
+					[
+						2,
+						3
+					],
+					"directoryIndexes" : 
+					[
+						1,
+						2
+					],
+					"name" : "FBLink",
+					"parentIndex" : 0,
+					"targetIndexes" : 
+					[
+						0,
+						1,
+						2,
+						3,
+						4,
+						5,
+						6,
+						7,
+						8,
+						24,
+						25,
+						26,
+						27,
+						28,
+						29,
+						35,
+						36
+					]
+				},
+				{
+					"directoryIndexes" : 
+					[
+						3,
+						4
+					],
+					"name" : "qtkeychain",
+					"parentIndex" : 1,
+					"targetIndexes" : 
+					[
+						38,
+						39,
+						40,
+						41,
+						43
+					]
+				},
+				{
+					"directoryIndexes" : 
+					[
+						5,
+						6,
+						7,
+						8,
+						9,
+						10,
+						11,
+						12,
+						13
+					],
+					"name" : "QtGamepadLegacy",
+					"parentIndex" : 1,
+					"targetIndexes" : 
+					[
+						9,
+						10,
+						11,
+						12,
+						13,
+						14,
+						15,
+						16,
+						17,
+						18,
+						19,
+						20,
+						21,
+						22,
+						23,
+						31,
+						32,
+						33,
+						34,
+						42
+					]
+				}
+			],
+			"targets" : 
+			[
+				{
+					"directoryIndex" : 1,
+					"id" : "FBLink::@b0c487aac068df482bf0",
+					"jsonFile" : "target-FBLink-Debug-b5221ffb5ef2a1907c55.json",
+					"name" : "FBLink",
+					"projectIndex" : 1
+				},
+				{
+					"directoryIndex" : 1,
+					"id" : "FBLink_autogen::@b0c487aac068df482bf0",
+					"jsonFile" : "target-FBLink_autogen-Debug-eecbacdfec0390756cac.json",
+					"name" : "FBLink_autogen",
+					"projectIndex" : 1
+				},
+				{
+					"directoryIndex" : 1,
+					"id" : "FBLink_autogen_timestamp_deps::@b0c487aac068df482bf0",
+					"jsonFile" : "target-FBLink_autogen_timestamp_deps-Debug-4aa7913afdf5d849e640.json",
+					"name" : "FBLink_autogen_timestamp_deps",
+					"projectIndex" : 1
+				},
+				{
+					"directoryIndex" : 1,
+					"id" : "FBLink_copy_apk_dependencies::@b0c487aac068df482bf0",
+					"jsonFile" : "target-FBLink_copy_apk_dependencies-Debug-887136776c3debca38ed.json",
+					"name" : "FBLink_copy_apk_dependencies",
+					"projectIndex" : 1
+				},
+				{
+					"directoryIndex" : 1,
+					"id" : "FBLink_make_aab::@b0c487aac068df482bf0",
+					"jsonFile" : "target-FBLink_make_aab-Debug-49b1c9125ea38e152ef8.json",
+					"name" : "FBLink_make_aab",
+					"projectIndex" : 1
+				},
+				{
+					"directoryIndex" : 1,
+					"id" : "FBLink_make_aar::@b0c487aac068df482bf0",
+					"jsonFile" : "target-FBLink_make_aar-Debug-0b8fcfb3464631177688.json",
+					"name" : "FBLink_make_aar",
+					"projectIndex" : 1
+				},
+				{
+					"directoryIndex" : 1,
+					"id" : "FBLink_make_apk::@b0c487aac068df482bf0",
+					"jsonFile" : "target-FBLink_make_apk-Debug-34ccadf76b92f0b98a82.json",
+					"name" : "FBLink_make_apk",
+					"projectIndex" : 1
+				},
+				{
+					"directoryIndex" : 1,
+					"id" : "FBLink_other_files::@b0c487aac068df482bf0",
+					"jsonFile" : "target-FBLink_other_files-Debug-483e09abcd28448bd871.json",
+					"name" : "FBLink_other_files",
+					"projectIndex" : 1
+				},
+				{
+					"directoryIndex" : 1,
+					"id" : "FBLink_prepare_apk_dir::@b0c487aac068df482bf0",
+					"jsonFile" : "target-FBLink_prepare_apk_dir-Debug-4bdd9d566bdc12d94e59.json",
+					"name" : "FBLink_prepare_apk_dir",
+					"projectIndex" : 1
+				},
+				{
+					"directoryIndex" : 7,
+					"id" : "GamepadLegacy::@d3cc642445bf055bf6f4",
+					"jsonFile" : "target-GamepadLegacy-Debug-08ed99154afaea5d6b5d.json",
+					"name" : "GamepadLegacy",
+					"projectIndex" : 3
+				},
+				{
+					"directoryIndex" : 9,
+					"id" : "GamepadLegacyQuickPrivate::@85c6c8a454543bd986f9",
+					"jsonFile" : "target-GamepadLegacyQuickPrivate-Debug-68c29cb6fa1e08cb68b4.json",
+					"name" : "GamepadLegacyQuickPrivate",
+					"projectIndex" : 3
+				},
+				{
+					"directoryIndex" : 9,
+					"id" : "GamepadLegacyQuickPrivate_autogen::@85c6c8a454543bd986f9",
+					"jsonFile" : "target-GamepadLegacyQuickPrivate_autogen-Debug-09efdc3ad703426d5c26.json",
+					"name" : "GamepadLegacyQuickPrivate_autogen",
+					"projectIndex" : 3
+				},
+				{
+					"directoryIndex" : 9,
+					"id" : "GamepadLegacyQuickPrivate_autogen_timestamp_deps::@85c6c8a454543bd986f9",
+					"jsonFile" : "target-GamepadLegacyQuickPrivate_autogen_timestamp_deps-Debug-240c8258a82d867543e8.json",
+					"name" : "GamepadLegacyQuickPrivate_autogen_timestamp_deps",
+					"projectIndex" : 3
+				},
+				{
+					"directoryIndex" : 9,
+					"id" : "GamepadLegacyQuickPrivate_copy_qml::@85c6c8a454543bd986f9",
+					"jsonFile" : "target-GamepadLegacyQuickPrivate_copy_qml-Debug-aa04a25a7d0c71bfc1b6.json",
+					"name" : "GamepadLegacyQuickPrivate_copy_qml",
+					"projectIndex" : 3
+				},
+				{
+					"directoryIndex" : 9,
+					"id" : "GamepadLegacyQuickPrivate_copy_res::@85c6c8a454543bd986f9",
+					"jsonFile" : "target-GamepadLegacyQuickPrivate_copy_res-Debug-0fb5bae42f345ca0285c.json",
+					"name" : "GamepadLegacyQuickPrivate_copy_res",
+					"projectIndex" : 3
+				},
+				{
+					"directoryIndex" : 9,
+					"id" : "GamepadLegacyQuickPrivate_qmllint::@85c6c8a454543bd986f9",
+					"jsonFile" : "target-GamepadLegacyQuickPrivate_qmllint-Debug-4e28c8f1ab1b01d23541.json",
+					"name" : "GamepadLegacyQuickPrivate_qmllint",
+					"projectIndex" : 3
+				},
+				{
+					"directoryIndex" : 9,
+					"id" : "GamepadLegacyQuickPrivate_qmllint_json::@85c6c8a454543bd986f9",
+					"jsonFile" : "target-GamepadLegacyQuickPrivate_qmllint_json-Debug-87e281d918bec1850468.json",
+					"name" : "GamepadLegacyQuickPrivate_qmllint_json",
+					"projectIndex" : 3
+				},
+				{
+					"directoryIndex" : 9,
+					"id" : "GamepadLegacyQuickPrivate_qmllint_module::@85c6c8a454543bd986f9",
+					"jsonFile" : "target-GamepadLegacyQuickPrivate_qmllint_module-Debug-d4e4861206639259956f.json",
+					"name" : "GamepadLegacyQuickPrivate_qmllint_module",
+					"projectIndex" : 3
+				},
+				{
+					"directoryIndex" : 9,
+					"id" : "GamepadLegacyQuickPrivate_qmltyperegistration::@85c6c8a454543bd986f9",
+					"jsonFile" : "target-GamepadLegacyQuickPrivate_qmltyperegistration-Debug-6fcfe6bf980ff8105e19.json",
+					"name" : "GamepadLegacyQuickPrivate_qmltyperegistration",
+					"projectIndex" : 3
+				},
+				{
+					"directoryIndex" : 9,
+					"id" : "GamepadLegacyQuickPrivateplugin::@85c6c8a454543bd986f9",
+					"jsonFile" : "target-GamepadLegacyQuickPrivateplugin-Debug-5e4aea13a74f2963488e.json",
+					"name" : "GamepadLegacyQuickPrivateplugin",
+					"projectIndex" : 3
+				},
+				{
+					"directoryIndex" : 9,
+					"id" : "GamepadLegacyQuickPrivateplugin_autogen::@85c6c8a454543bd986f9",
+					"jsonFile" : "target-GamepadLegacyQuickPrivateplugin_autogen-Debug-522975b28aa57ded7e7a.json",
+					"name" : "GamepadLegacyQuickPrivateplugin_autogen",
+					"projectIndex" : 3
+				},
+				{
+					"directoryIndex" : 9,
+					"id" : "GamepadLegacyQuickPrivateplugin_autogen_timestamp_deps::@85c6c8a454543bd986f9",
+					"jsonFile" : "target-GamepadLegacyQuickPrivateplugin_autogen_timestamp_deps-Debug-2a44d8ba7a06f9ee2801.json",
+					"name" : "GamepadLegacyQuickPrivateplugin_autogen_timestamp_deps",
+					"projectIndex" : 3
+				},
+				{
+					"directoryIndex" : 7,
+					"id" : "GamepadLegacy_autogen::@d3cc642445bf055bf6f4",
+					"jsonFile" : "target-GamepadLegacy_autogen-Debug-b3c09d421dd2858f3f57.json",
+					"name" : "GamepadLegacy_autogen",
+					"projectIndex" : 3
+				},
+				{
+					"directoryIndex" : 7,
+					"id" : "GamepadLegacy_autogen_timestamp_deps::@d3cc642445bf055bf6f4",
+					"jsonFile" : "target-GamepadLegacy_autogen_timestamp_deps-Debug-78994ed8b55fce22057e.json",
+					"name" : "GamepadLegacy_autogen_timestamp_deps",
+					"projectIndex" : 3
+				},
+				{
+					"directoryIndex" : 2,
+					"id" : "SortFilterProxyModel::@44f9b71fb6a28e94aad3",
+					"jsonFile" : "target-SortFilterProxyModel-Debug-b13247630b22d1aaf58a.json",
+					"name" : "SortFilterProxyModel",
+					"projectIndex" : 1
+				},
+				{
+					"directoryIndex" : 2,
+					"id" : "SortFilterProxyModel_autogen::@44f9b71fb6a28e94aad3",
+					"jsonFile" : "target-SortFilterProxyModel_autogen-Debug-250d8d67fe3c153d7d1c.json",
+					"name" : "SortFilterProxyModel_autogen",
+					"projectIndex" : 1
+				},
+				{
+					"directoryIndex" : 2,
+					"id" : "SortFilterProxyModel_autogen_timestamp_deps::@44f9b71fb6a28e94aad3",
+					"jsonFile" : "target-SortFilterProxyModel_autogen_timestamp_deps-Debug-e1c63a01e1c71b88182e.json",
+					"name" : "SortFilterProxyModel_autogen_timestamp_deps",
+					"projectIndex" : 1
+				},
+				{
+					"directoryIndex" : 1,
+					"id" : "_qt_internal_apk_dependencies::@b0c487aac068df482bf0",
+					"jsonFile" : "target-_qt_internal_apk_dependencies-Debug-7be8840457abe99668df.json",
+					"name" : "_qt_internal_apk_dependencies",
+					"projectIndex" : 1
+				},
+				{
+					"directoryIndex" : 1,
+					"id" : "aab::@b0c487aac068df482bf0",
+					"jsonFile" : "target-aab-Debug-69a2ca4d705144cfc6a6.json",
+					"name" : "aab",
+					"projectIndex" : 1
+				},
+				{
+					"directoryIndex" : 1,
+					"id" : "aar::@b0c487aac068df482bf0",
+					"jsonFile" : "target-aar-Debug-3992c94b3b6b3633a01f.json",
+					"name" : "aar",
+					"projectIndex" : 1
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "all_aotstats::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-all_aotstats-Debug-fdf87990e8b316409466.json",
+					"name" : "all_aotstats",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 9,
+					"id" : "all_qmllint::@85c6c8a454543bd986f9",
+					"jsonFile" : "target-all_qmllint-Debug-254e7db634dd55346403.json",
+					"name" : "all_qmllint",
+					"projectIndex" : 3
+				},
+				{
+					"directoryIndex" : 9,
+					"id" : "all_qmllint_json::@85c6c8a454543bd986f9",
+					"jsonFile" : "target-all_qmllint_json-Debug-507da87ebdb68bc2a087.json",
+					"name" : "all_qmllint_json",
+					"projectIndex" : 3
+				},
+				{
+					"directoryIndex" : 9,
+					"id" : "all_qmllint_module::@85c6c8a454543bd986f9",
+					"jsonFile" : "target-all_qmllint_module-Debug-dfe9a20a8fb0f2fcc8cb.json",
+					"name" : "all_qmllint_module",
+					"projectIndex" : 3
+				},
+				{
+					"directoryIndex" : 9,
+					"id" : "all_qmltyperegistrations::@85c6c8a454543bd986f9",
+					"jsonFile" : "target-all_qmltyperegistrations-Debug-f4f8adfbc7eee4e5f96e.json",
+					"name" : "all_qmltyperegistrations",
+					"projectIndex" : 3
+				},
+				{
+					"directoryIndex" : 1,
+					"id" : "apk::@b0c487aac068df482bf0",
+					"jsonFile" : "target-apk-Debug-29de019a6de765deccc5.json",
+					"name" : "apk",
+					"projectIndex" : 1
+				},
+				{
+					"directoryIndex" : 1,
+					"id" : "apk_all::@b0c487aac068df482bf0",
+					"jsonFile" : "target-apk_all-Debug-55ef2863a38d4fa1a179.json",
+					"name" : "apk_all",
+					"projectIndex" : 1
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "generate_qmlls_build_ini_file::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-generate_qmlls_build_ini_file-Debug-bb58dbf376b02c1dc18c.json",
+					"name" : "generate_qmlls_build_ini_file",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 3,
+					"id" : "messages::@38878eb19d6df20e2b75",
+					"jsonFile" : "target-messages-Debug-845a09943c3d13632556.json",
+					"name" : "messages",
+					"projectIndex" : 2
+				},
+				{
+					"directoryIndex" : 4,
+					"id" : "qt6keychain::@95ea44de8979db819b0e",
+					"jsonFile" : "target-qt6keychain-Debug-38538516f736f26952a6.json",
+					"name" : "qt6keychain",
+					"projectIndex" : 2
+				},
+				{
+					"directoryIndex" : 4,
+					"id" : "qt6keychain_autogen::@95ea44de8979db819b0e",
+					"jsonFile" : "target-qt6keychain_autogen-Debug-6efef67e95d57b42723f.json",
+					"name" : "qt6keychain_autogen",
+					"projectIndex" : 2
+				},
+				{
+					"directoryIndex" : 4,
+					"id" : "qt6keychain_autogen_timestamp_deps::@95ea44de8979db819b0e",
+					"jsonFile" : "target-qt6keychain_autogen_timestamp_deps-Debug-54c7a568eed6f396e7ed.json",
+					"name" : "qt6keychain_autogen_timestamp_deps",
+					"projectIndex" : 2
+				},
+				{
+					"directoryIndex" : 9,
+					"id" : "qt_internal_plugins::@85c6c8a454543bd986f9",
+					"jsonFile" : "target-qt_internal_plugins-Debug-f28fb4a1e25d818ef39a.json",
+					"name" : "qt_internal_plugins",
+					"projectIndex" : 3
+				},
+				{
+					"directoryIndex" : 3,
+					"id" : "translations::@38878eb19d6df20e2b75",
+					"jsonFile" : "target-translations-Debug-2dcbc1faa946295b568e.json",
+					"name" : "translations",
+					"projectIndex" : 2
+				}
+			]
+		}
+	],
+	"kind" : "codemodel",
+	"paths" : 
+	{
+		"build" : "C:/Users/PC/Documents/Dr.Frake-VPN",
+		"source" : "C:/Users/PC/Documents/Dr.Frake-VPN"
+	},
+	"version" : 
+	{
+		"major" : 2,
+		"minor" : 7
+	}
+}

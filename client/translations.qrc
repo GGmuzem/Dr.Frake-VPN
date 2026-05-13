@@ -1,0 +1,5 @@
+<RCC>
+    <qresource prefix="/translations">
+				<file>FBLink_ru_RU.qm</file><file>FBLink_zh_CN.qm</file><file>FBLink_fa_IR.qm</file><file>FBLink_ar_EG.qm</file><file>FBLink_my_MM.qm</file><file>FBLink_uk_UA.qm</file><file>FBLink_ur_PK.qm</file><file>FBLink_hi_IN.qm</file>
+    </qresource>
+</RCC>

@@ -1,0 +1,50 @@
+{
+	"backtrace" : 0,
+	"backtraceGraph" : 
+	{
+		"commands" : [],
+		"files" : 
+		[
+			"client/CMakeLists.txt"
+		],
+		"nodes" : 
+		[
+			{
+				"file" : 0
+			}
+		]
+	},
+	"dependencies" : 
+	[
+		{
+			"backtrace" : 0,
+			"id" : "SortFilterProxyModel::@44f9b71fb6a28e94aad3"
+		},
+		{
+			"backtrace" : 0,
+			"id" : "qt6keychain::@95ea44de8979db819b0e"
+		},
+		{
+			"backtrace" : 0,
+			"id" : "GamepadLegacy::@d3cc642445bf055bf6f4"
+		},
+		{
+			"backtrace" : 0,
+			"id" : "GamepadLegacyQuickPrivate::@85c6c8a454543bd986f9"
+		}
+	],
+	"folder" : 
+	{
+		"name" : "Autogen"
+	},
+	"id" : "FBLink_autogen_timestamp_deps::@b0c487aac068df482bf0",
+	"isGeneratorProvided" : true,
+	"name" : "FBLink_autogen_timestamp_deps",
+	"paths" : 
+	{
+		"build" : "client",
+		"source" : "client"
+	},
+	"sources" : [],
+	"type" : "UTILITY"
+}

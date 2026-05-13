@@ -1,0 +1,31 @@
+{
+	"backtrace" : 0,
+	"backtraceGraph" : 
+	{
+		"commands" : [],
+		"files" : 
+		[
+			"client/3rd/qtgamepad/src/gamepad/CMakeLists.txt"
+		],
+		"nodes" : 
+		[
+			{
+				"file" : 0
+			}
+		]
+	},
+	"folder" : 
+	{
+		"name" : "Autogen"
+	},
+	"id" : "GamepadLegacy_autogen_timestamp_deps::@d3cc642445bf055bf6f4",
+	"isGeneratorProvided" : true,
+	"name" : "GamepadLegacy_autogen_timestamp_deps",
+	"paths" : 
+	{
+		"build" : "client/3rd/qtgamepad/src/gamepad",
+		"source" : "client/3rd/qtgamepad/src/gamepad"
+	},
+	"sources" : [],
+	"type" : "UTILITY"
+}

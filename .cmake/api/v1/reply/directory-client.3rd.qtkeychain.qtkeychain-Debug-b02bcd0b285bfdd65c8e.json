@@ -1,0 +1,62 @@
+{
+	"backtraceGraph" : 
+	{
+		"commands" : 
+		[
+			"install"
+		],
+		"files" : 
+		[
+			"client/3rd/qtkeychain/qtkeychain/CMakeLists.txt"
+		],
+		"nodes" : 
+		[
+			{
+				"file" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 109,
+				"parent" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 113,
+				"parent" : 0
+			}
+		]
+	},
+	"installers" : 
+	[
+		{
+			"backtrace" : 1,
+			"component" : "Unspecified",
+			"destination" : "include/qt6keychain",
+			"paths" : 
+			[
+				"client/3rd/qtkeychain/qtkeychain/keychain.h",
+				"client/3rd/qtkeychain/qtkeychain/qkeychain_export.h"
+			],
+			"type" : "file"
+		},
+		{
+			"backtrace" : 2,
+			"component" : "Unspecified",
+			"destination" : "lib",
+			"paths" : 
+			[
+				"client/3rd/qtkeychain/qtkeychain/libqt6keychain.a"
+			],
+			"targetId" : "qt6keychain::@95ea44de8979db819b0e",
+			"targetIndex" : 39,
+			"type" : "target"
+		}
+	],
+	"paths" : 
+	{
+		"build" : "client/3rd/qtkeychain/qtkeychain",
+		"source" : "client/3rd/qtkeychain/qtkeychain"
+	}
+}
