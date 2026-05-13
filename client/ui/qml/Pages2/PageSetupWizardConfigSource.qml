@@ -343,7 +343,7 @@ PageType {
         property string title: qsTr("QR code")
         property string description: qsTr("")
         property string imageSource: "qrc:/images/controls/scan-line.svg"
-        property bool isVisible: SettingsController.isCameraPresent()
+        property bool isVisible: !GC.isDesktop() && SettingsController.isCameraPresent()
         property var handler: function() {
             ImportController.startDecodingQr()
             if (Qt.platform.os === "ios") {
