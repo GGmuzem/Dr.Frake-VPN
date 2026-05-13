@@ -7,8 +7,6 @@
 #include "vpnprotocol.h"
 #include "settings.h"
 #include <QtCore/qsharedpointer.h>
-#include <QtConcurrent/QtConcurrentRun>
-#include <QFutureWatcher>
 
 class XrayProtocol : public VpnProtocol
 {
@@ -35,7 +33,6 @@ private:
     bool m_forceTunResolversOnWindows = false;
 
     QSharedPointer<IpcProcessInterfaceReplica> m_tun2socksProcess;
-    QFutureWatcher<void> *m_stopWatcher = nullptr;
 };
 
 #endif // XRAYPROTOCOL_H

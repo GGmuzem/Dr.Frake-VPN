@@ -8,8 +8,6 @@
 #include <QTimer>
 #include <QDateTime>
 #include <QElapsedTimer>
-#include <QFutureWatcher>
-#include <QtConcurrent/QtConcurrentRun>
 
 #include "protocols/vpnprotocol.h"
 #include "core/defs.h"
@@ -103,8 +101,6 @@ private:
    DockerContainer m_lastContainer = DockerContainer::None;
    bool m_reconnectScheduled = false;
    bool m_userRequestedDisconnect = false;
-
-   QFutureWatcher<ErrorCode> *m_startWatcher = nullptr;
 
    void createProtocolConnections();
    void armStateWatchdog(Vpn::ConnectionState state);
