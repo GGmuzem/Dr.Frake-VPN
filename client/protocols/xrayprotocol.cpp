@@ -503,9 +503,7 @@ ErrorCode XrayProtocol::start()
         qCritical() << "XrayProtocol::start(): refusing to start because remote endpoint is unreachable"
                     << m_remoteAddress;
         return ErrorCode::XrayRemoteEndpointUnavailable;
-    }
-
-    return IpcClient::withInterface([&](QSharedPointer<IpcInterfaceReplica> iface) {
+    }    return IpcClient::withInterface([&](QSharedPointer<IpcInterfaceReplica> iface) {
         // Recover from unclean shutdown/reboot before starting a fresh XRay
         // session. This mirrors stop()-cleanup and prevents stale network
         // state (kill-switch/DNS/IPv6 routes/TUN routes) from blackholing traffic.
@@ -546,31 +544,9 @@ void XrayProtocol::stop()
 {
     qDebug() << "XrayProtocol::stop()";
 
-    IpcClient::withInterface([](QSharedPointer<IpcInterfaceReplica> iface) {
-        auto disableKillSwitch = iface->disableKillSwitch();
-        if (!disableKillSwitch.waitForFinished() || !disableKillSwitch.returnValue())
-            qWarning() << "Failed to disable killswitch";
-
-        auto StartRoutingIpv6 = iface->StartRoutingIpv6();
-        if (!StartRoutingIpv6.waitForFinished() || !StartRoutingIpv6.returnValue())
-            qWarning() << "Failed to start routing ipv6";
-
-        auto restoreResolvers = iface->restoreResolvers();
-        if (!restoreResolvers.waitForFinished() || !restoreResolvers.returnValue())
-            qWarning() << "Failed to restore resolvers";
-
-        auto deleteTun = iface->deleteTun(tunName);
-        if (!deleteTun.waitForFinished() || !deleteTun.returnValue())
-            qWarning() << "Failed to delete tun";
-
-        auto xrayStop = iface->xrayStop();
-        if (!xrayStop.waitForFinished() || !xrayStop.returnValue())
-            qWarning() << "Failed to stop xray";
-    });
-
+    // Kill tun2socks immediately (non-blocking on Windows).
     if (m_tun2socksProcess) {
         m_tun2socksProcess->blockSignals(true);
-
 #ifndef Q_OS_WIN
         m_tun2socksProcess->terminate();
         auto waitForFinished = m_tun2socksProcess->waitForFinished(1000);
@@ -579,16 +555,55 @@ void XrayProtocol::stop()
             m_tun2socksProcess->kill();
         }
 #else
-        // terminate does not do anything useful on Windows
-        // so just kill the process
         m_tun2socksProcess->kill();
 #endif
-
         m_tun2socksProcess->close();
         m_tun2socksProcess.reset();
     }
 
+    // Signal Disconnected immediately so the server-switch logic in
+    // VpnConnection can proceed without waiting for IPC teardown.
     setConnectionState(Vpn::ConnectionState::Disconnected);
+
+    // Run the blocking IPC cleanup in a background thread so the main
+    // thread (and the Qt event loop) are never stalled.
+    if (m_stopWatcher) {
+        m_stopWatcher->cancel();
+        m_stopWatcher->deleteLater();
+        m_stopWatcher = nullptr;
+    }
+
+    m_stopWatcher = new QFutureWatcher<void>(this);
+    connect(m_stopWatcher, &QFutureWatcher<void>::finished, this, [this]() {
+        if (m_stopWatcher) {
+            m_stopWatcher->deleteLater();
+            m_stopWatcher = nullptr;
+        }
+    });
+
+    m_stopWatcher->setFuture(QtConcurrent::run([]() {
+        IpcClient::withInterface([](QSharedPointer<IpcInterfaceReplica> iface) {
+            auto disableKillSwitch = iface->disableKillSwitch();
+            if (!disableKillSwitch.waitForFinished() || !disableKillSwitch.returnValue())
+                qWarning() << "Failed to disable killswitch";
+
+            auto StartRoutingIpv6 = iface->StartRoutingIpv6();
+            if (!StartRoutingIpv6.waitForFinished() || !StartRoutingIpv6.returnValue())
+                qWarning() << "Failed to start routing ipv6";
+
+            auto restoreResolvers = iface->restoreResolvers();
+            if (!restoreResolvers.waitForFinished() || !restoreResolvers.returnValue())
+                qWarning() << "Failed to restore resolvers";
+
+            auto deleteTun = iface->deleteTun(tunName);
+            if (!deleteTun.waitForFinished() || !deleteTun.returnValue())
+                qWarning() << "Failed to delete tun";
+
+            auto xrayStop = iface->xrayStop();
+            if (!xrayStop.waitForFinished() || !xrayStop.returnValue())
+                qWarning() << "Failed to stop xray";
+        });
+    }));
 }
 
 ErrorCode XrayProtocol::startTun2Socks()

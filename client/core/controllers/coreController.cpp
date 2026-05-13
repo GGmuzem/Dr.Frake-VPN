@@ -465,11 +465,6 @@ void CoreController::initPrepareConfigHandler()
             emit m_vpnConnection->connectionStateChanged(Vpn::ConnectionState::Preparing);
             m_connectionController->setConnectionStateText(tr("Обновление..."));
 
-            if ((hasPendingRoutingSync || requiresServerConfigRefresh) && !isBackendConfigSyncing) {
-                qDebug() << "[FBLink] prepareConfig: forcing fetchConfig() before connect";
-                m_fbLinkController->fetchConfig();
-            }
-
             std::shared_ptr<bool> triggered = std::make_shared<bool>(false);
 
             // When configFetched fires, fresh config is guaranteed — proceed directly
@@ -493,6 +488,11 @@ void CoreController::initPrepareConfigHandler()
                     static_cast<Qt::ConnectionType>(Qt::QueuedConnection | Qt::SingleShotConnection));
             connect(m_fbLinkController.get(), &FBLinkController::configError, this, errorProceed,
                     static_cast<Qt::ConnectionType>(Qt::QueuedConnection | Qt::SingleShotConnection));
+
+            if ((hasPendingRoutingSync || requiresServerConfigRefresh) && !isBackendConfigSyncing) {
+                qDebug() << "[FBLink] prepareConfig: forcing fetchConfig() before connect";
+                m_fbLinkController->fetchConfig();
+            }
 
             // Fallback timeout: if configFetched hasn't arrived yet (backend is slow),
             // proceed anyway rather than refusing — forcing a double-click was bad UX.
