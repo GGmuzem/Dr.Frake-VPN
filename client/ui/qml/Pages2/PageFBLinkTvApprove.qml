@@ -126,7 +126,7 @@ PageType {
                         // ---- Chooser tiles (default) ------------------
                         BasicButtonType {
                             Layout.fillWidth: true
-                            visible: !root.approvedShown && !root.codeMode
+                            visible: !root.approvedShown && !root.codeMode && !GC.isDesktop()
                             implicitHeight: 64
                             defaultColor: "#EAB308"
                             hoveredColor: "#FACC15"

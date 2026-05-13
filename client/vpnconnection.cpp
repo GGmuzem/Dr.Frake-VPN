@@ -15,6 +15,7 @@
 #include <QStringList>
 #include <QTimer>
 #include <QThread>
+#include <QtConcurrent/QtConcurrentRun>
 
 #ifdef Q_OS_ANDROID
     #include <QGuiApplication>
@@ -389,12 +390,51 @@ void VpnConnection::startNewConnection(DockerContainer container, const QJsonObj
     }
 
 #if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS) && !defined(MACOS_NE)
-    m_vpnProtocol.reset(VpnProtocol::factory(container, m_vpnConfiguration));
-    if (!m_vpnProtocol) {
-        setConnectionState(Vpn::ConnectionState::Error);
+    {
+        // Cancel any previous in-flight start.
+        if (m_startWatcher) {
+            m_startWatcher->cancel();
+            m_startWatcher->deleteLater();
+            m_startWatcher = nullptr;
+        }
+
+        // factory() + prepare() + start() all contain blocking calls (DNS
+        // resolution, TCP reachability probes, IPC waitForFinished). Run
+        // everything in a background thread so the main thread never stalls.
+        const QJsonObject vpnConfig = m_vpnConfiguration;
+        m_startWatcher = new QFutureWatcher<ErrorCode>(this);
+        connect(m_startWatcher, &QFutureWatcher<ErrorCode>::finished, this, [this]() {
+            if (!m_startWatcher) return;
+            const ErrorCode err = m_startWatcher->result();
+            m_startWatcher->deleteLater();
+            m_startWatcher = nullptr;
+            if (err != ErrorCode::NoError) {
+                setConnectionState(Vpn::ConnectionState::Error);
+                emit vpnProtocolError(err);
+            }
+        });
+        m_startWatcher->setFuture(QtConcurrent::run([this, container, vpnConfig]() -> ErrorCode {
+            VpnProtocol *proto = VpnProtocol::factory(container, vpnConfig);
+            if (!proto) return ErrorCode::InternalError;
+            proto->prepare();
+
+            // Move proto to main thread so its signals are delivered there.
+            proto->moveToThread(qApp->thread());
+
+            QMetaObject::invokeMethod(this, [this, proto]() {
+                if (m_userRequestedDisconnect) {
+                    proto->deleteLater();
+                    return;
+                }
+                m_vpnProtocol.reset(proto);
+                createProtocolConnections();
+            }, Qt::BlockingQueuedConnection);
+
+            if (m_userRequestedDisconnect) return ErrorCode::NoError;
+            return proto->start();
+        }));
         return;
     }
-    m_vpnProtocol->prepare();
 #elif defined Q_OS_ANDROID
     androidVpnProtocol = createDefaultAndroidVpnProtocol();
     createAndroidConnections();
@@ -709,6 +749,14 @@ void VpnConnection::disconnectFromVpn()
     if (m_protocolShutdownConn) {
         QObject::disconnect(m_protocolShutdownConn);
         m_protocolShutdownConn = QMetaObject::Connection();
+    }
+
+    // Cancel any in-flight async start so it doesn't call setConnectionState
+    // after the user has requested a disconnect.
+    if (m_startWatcher) {
+        m_startWatcher->cancel();
+        m_startWatcher->deleteLater();
+        m_startWatcher = nullptr;
     }
 
 #if defined(Q_OS_IOS) || defined(MACOS_NE)
