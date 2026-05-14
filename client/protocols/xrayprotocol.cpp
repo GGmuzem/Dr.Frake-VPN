@@ -6,11 +6,13 @@
 #include "core/networkUtilities.h"
 
 #include <QCryptographicHash>
+#include <QEventLoop>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QNetworkInterface>
 #include <QTcpSocket>
+#include <QTimer>
 #include <QJsonDocument>
 #include <QtCore/qlogging.h>
 #include <QtCore/qobjectdefs.h>
@@ -492,7 +494,9 @@ XrayProtocol::XrayProtocol(const QJsonObject &configuration, QObject *parent) : 
 XrayProtocol::~XrayProtocol()
 {
     qDebug() << "XrayProtocol::~XrayProtocol()";
-    XrayProtocol::stop();
+    if (m_connectionState != Vpn::ConnectionState::Disconnected) {
+        XrayProtocol::stop();
+    }
 }
 
 ErrorCode XrayProtocol::start()
@@ -503,37 +507,69 @@ ErrorCode XrayProtocol::start()
         qCritical() << "XrayProtocol::start(): refusing to start because remote endpoint is unreachable"
                     << m_remoteAddress;
         return ErrorCode::XrayRemoteEndpointUnavailable;
-    }    return IpcClient::withInterface([&](QSharedPointer<IpcInterfaceReplica> iface) {
+    }    static constexpr int kIpcTimeoutMs = 5000;
+    static constexpr int kXrayStartTimeoutMs = 70000; // amnezia_xray_stop() in service can block 5-60s
+
+    return IpcClient::withInterface([&](QSharedPointer<IpcInterfaceReplica> iface) {
         // Recover from unclean shutdown/reboot before starting a fresh XRay
         // session. This mirrors stop()-cleanup and prevents stale network
         // state (kill-switch/DNS/IPv6 routes/TUN routes) from blackholing traffic.
         auto disableKillSwitch = iface->disableKillSwitch();
-        if (!disableKillSwitch.waitForFinished() || !disableKillSwitch.returnValue()) {
-            qWarning() << "XrayProtocol::start(): pre-clean failed to disable killswitch";
-        }
+        disableKillSwitch.waitForFinished(kIpcTimeoutMs);
 
         auto startRoutingIpv6 = iface->StartRoutingIpv6();
-        if (!startRoutingIpv6.waitForFinished() || !startRoutingIpv6.returnValue()) {
-            qWarning() << "XrayProtocol::start(): pre-clean failed to restore IPv6 routing";
-        }
+        startRoutingIpv6.waitForFinished(kIpcTimeoutMs);
 
         auto restoreResolvers = iface->restoreResolvers();
-        if (!restoreResolvers.waitForFinished() || !restoreResolvers.returnValue()) {
-            qWarning() << "XrayProtocol::start(): pre-clean failed to restore DNS resolvers";
-        }
+        restoreResolvers.waitForFinished(kIpcTimeoutMs);
 
         auto deleteTun = iface->deleteTun(tunName);
-        if (!deleteTun.waitForFinished() || !deleteTun.returnValue()) {
-            qWarning() << "XrayProtocol::start(): failed to pre-clean stale tunnel routes";
-        } else {
+        if (deleteTun.waitForFinished(kIpcTimeoutMs) && deleteTun.returnValue()) {
             qDebug() << "XrayProtocol::start(): pre-cleaned stale tunnel routes";
         }
 
+        // xrayStart triggers stopEmbeddedXray(true) in the service which calls
+        // amnezia_xray_stop() — this can block for 5-60s. Use QEventLoop with
+        // QTimer for a reliable timeout since QRemoteObjectPendingReply::waitForFinished
+        // may not honor its timeout parameter.
         auto xrayStart = iface->xrayStart(QJsonDocument(m_xrayConfig).toJson());
-        if (!xrayStart.waitForFinished() || !xrayStart.returnValue()) {
-            qCritical() << "Failed to start xray";
+        qDebug() << "XrayProtocol::start(): waiting for xrayStart IPC...";
+
+        QEventLoop loop;
+        QTimer timer;
+        timer.setSingleShot(true);
+        bool timedOut = false;
+        bool finished = false;
+
+        QObject::connect(&timer, &QTimer::timeout, &loop, [&]() {
+            timedOut = true;
+            loop.quit();
+        });
+
+        // Poll for completion since QRemoteObjectPendingReply has no signal
+        QTimer poller;
+        poller.setInterval(100);
+        QObject::connect(&poller, &QTimer::timeout, &loop, [&]() {
+            if (xrayStart.isFinished()) {
+                finished = true;
+                loop.quit();
+            }
+        });
+
+        timer.start(kXrayStartTimeoutMs);
+        if (!xrayStart.isFinished()) {
+            poller.start();
+            loop.exec();
+            poller.stop();
+        } else {
+            finished = true;
+        }
+
+        if (timedOut || !finished || !xrayStart.returnValue()) {
+            qCritical() << "Failed to start xray" << (timedOut ? "(timeout)" : "(service error)");
             return ErrorCode::XrayExecutableCrashed;
         }
+        qDebug() << "XrayProtocol::start(): xray started, launching tun2socks";
         return startTun2Socks();
     }, [] () {
         return ErrorCode::FBLinkServiceConnectionFailed;
@@ -544,43 +580,51 @@ void XrayProtocol::stop()
 {
     qDebug() << "XrayProtocol::stop()";
 
-    IpcClient::withInterface([](QSharedPointer<IpcInterfaceReplica> iface) {
-        auto disableKillSwitch = iface->disableKillSwitch();
-        if (!disableKillSwitch.waitForFinished() || !disableKillSwitch.returnValue())
-            qWarning() << "Failed to disable killswitch";
-
-        auto StartRoutingIpv6 = iface->StartRoutingIpv6();
-        if (!StartRoutingIpv6.waitForFinished() || !StartRoutingIpv6.returnValue())
-            qWarning() << "Failed to start routing ipv6";
-
-        auto restoreResolvers = iface->restoreResolvers();
-        if (!restoreResolvers.waitForFinished() || !restoreResolvers.returnValue())
-            qWarning() << "Failed to restore resolvers";
-
-        auto deleteTun = iface->deleteTun(tunName);
-        if (!deleteTun.waitForFinished() || !deleteTun.returnValue())
-            qWarning() << "Failed to delete tun";
-
-        auto xrayStop = iface->xrayStop();
-        if (!xrayStop.waitForFinished() || !xrayStop.returnValue())
-            qWarning() << "Failed to stop xray";
-    });
-
     if (m_tun2socksProcess) {
         m_tun2socksProcess->blockSignals(true);
 #ifndef Q_OS_WIN
         m_tun2socksProcess->terminate();
-        auto waitForFinished = m_tun2socksProcess->waitForFinished(1000);
-        if (!waitForFinished.waitForFinished() || !waitForFinished.returnValue()) {
+        auto waitTerm = m_tun2socksProcess->waitForFinished(2000);
+        if (!waitTerm.waitForFinished(5000) || !waitTerm.returnValue()) {
             qWarning() << "Failed to terminate tun2socks. Killing the process...";
             m_tun2socksProcess->kill();
         }
 #else
         m_tun2socksProcess->kill();
+        // Wait for tun2socks to actually exit so wintun releases the adapter
+        // before a new session tries to create it with the same name.
+        auto waitKill = m_tun2socksProcess->waitForFinished(3000);
+        if (!waitKill.waitForFinished(5000) || !waitKill.returnValue()) {
+            qWarning() << "XrayProtocol::stop(): tun2socks did not exit within 3s after kill";
+        }
 #endif
         m_tun2socksProcess->close();
         m_tun2socksProcess.reset();
     }
+
+    IpcClient::withInterface([](QSharedPointer<IpcInterfaceReplica> iface) {
+        static constexpr int kStopIpcTimeoutMs = 3000;
+
+        auto disableKillSwitch = iface->disableKillSwitch();
+        if (!disableKillSwitch.waitForFinished(kStopIpcTimeoutMs) || !disableKillSwitch.returnValue())
+            qWarning() << "Failed to disable killswitch";
+
+        auto StartRoutingIpv6 = iface->StartRoutingIpv6();
+        if (!StartRoutingIpv6.waitForFinished(kStopIpcTimeoutMs) || !StartRoutingIpv6.returnValue())
+            qWarning() << "Failed to start routing ipv6";
+
+        auto restoreResolvers = iface->restoreResolvers();
+        if (!restoreResolvers.waitForFinished(kStopIpcTimeoutMs) || !restoreResolvers.returnValue())
+            qWarning() << "Failed to restore resolvers";
+
+        auto deleteTun = iface->deleteTun(tunName);
+        if (!deleteTun.waitForFinished(kStopIpcTimeoutMs) || !deleteTun.returnValue())
+            qWarning() << "Failed to delete tun";
+
+        // Do NOT call xrayStop here. amnezia_xray_stop() blocks the service's
+        // IPC thread for 5-60s (Go runtime teardown). The service's startXray()
+        // calls stopEmbeddedXray(true) before launching a new instance.
+    });
 
     setConnectionState(Vpn::ConnectionState::Disconnected);
 }
@@ -662,10 +706,13 @@ ErrorCode XrayProtocol::startTun2Socks()
     }, Qt::QueuedConnection);
 
     m_tun2socksProcess->start();
+    qDebug() << "XrayProtocol::startTun2Socks(): process launched, waiting for STACK line";
     return ErrorCode::NoError;
 }
 
 ErrorCode XrayProtocol::setupRouting() {
+    static constexpr int kRoutingIpcTimeoutMs = 5000;
+
     return IpcClient::withInterface([this](QSharedPointer<IpcInterfaceReplica> iface) -> ErrorCode {
 #ifdef Q_OS_WIN
         const int inetAdapterIndex = NetworkUtilities::AdapterIndexTo(QHostAddress(m_remoteAddress));
@@ -675,7 +722,7 @@ ErrorCode XrayProtocol::setupRouting() {
         static constexpr int kMaxCreateTunAttempts = 8;
         for (int attempt = 1; attempt <= kMaxCreateTunAttempts; ++attempt) {
             auto createTun = iface->createTun(tunName, fblink::protocols::xray::defaultLocalAddr);
-            if (createTun.waitForFinished() && createTun.returnValue()) {
+            if (createTun.waitForFinished(kRoutingIpcTimeoutMs) && createTun.returnValue()) {
                 tunReady = true;
                 break;
             }
@@ -687,7 +734,7 @@ ErrorCode XrayProtocol::setupRouting() {
             // Aggressive cleanup on every failure can race with adapter creation.
             if (attempt == 4 || attempt == 6) {
                 auto deleteTun = iface->deleteTun(tunName);
-                deleteTun.waitForFinished();
+                deleteTun.waitForFinished(kRoutingIpcTimeoutMs);
             }
 
             if (attempt < kMaxCreateTunAttempts) {
@@ -703,7 +750,7 @@ ErrorCode XrayProtocol::setupRouting() {
 #ifdef Q_OS_WIN
         if (m_forceTunResolversOnWindows) {
             auto updateResolvers = iface->updateResolvers(tunName, m_dnsServers);
-            if (!updateResolvers.waitForFinished() || !updateResolvers.returnValue()) {
+            if (!updateResolvers.waitForFinished(kRoutingIpcTimeoutMs) || !updateResolvers.returnValue()) {
                 qCritical() << "Failed to set XRay DNS resolvers for TUN on Windows";
                 return ErrorCode::InternalError;
             }
@@ -713,7 +760,7 @@ ErrorCode XrayProtocol::setupRouting() {
         }
 #else
         auto updateResolvers = iface->updateResolvers(tunName, m_dnsServers);
-        if (!updateResolvers.waitForFinished() || !updateResolvers.returnValue()) {
+        if (!updateResolvers.waitForFinished(kRoutingIpcTimeoutMs) || !updateResolvers.returnValue()) {
             qCritical() << "Failed to set DNS resolvers for TUN";
             return ErrorCode::InternalError;
         }
@@ -745,7 +792,7 @@ ErrorCode XrayProtocol::setupRouting() {
                 config.insert("vpnServer", m_remoteAddress);
 
                 auto enableKillSwitch = IpcClient::Interface()->enableKillSwitch(config, vpnAdapterIndex);
-                if (!enableKillSwitch.waitForFinished() || !enableKillSwitch.returnValue()) {
+                if (!enableKillSwitch.waitForFinished(kRoutingIpcTimeoutMs) || !enableKillSwitch.returnValue()) {
                     qCritical() << "Failed to enable killswitch";
                     return ErrorCode::InternalError;
                 }
@@ -764,7 +811,7 @@ ErrorCode XrayProtocol::setupRouting() {
             static const QStringList subnets = { "1.0.0.0/8", "2.0.0.0/7", "4.0.0.0/6", "8.0.0.0/5", "16.0.0.0/4", "32.0.0.0/3", "64.0.0.0/2", "128.0.0.0/1" };
 
             auto routeAddList =  iface->routeAddList(m_vpnGateway, subnets);
-            if (!routeAddList.waitForFinished() || routeAddList.returnValue() != subnets.count()) {
+            if (!routeAddList.waitForFinished(kRoutingIpcTimeoutMs) || routeAddList.returnValue() != subnets.count()) {
                 qCritical() << "Failed to set routes for TUN";
                 return ErrorCode::InternalError;
             }
@@ -778,7 +825,7 @@ ErrorCode XrayProtocol::setupRouting() {
         // Otherwise full-tunnel mode can blackhole the server connection itself.
         if (!m_remoteAddress.isEmpty() && NetworkUtilities::checkIPv4Format(m_remoteAddress) && !m_routeGateway.isEmpty()) {
             auto routeServerDirect = iface->routeAddList(m_routeGateway, QStringList() << m_remoteAddress);
-            if (!routeServerDirect.waitForFinished() || routeServerDirect.returnValue() < 1) {
+            if (!routeServerDirect.waitForFinished(kRoutingIpcTimeoutMs) || routeServerDirect.returnValue() < 1) {
                 qWarning() << "Failed to add direct route to XRay server" << m_remoteAddress << "via" << m_routeGateway;
             } else {
                 qDebug() << "Added direct route to XRay server" << m_remoteAddress << "via" << m_routeGateway;
@@ -788,7 +835,7 @@ ErrorCode XrayProtocol::setupRouting() {
 #ifdef Q_OS_WIN
         if (!m_forceTunResolversOnWindows && !physicalDnsResolvers.isEmpty() && !m_routeGateway.isEmpty()) {
             auto routeDnsDirect = iface->routeAddList(m_routeGateway, physicalDnsResolvers);
-            if (!routeDnsDirect.waitForFinished() || routeDnsDirect.returnValue() < physicalDnsResolvers.size()) {
+            if (!routeDnsDirect.waitForFinished(kRoutingIpcTimeoutMs) || routeDnsDirect.returnValue() < physicalDnsResolvers.size()) {
                 qWarning() << "Failed to add direct routes to system DNS resolvers" << physicalDnsResolvers << "via" << m_routeGateway;
             } else {
                 qDebug() << "Added direct routes to system DNS resolvers" << physicalDnsResolvers << "via" << m_routeGateway;
@@ -801,7 +848,7 @@ ErrorCode XrayProtocol::setupRouting() {
 #endif
 
         auto StopRoutingIpv6 = iface->StopRoutingIpv6();
-        if (!StopRoutingIpv6.waitForFinished() || !StopRoutingIpv6.returnValue()) {
+        if (!StopRoutingIpv6.waitForFinished(kRoutingIpcTimeoutMs) || !StopRoutingIpv6.returnValue()) {
             qWarning() << "Failed to disable IPv6 routing; continuing without IPv6 block routes";
         }
 
@@ -818,7 +865,7 @@ ErrorCode XrayProtocol::setupRouting() {
             // Only invoke legacy Windows peer-traffic plumbing when a feature still needs it.
             if (killSwitchEnabled || hasAppSplitTunnel) {
                 auto enablePeerTraffic = iface->enablePeerTraffic(config);
-                if (!enablePeerTraffic.waitForFinished() || !enablePeerTraffic.returnValue()) {
+                if (!enablePeerTraffic.waitForFinished(kRoutingIpcTimeoutMs) || !enablePeerTraffic.returnValue()) {
                     qCritical() << "Failed to enable peer traffic";
                     return ErrorCode::InternalError;
                 }

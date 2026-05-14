@@ -42,7 +42,7 @@
 #include "vpnconnection.h"
 
 namespace {
-constexpr int kConnectWatchdogTimeoutMs = 28000;
+constexpr int kConnectWatchdogTimeoutMs = 15000;
 constexpr int kDisconnectWatchdogTimeoutMs = 12000;
 constexpr int kReconnectBaseDelayMs = 1200;
 constexpr int kMaxRecoveryAttempts = 2;
@@ -146,6 +146,12 @@ void VpnConnection::onConnectionStateChanged(Vpn::ConnectionState state)
     }
 
 #ifdef AMNEZIA_DESKTOP
+    // Only issue IPC calls for terminal/connected states that need network cleanup or setup.
+    // Intermediate states (Connecting, Preparing, Reconnecting, Disconnecting) don't need IPC.
+    if (state == Vpn::ConnectionState::Connected
+        || state == Vpn::ConnectionState::Disconnected
+        || state == Vpn::ConnectionState::Error) {
+
     auto container = m_settings->defaultContainer(m_settings->defaultServerIndex());
 
     IpcClient::withInterface([&](QSharedPointer<IpcInterfaceReplica> iface) {
@@ -191,6 +197,8 @@ void VpnConnection::onConnectionStateChanged(Vpn::ConnectionState state)
                 break;
         }
     });
+
+    } // if (state == Connected || Disconnected || Error)
 #endif
 
 #if defined(Q_OS_IOS) || defined(MACOS_NE)
@@ -335,18 +343,15 @@ void VpnConnection::connectToVpn(int serverIndex, const ServerCredentials &crede
     }
 
 #ifdef AMNEZIA_DESKTOP
-    // Desktop grace window: if the user just tapped Disconnect and is now
-    // re-tapping Connect, the fblink daemon may still be tearing down the
-    // previous tunnel (deleteInterface() runs waitForFinished(5000) on the
-    // wg process on Linux, WFP firewall rules are being refreshed on Windows,
-    // pfctl is reloading its ruleset on macOS). Landing a new activate on
-    // top of that in-flight teardown is what causes the hang. Defer by up
-    // to 500 ms to let the daemon settle.
+    // Desktop grace window: after disconnect, the service's amnezia_xray_stop()
+    // blocks its main thread for 5-60s (Go runtime teardown). If we send a new
+    // IPC request during that window, it will hang. Wait up to 6s after
+    // disconnect before attempting a new connection.
     if (m_vpnProtocol.isNull() && m_disconnectElapsed.isValid()) {
         const qint64 elapsed = m_disconnectElapsed.elapsed();
-        if (elapsed >= 0 && elapsed < 500) {
-            const int rawDelay = static_cast<int>(500 - elapsed);
-            const int delayMs = (std::max)(50, (std::min)(500, rawDelay));
+        if (elapsed >= 0 && elapsed < 6000) {
+            const int rawDelay = static_cast<int>(6000 - elapsed);
+            const int delayMs = (std::max)(50, (std::min)(6000, rawDelay));
             qDebug() << "VpnConnection::connectToVpn(): daemon grace window, deferring" << delayMs << "ms";
             m_disconnectElapsed.invalidate();
             QTimer::singleShot(delayMs, this, [this]() {
@@ -389,12 +394,15 @@ void VpnConnection::startNewConnection(DockerContainer container, const QJsonObj
     }
 
 #if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS) && !defined(MACOS_NE)
+    qDebug() << "VpnConnection::startNewConnection: creating protocol...";
     m_vpnProtocol.reset(VpnProtocol::factory(container, m_vpnConfiguration));
     if (!m_vpnProtocol) {
         setConnectionState(Vpn::ConnectionState::Error);
         return;
     }
+    qDebug() << "VpnConnection::startNewConnection: protocol created, calling prepare()";
     m_vpnProtocol->prepare();
+    qDebug() << "VpnConnection::startNewConnection: calling start()";
 #elif defined Q_OS_ANDROID
     androidVpnProtocol = createDefaultAndroidVpnProtocol();
     createAndroidConnections();

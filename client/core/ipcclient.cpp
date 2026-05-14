@@ -9,6 +9,14 @@ IpcClient::IpcClient(QObject *parent) : QObject(parent)
     m_interface.reset(m_node.acquire<IpcInterfaceReplica>());
 }
 
+void IpcClient::reconnect()
+{
+    qDebug() << "IpcClient::reconnect(): attempting to re-establish service connection";
+    m_interface.reset();
+    m_node.connectToNode(QUrl("local:" + fblink::getIpcServiceUrl()));
+    m_interface.reset(m_node.acquire<IpcInterfaceReplica>());
+}
+
 IpcClient& IpcClient::Instance()
 {
     thread_local IpcClient ipcClient;

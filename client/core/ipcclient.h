@@ -25,12 +25,16 @@ public:
         using ReturnType = decltype(func(std::declval<QSharedPointer<IpcInterfaceReplica>>()));
 
         if (iface.isNull() || !iface->waitForSource(1000) || !iface->isReplicaValid()) {
-            qWarning() << "IpcClient::withInterface(): Service is not running";
-
-            if constexpr (std::is_void_v<ReturnType>)
-                return;
-            else
-                return ReturnType{};
+            // Reconnect: the service may have restarted since our initial connection
+            Instance().reconnect();
+            iface = Instance().m_interface;
+            if (iface.isNull() || !iface->waitForSource(1000) || !iface->isReplicaValid()) {
+                qWarning() << "IpcClient::withInterface(): Service is not running";
+                if constexpr (std::is_void_v<ReturnType>)
+                    return;
+                else
+                    return ReturnType{};
+            }
         }
 
         return func(iface);
@@ -41,7 +45,11 @@ public:
     {
         QSharedPointer<IpcInterfaceReplica> iface = Instance().m_interface;
         if (iface.isNull() || !iface->waitForSource(1000) || !iface->isReplicaValid()) {
-            return onFailure();
+            Instance().reconnect();
+            iface = Instance().m_interface;
+            if (iface.isNull() || !iface->waitForSource(1000) || !iface->isReplicaValid()) {
+                return onFailure();
+            }
         }
 
         return onSuccess(iface);
@@ -49,6 +57,7 @@ public:
 signals:
 
 private:
+    void reconnect();
     QRemoteObjectNode m_node;
     QSharedPointer<IpcInterfaceReplica> m_interface;
 };

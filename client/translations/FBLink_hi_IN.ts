@@ -258,34 +258,34 @@
     </message>
     <message>
         <location filename="../ui/controllers/connectionController.h" line="68"/>
-        <location filename="../ui/controllers/connectionController.cpp" line="124"/>
-        <location filename="../ui/controllers/connectionController.cpp" line="139"/>
-        <location filename="../ui/controllers/connectionController.cpp" line="145"/>
+        <location filename="../ui/controllers/connectionController.cpp" line="155"/>
+        <location filename="../ui/controllers/connectionController.cpp" line="170"/>
+        <location filename="../ui/controllers/connectionController.cpp" line="176"/>
         <source>Подключиться</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/connectionController.cpp" line="105"/>
+        <location filename="../ui/controllers/connectionController.cpp" line="136"/>
         <source>Подключение...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/connectionController.cpp" line="110"/>
+        <location filename="../ui/controllers/connectionController.cpp" line="141"/>
         <source>Подключено</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/connectionController.cpp" line="119"/>
+        <location filename="../ui/controllers/connectionController.cpp" line="150"/>
         <source>Переподключение...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/connectionController.cpp" line="129"/>
+        <location filename="../ui/controllers/connectionController.cpp" line="160"/>
         <source>Отключение...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/connectionController.cpp" line="134"/>
+        <location filename="../ui/controllers/connectionController.cpp" line="165"/>
         <source>Подготовка...</source>
         <translation type="unfinished"></translation>
     </message>
@@ -354,7 +354,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../core/controllers/coreController.cpp" line="488"/>
+        <location filename="../core/controllers/coreController.cpp" line="483"/>
         <source>Не удалось обновить конфигурацию перед подключением. Попробуйте ещё раз.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -7695,7 +7695,7 @@ While it offers a blend of security, stability, and speed, it&apos;s essential t
 <context>
     <name>VpnConnection</name>
     <message>
-        <location filename="../vpnconnection.cpp" line="482"/>
+        <location filename="../vpnconnection.cpp" line="646"/>
         <source>Mbps</source>
         <translation></translation>
     </message>
@@ -8021,12 +8021,12 @@ While it offers a blend of security, stability, and speed, it&apos;s essential t
 <context>
     <name>main2</name>
     <message>
-        <location filename="../ui/qml/main2.qml" line="274"/>
+        <location filename="../ui/qml/main2.qml" line="283"/>
         <source>Private key passphrase</source>
         <translation>निजी कुंजी पासफ़्रेज़</translation>
     </message>
     <message>
-        <location filename="../ui/qml/main2.qml" line="295"/>
+        <location filename="../ui/qml/main2.qml" line="304"/>
         <source>Save</source>
         <translation>सहेजें</translation>
     </message>
