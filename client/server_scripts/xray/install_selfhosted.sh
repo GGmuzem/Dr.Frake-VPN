@@ -8,8 +8,9 @@ CONTAINER_NAME="${CONTAINER_NAME:-amnezia-xray}"
 IMAGE_NAME="${IMAGE_NAME:-amnezia-xray}"
 CONFIG_DIR="${CONFIG_DIR:-/opt/amnezia/xray}"
 XRAY_SERVER_PORT="${XRAY_SERVER_PORT:-8443}"
-XRAY_SITE_NAME="${XRAY_SITE_NAME:-www.googletagmanager.com}"
+XRAY_SITE_NAME="${XRAY_SITE_NAME:-www.icloud.com}"
 XRAY_RELEASE="${XRAY_RELEASE:-v25.8.3}"
+XRAY_SHORT_IDS_COUNT="${XRAY_SHORT_IDS_COUNT:-8}"
 PUBLIC_HOST="${PUBLIC_HOST:-}"
 REBUILD_IMAGE=0
 FORCE_REGENERATE=0
@@ -168,12 +169,23 @@ else
   XRAY_CLIENT_ID="$(read_root_file "$CONFIG_DIR/xray_uuid.key" | tr -d '\r\n')"
 fi
 
-if [[ "$FORCE_REGENERATE" -eq 1 ]] || ! run_root test -s "$CONFIG_DIR/xray_short_id.key"; then
-  XRAY_SHORT_ID="$(openssl rand -hex 8 | tr -d '\r\n')"
-  write_root_file "$CONFIG_DIR/xray_short_id.key" 600 "$XRAY_SHORT_ID"
-else
-  XRAY_SHORT_ID="$(read_root_file "$CONFIG_DIR/xray_short_id.key" | tr -d '\r\n')"
+generate_mldsa65() {
+  docker_root run --rm --entrypoint xray "$IMAGE_NAME" mldsa65 | tr -d '\r'
+}
+
+XRAY_SHORT_IDS_FILE="$CONFIG_DIR/xray_short_ids.txt"
+if [[ "$FORCE_REGENERATE" -eq 1 ]] || ! run_root test -s "$XRAY_SHORT_IDS_FILE"; then
+  tmp_short_ids="$(mktemp)"
+  : > "$tmp_short_ids"
+  for _ in $(seq 1 "$XRAY_SHORT_IDS_COUNT"); do
+    openssl rand -hex 8 >> "$tmp_short_ids"
+  done
+  run_root install -m 600 "$tmp_short_ids" "$XRAY_SHORT_IDS_FILE"
+  rm -f "$tmp_short_ids"
 fi
+XRAY_SHORT_ID="$(read_root_file "$XRAY_SHORT_IDS_FILE" | head -n1 | tr -d '\r\n')"
+write_root_file "$CONFIG_DIR/xray_short_id.key" 600 "$XRAY_SHORT_ID"
+XRAY_SHORT_IDS_JSON_ARRAY="$(read_root_file "$XRAY_SHORT_IDS_FILE" | awk 'BEGIN{first=1; printf "["} {gsub(/[\r\n ]/,""); if(length($0)){if(first==0) printf ","; printf "\"%s\"", $0; first=0}} END{print "]"}')"
 
 if [[ "$FORCE_REGENERATE" -eq 1 ]] || ! run_root test -s "$CONFIG_DIR/xray_private.key" || ! run_root test -s "$CONFIG_DIR/xray_public.key"; then
   KEYPAIR="$(generate_keypair)"
@@ -184,6 +196,17 @@ if [[ "$FORCE_REGENERATE" -eq 1 ]] || ! run_root test -s "$CONFIG_DIR/xray_priva
 else
   XRAY_PRIVATE_KEY="$(read_root_file "$CONFIG_DIR/xray_private.key" | tr -d '\r\n')"
   XRAY_PUBLIC_KEY="$(read_root_file "$CONFIG_DIR/xray_public.key" | tr -d '\r\n')"
+fi
+
+if [[ "$FORCE_REGENERATE" -eq 1 ]] || ! run_root test -s "$CONFIG_DIR/xray_mldsa65_seed.key" || ! run_root test -s "$CONFIG_DIR/xray_mldsa65_verify.key"; then
+  MLDSA65_PAIR="$(generate_mldsa65)"
+  XRAY_MLDSA65_SEED="$(printf '%s\n' "$MLDSA65_PAIR" | awk -F': ' '/Seed:/ {print $2}')"
+  XRAY_MLDSA65_VERIFY="$(printf '%s\n' "$MLDSA65_PAIR" | awk -F': ' '/Verify:/ {print $2}')"
+  write_root_file "$CONFIG_DIR/xray_mldsa65_seed.key" 600 "$XRAY_MLDSA65_SEED"
+  write_root_file "$CONFIG_DIR/xray_mldsa65_verify.key" 600 "$XRAY_MLDSA65_VERIFY"
+else
+  XRAY_MLDSA65_SEED="$(read_root_file "$CONFIG_DIR/xray_mldsa65_seed.key" | tr -d '\r\n')"
+  XRAY_MLDSA65_VERIFY="$(read_root_file "$CONFIG_DIR/xray_mldsa65_verify.key" | tr -d '\r\n')"
 fi
 
 SERVER_JSON="$(cat <<EOF
@@ -208,15 +231,22 @@ SERVER_JSON="$(cat <<EOF
       "streamSettings": {
         "network": "tcp",
         "security": "reality",
+        "tcpSettings": {
+          "acceptProxyProtocol": false,
+          "header": {
+            "type": "none"
+          }
+        },
         "realitySettings": {
+          "show": false,
+          "xver": 0,
           "dest": "${XRAY_SITE_NAME}:443",
           "serverNames": [
             "${XRAY_SITE_NAME}"
           ],
           "privateKey": "${XRAY_PRIVATE_KEY}",
-          "shortIds": [
-            "${XRAY_SHORT_ID}"
-          ]
+          "mldsa65Seed": "${XRAY_MLDSA65_SEED}",
+          "shortIds": ${XRAY_SHORT_IDS_JSON_ARRAY}
         }
       }
     }
@@ -294,7 +324,9 @@ SNI:         ${XRAY_SITE_NAME}
 Address:     ${PUBLIC_HOST:-<set your server IP or hostname>}
 UUID:        ${XRAY_CLIENT_ID}
 Short ID:    ${XRAY_SHORT_ID}
+Short IDs:   ${XRAY_SHORT_IDS_JSON_ARRAY}
 Public key:  ${XRAY_PUBLIC_KEY}
+ML-DSA-65:   ${XRAY_MLDSA65_VERIFY}
 
 Quick checks:
   docker ps --format 'table {{.Names}}\t{{.Ports}}\t{{.Status}}'
@@ -307,6 +339,9 @@ Notes:
       ${CONFIG_DIR}/server.json
       ${CONFIG_DIR}/xray_uuid.key
       ${CONFIG_DIR}/xray_short_id.key
+      ${CONFIG_DIR}/xray_short_ids.txt
       ${CONFIG_DIR}/xray_public.key
       ${CONFIG_DIR}/xray_private.key
+      ${CONFIG_DIR}/xray_mldsa65_seed.key
+      ${CONFIG_DIR}/xray_mldsa65_verify.key
 EOF

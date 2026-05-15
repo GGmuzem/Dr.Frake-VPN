@@ -242,6 +242,11 @@ QJsonObject Deserialize(const QString &str, QString *alias, QString *errMessage)
             const auto sid = QUrl::fromPercentEncoding(query.queryItemValue("sid").toUtf8());
             QJsonIO::SetValue(stream, sid, { "realitySettings", "shortId" });
         }
+        if (query.hasQueryItem("pqv"))
+        {
+            const auto pqv = QUrl::fromPercentEncoding(query.queryItemValue("pqv").toUtf8());
+            QJsonIO::SetValue(stream, pqv, { "realitySettings", "mldsa65Verify" });
+        }
     }
 
     // assembling config
@@ -301,6 +306,10 @@ const QString Serialize(const VlessServerObject &server, const QString &alias)
         
         if (!server.spiderX.isEmpty()) {
             query.addQueryItem("spiderX", server.spiderX);
+        }
+
+        if (!server.mldsa65Verify.isEmpty()) {
+            query.addQueryItem("pqv", server.mldsa65Verify);
         }
     }
     

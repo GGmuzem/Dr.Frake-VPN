@@ -8,9 +8,10 @@ import (
 
 const (
 	defaultSelfHostedXrayPort      = 8443
-	defaultSelfHostedXraySNI       = "www.googletagmanager.com"
+	defaultSelfHostedXraySNI       = "www.icloud.com"
 	defaultSelfHostedXrayConfigDir = "/opt/amnezia/xray"
 	defaultSelfHostedXrayRelease   = "v25.8.3"
+	defaultSelfHostedXrayShortIDs  = 8
 )
 
 type selfHostedXrayBootstrapOptions struct {
@@ -162,12 +163,17 @@ else
   XRAY_CLIENT_ID="$(tr -d '\r\n' < "$CONFIG_DIR/xray_uuid.key")"
 fi
 
-if [ "$FORCE_REGENERATE" = "1" ] || [ ! -s "$CONFIG_DIR/xray_short_id.key" ]; then
-  XRAY_SHORT_ID="$(openssl rand -hex 8 | tr -d '\r\n')"
-  printf '%%s' "$XRAY_SHORT_ID" > "$CONFIG_DIR/xray_short_id.key"
-else
-  XRAY_SHORT_ID="$(tr -d '\r\n' < "$CONFIG_DIR/xray_short_id.key")"
+XRAY_SHORT_IDS_FILE="$CONFIG_DIR/xray_short_ids.txt"
+if [ "$FORCE_REGENERATE" = "1" ] || [ ! -s "$XRAY_SHORT_IDS_FILE" ]; then
+  : > "$XRAY_SHORT_IDS_FILE"
+  for _ in $(seq 1 %d); do
+    openssl rand -hex 8 >> "$XRAY_SHORT_IDS_FILE"
+  done
 fi
+# Single-id key kept for backward compatibility: first entry of the list
+head -n1 "$XRAY_SHORT_IDS_FILE" | tr -d '\r\n' > "$CONFIG_DIR/xray_short_id.key"
+XRAY_SHORT_ID="$(tr -d '\r\n' < "$CONFIG_DIR/xray_short_id.key")"
+XRAY_SHORT_IDS_JSON_ARRAY="$(awk 'BEGIN{first=1; printf "["} {gsub(/[\r\n ]/,""); if(length($0)){if(first==0) printf ","; printf "\"%%s\"", $0; first=0}} END{print "]"}' "$XRAY_SHORT_IDS_FILE")"
 
 if [ "$FORCE_REGENERATE" = "1" ] || [ ! -s "$CONFIG_DIR/xray_private.key" ] || [ ! -s "$CONFIG_DIR/xray_public.key" ]; then
   KEYPAIR="$(docker run --rm --entrypoint xray "$IMAGE_NAME" x25519 | tr -d '\r')"
@@ -178,6 +184,17 @@ if [ "$FORCE_REGENERATE" = "1" ] || [ ! -s "$CONFIG_DIR/xray_private.key" ] || [
 else
   XRAY_PRIVATE_KEY="$(tr -d '\r\n' < "$CONFIG_DIR/xray_private.key")"
   XRAY_PUBLIC_KEY="$(tr -d '\r\n' < "$CONFIG_DIR/xray_public.key")"
+fi
+
+if [ "$FORCE_REGENERATE" = "1" ] || [ ! -s "$CONFIG_DIR/xray_mldsa65_seed.key" ] || [ ! -s "$CONFIG_DIR/xray_mldsa65_verify.key" ]; then
+  MLDSA65_PAIR="$(docker run --rm --entrypoint xray "$IMAGE_NAME" mldsa65 | tr -d '\r')"
+  XRAY_MLDSA65_SEED="$(printf '%%s\n' "$MLDSA65_PAIR" | awk -F': ' '/Seed:/ {print $2}')"
+  XRAY_MLDSA65_VERIFY="$(printf '%%s\n' "$MLDSA65_PAIR" | awk -F': ' '/Verify:/ {print $2}')"
+  printf '%%s' "$XRAY_MLDSA65_SEED" > "$CONFIG_DIR/xray_mldsa65_seed.key"
+  printf '%%s' "$XRAY_MLDSA65_VERIFY" > "$CONFIG_DIR/xray_mldsa65_verify.key"
+else
+  XRAY_MLDSA65_SEED="$(tr -d '\r\n' < "$CONFIG_DIR/xray_mldsa65_seed.key")"
+  XRAY_MLDSA65_VERIFY="$(tr -d '\r\n' < "$CONFIG_DIR/xray_mldsa65_verify.key")"
 fi
 
 cat > "$CONFIG_DIR/server.json" <<EOF
@@ -202,15 +219,22 @@ cat > "$CONFIG_DIR/server.json" <<EOF
       "streamSettings": {
         "network": "tcp",
         "security": "reality",
+        "tcpSettings": {
+          "acceptProxyProtocol": false,
+          "header": {
+            "type": "none"
+          }
+        },
         "realitySettings": {
+          "show": false,
+          "xver": 0,
           "dest": "${XRAY_SITE_NAME}:443",
           "serverNames": [
             "${XRAY_SITE_NAME}"
           ],
           "privateKey": "${XRAY_PRIVATE_KEY}",
-          "shortIds": [
-            "${XRAY_SHORT_ID}"
-          ]
+          "mldsa65Seed": "${XRAY_MLDSA65_SEED}",
+          "shortIds": ${XRAY_SHORT_IDS_JSON_ARRAY}
         }
       }
     }
@@ -269,14 +293,16 @@ if [ "$READY" != "1" ]; then
   exit 1
 fi
 
-printf 'container_name=%%s\nport=%%s\nserver_name=%%s\npublic_key=%%s\nshort_id=%%s\nuuid=%%s\n' \
+printf 'container_name=%%s\nport=%%s\nserver_name=%%s\npublic_key=%%s\nshort_id=%%s\nuuid=%%s\nmldsa65_verify=%%s\nshort_ids_json=%%s\n' \
   "$CONTAINER_NAME" \
   "$XRAY_SERVER_PORT" \
   "$XRAY_SITE_NAME" \
   "$(tr -d '\r\n' < "$CONFIG_DIR/xray_public.key")" \
   "$(tr -d '\r\n' < "$CONFIG_DIR/xray_short_id.key")" \
-  "$(tr -d '\r\n' < "$CONFIG_DIR/xray_uuid.key")"
-`, shellQuote(opts.ContainerName), shellQuote(opts.ImageName), shellQuote(opts.ConfigDir), opts.Port, shellQuote(opts.SNI), shellQuote(defaultSelfHostedXrayRelease), boolToInt(opts.ForceRegenerate), boolToInt(opts.RebuildImage), selfHostedXrayDockerfile, selfHostedXrayStartScript)
+  "$(tr -d '\r\n' < "$CONFIG_DIR/xray_uuid.key")" \
+  "$(tr -d '\r\n' < "$CONFIG_DIR/xray_mldsa65_verify.key" 2>/dev/null)" \
+  "$XRAY_SHORT_IDS_JSON_ARRAY"
+`, shellQuote(opts.ContainerName), shellQuote(opts.ImageName), shellQuote(opts.ConfigDir), opts.Port, shellQuote(opts.SNI), shellQuote(defaultSelfHostedXrayRelease), boolToInt(opts.ForceRegenerate), boolToInt(opts.RebuildImage), selfHostedXrayDockerfile, selfHostedXrayStartScript, defaultSelfHostedXrayShortIDs)
 }
 
 func boolToInt(value bool) int {
