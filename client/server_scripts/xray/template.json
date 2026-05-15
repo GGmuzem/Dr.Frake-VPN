@@ -39,12 +39,17 @@
                     "tcpKeepAliveIdle": 45,
                     "tcpKeepAliveInterval": 45
                 },
+                "tcpSettings": {
+                    "header": {
+                        "type": "none"
+                    }
+                },
                 "realitySettings": {
                     "fingerprint": "chrome",
                     "serverName": "$XRAY_SITE_NAME",
                     "publicKey": "$XRAY_PUBLIC_KEY",
                     "shortId": "$XRAY_SHORT_ID",
-                    "spiderX": ""
+                    "spiderX": "/"
                 }
             }
         }

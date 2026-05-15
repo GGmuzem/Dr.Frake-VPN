@@ -323,7 +323,8 @@ void ExportController::generateXrayConfig(const QString &clientName)
         vlessServer.publicKey = realitySettings.value("publicKey").toString();
         vlessServer.shortId = realitySettings.value("shortId").toString();
         vlessServer.fingerprint = realitySettings.value("fingerprint").toString("chrome");
-        vlessServer.spiderX = realitySettings.value("spiderX").toString("");
+        vlessServer.spiderX = realitySettings.value("spiderX").toString("/");
+        vlessServer.mldsa65Verify = realitySettings.value("mldsa65Verify").toString("");
     }
 
     m_nativeConfigString = fblink::serialization::vless::Serialize(vlessServer, "FBLink");

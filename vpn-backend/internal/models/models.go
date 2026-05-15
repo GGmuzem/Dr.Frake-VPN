@@ -156,11 +156,13 @@ type VLESSServerTemplate struct {
 	ServerName    string `gorm:"not null"`
 	PublicKey     string `gorm:"not null"`
 	ShortID       string `gorm:"not null"`
+	ShortIDsJSON  string `gorm:"default:''"` // JSON-кодированный массив всех shortIds сервера
 	Fingerprint   string `gorm:"default:'chrome'"`
 	Flow          string `gorm:"default:'xtls-rprx-vision'"`
 	Network       string `gorm:"default:'tcp'"`
 	Security      string `gorm:"default:'reality'"`
-	SpiderX       string `gorm:"default:''"`
+	SpiderX       string `gorm:"default:'/'"`
+	MLDSA65Verify string `gorm:"default:''"` // post-quantum Reality public verify-key для клиента
 	ContainerName string `gorm:"default:'amnezia-xray'"`
 }
 

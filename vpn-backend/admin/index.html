@@ -399,7 +399,7 @@
         <div class="field"><label>SSH пароль</label><input id="serverPassword" type="password" placeholder="••••••••"></div>
         <div class="field"><label>VLESS address</label><input id="serverVlessAddress" type="text" placeholder="vpn.example.com или 1.2.3.4"></div>
         <div class="field"><label>VLESS port</label><input id="serverVlessPort" type="number" placeholder="8443"></div>
-        <div class="field"><label>VLESS server_name / SNI</label><input id="serverVlessServerName" type="text" placeholder="www.googletagmanager.com"></div>
+        <div class="field"><label>VLESS server_name / SNI</label><input id="serverVlessServerName" type="text" placeholder="www.icloud.com"></div>
         <div class="field"><label>VLESS public_key</label><input id="serverVlessPublicKey" type="text" placeholder="REALITY public key"></div>
         <div class="field"><label>VLESS short_id</label><input id="serverVlessShortId" type="text" placeholder="0123456789abcdef"></div>
         <div class="field"><label>VLESS fingerprint</label><input id="serverVlessFingerprint" type="text" placeholder="chrome"></div>
@@ -1141,11 +1141,12 @@
       document.getElementById('serverSaveButton').classList.remove('is-loading');
       ['serverName','serverRegion','serverCountryCode','serverHost','serverEndpoint','serverMaxPeers','serverAwgPort','serverPassword','serverVlessAddress','serverVlessPort','serverVlessServerName','serverVlessPublicKey','serverVlessShortId','serverVlessFingerprint','serverVlessFlow','serverVlessNetwork','serverVlessSecurity','serverVlessSpiderX','serverVlessContainerName'].forEach(id => document.getElementById(id).value = '');
       document.getElementById('serverVlessPort').value = '8443';
-      document.getElementById('serverVlessServerName').value = 'www.googletagmanager.com';
+      document.getElementById('serverVlessServerName').value = 'www.icloud.com';
       document.getElementById('serverVlessFingerprint').value = 'chrome';
       document.getElementById('serverVlessFlow').value = 'xtls-rprx-vision';
       document.getElementById('serverVlessNetwork').value = 'tcp';
       document.getElementById('serverVlessSecurity').value = 'reality';
+      document.getElementById('serverVlessSpiderX').value = '/';
       document.getElementById('serverVlessContainerName').value = 'amnezia-xray';
       document.getElementById('serverVipOnly').checked = false;
       document.getElementById('serverBootstrapSelfHostedXray').checked = true;

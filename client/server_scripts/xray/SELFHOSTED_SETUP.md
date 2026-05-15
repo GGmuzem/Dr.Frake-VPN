@@ -9,9 +9,10 @@ on a fresh VPS in a layout that the FBLink backend can auto-discover over SSH.
 - generates and persists:
   - `server.json`
   - `xray_uuid.key`
-  - `xray_short_id.key`
-  - `xray_public.key`
-  - `xray_private.key`
+  - `xray_short_id.key` (совместимость, всегда == первый элемент из `xray_short_ids.txt`)
+  - `xray_short_ids.txt` (8 short IDs, по строке на ID)
+  - `xray_public.key` / `xray_private.key` (Reality X25519 keypair)
+  - `xray_mldsa65_seed.key` / `xray_mldsa65_verify.key` (post-quantum ML-DSA-65 keypair)
 - recreates the docker container with `--restart always`
 - publishes the chosen TCP port
 - opens the local host firewall when possible
@@ -24,15 +25,18 @@ The backend VIP XRay auto-discovery reads these files over SSH:
 - `/opt/amnezia/xray/server.json`
 - `/opt/amnezia/xray/xray_uuid.key`
 - `/opt/amnezia/xray/xray_short_id.key`
+- `/opt/amnezia/xray/xray_short_ids.txt`
 - `/opt/amnezia/xray/xray_public.key`
 - `/opt/amnezia/xray/xray_private.key`
+- `/opt/amnezia/xray/xray_mldsa65_seed.key` (не разглашается)
+- `/opt/amnezia/xray/xray_mldsa65_verify.key` (отдаётся клиенту как `mldsa65Verify` / `pqv`)
 
 ## Recommended defaults
 
 - container: `amnezia-xray`
 - config dir: `/opt/amnezia/xray`
 - port: `8443`
-- SNI: `www.googletagmanager.com`
+- SNI: `www.icloud.com`
 
 ## Quick start on a new VPS
 
@@ -40,7 +44,7 @@ Copy the `xray` folder to the server and run:
 
 ```bash
 chmod +x ./install_selfhosted.sh
-./install_selfhosted.sh --port 8443 --sni www.googletagmanager.com
+./install_selfhosted.sh --port 8443 --sni www.icloud.com
 ```
 
 If you want a fixed public address in the printed summary:
@@ -48,7 +52,7 @@ If you want a fixed public address in the printed summary:
 ```bash
 ./install_selfhosted.sh \
   --port 8443 \
-  --sni www.googletagmanager.com \
+  --sni www.icloud.com \
   --public-host 138.124.101.69
 ```
 

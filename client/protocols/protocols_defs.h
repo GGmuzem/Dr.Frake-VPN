@@ -172,7 +172,7 @@ namespace fblink
             constexpr char PublicKeyPath[] = "/opt/fblink/xray/xray_public.key";
             constexpr char PrivateKeyPath[] = "/opt/fblink/xray/xray_private.key";
             constexpr char shortidPath[] = "/opt/fblink/xray/xray_short_id.key";
-            constexpr char defaultSite[] = "www.googletagmanager.com";
+            constexpr char defaultSite[] = "www.icloud.com";
 
             constexpr char defaultPort[] = "443";
             constexpr char defaultLocalProxyPort[] = "10808";

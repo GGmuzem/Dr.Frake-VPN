@@ -80,6 +80,9 @@ func xrayTemplateDefaults(template *models.VLESSServerTemplate, server *models.V
 	if template.Security == "" {
 		template.Security = "reality"
 	}
+	if template.SpiderX == "" {
+		template.SpiderX = "/"
+	}
 	if template.ContainerName == "" {
 		template.ContainerName = defaultXrayContainer
 	}
@@ -303,6 +306,7 @@ func fetchVLESSTemplateFromServer(server *models.VPNServer, existing *models.VLE
 	if err != nil {
 		return nil, err
 	}
+	mldsa65Verify, _ := readXrayFile(server, container, basePath+"/xray_mldsa65_verify.key")
 
 	var parsed map[string]interface{}
 	if err := json.Unmarshal([]byte(serverConfigRaw), &parsed); err != nil {
@@ -324,7 +328,8 @@ func fetchVLESSTemplateFromServer(server *models.VPNServer, existing *models.VLE
 		Flow:          "xtls-rprx-vision",
 		Network:       "tcp",
 		Security:      "reality",
-		SpiderX:       "",
+		SpiderX:       "/",
+		MLDSA65Verify: strings.TrimSpace(mldsa65Verify),
 		ContainerName: container,
 	}
 
@@ -359,6 +364,26 @@ func fetchVLESSTemplateFromServer(server *models.VPNServer, existing *models.VLE
 						if serverName, ok := serverNames[0].(string); ok {
 							template.ServerName = serverName
 						}
+					}
+					if shortIDs, ok := realitySettings["shortIds"].([]interface{}); ok && len(shortIDs) > 0 {
+						collected := make([]string, 0, len(shortIDs))
+						for _, item := range shortIDs {
+							if sid, ok := item.(string); ok {
+								sid = strings.TrimSpace(sid)
+								if sid != "" {
+									collected = append(collected, sid)
+								}
+							}
+						}
+						if len(collected) > 0 {
+							template.ShortID = collected[0]
+							if encoded, err := json.Marshal(collected); err == nil {
+								template.ShortIDsJSON = string(encoded)
+							}
+						}
+					}
+					if verify, ok := realitySettings["mldsa65Verify"].(string); ok && strings.TrimSpace(verify) != "" {
+						template.MLDSA65Verify = strings.TrimSpace(verify)
 					}
 				}
 			}
@@ -714,6 +739,17 @@ func vipDNSProxyRules(dnsConfig vipDNSConfig) []map[string]interface{} {
 func buildVLESSConfig(clientID string, server *models.VPNServer, template *models.VLESSServerTemplate, profiles []models.RoutingProfile, dnsConfig vipDNSConfig) map[string]interface{} {
 	xrayTemplateDefaults(template, server)
 
+	realitySettings := map[string]interface{}{
+		"fingerprint": template.Fingerprint,
+		"serverName":  template.ServerName,
+		"publicKey":   template.PublicKey,
+		"shortId":     template.ShortID,
+		"spiderX":     template.SpiderX,
+	}
+	if strings.TrimSpace(template.MLDSA65Verify) != "" {
+		realitySettings["mldsa65Verify"] = template.MLDSA65Verify
+	}
+
 	primaryOutbound := map[string]interface{}{
 		"protocol": "vless",
 		"settings": map[string]interface{}{
@@ -739,13 +775,12 @@ func buildVLESSConfig(clientID string, server *models.VPNServer, template *model
 				"tcpKeepAliveIdle":     45,
 				"tcpKeepAliveInterval": 45,
 			},
-			"realitySettings": map[string]interface{}{
-				"fingerprint": template.Fingerprint,
-				"serverName":  template.ServerName,
-				"publicKey":   template.PublicKey,
-				"shortId":     template.ShortID,
-				"spiderX":     template.SpiderX,
+			"tcpSettings": map[string]interface{}{
+				"header": map[string]interface{}{
+					"type": "none",
+				},
 			},
+			"realitySettings": realitySettings,
 		},
 	}
 
