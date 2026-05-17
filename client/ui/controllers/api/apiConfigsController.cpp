@@ -656,7 +656,7 @@ bool ApiConfigsController::renewYookassaSubscription(const QString &plan)
                                             m_apiServicesModel->getSelectedServiceProtocol(),
                                             QJsonObject() };
 
-    QJsonObject apiPayload;
+    QJsonObject apiPayload = gatewayRequestData.toJsonObject();
     apiPayload["plan"] = plan;
 
     QByteArray responseBody;
