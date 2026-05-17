@@ -36,14 +36,16 @@ type createPaymentRequest struct {
 	PromoCode string `json:"promo_code"`
 }
 
+const yooKassaVatCode5Percent = 7
+
 var planPrices = map[models.PlanType]struct {
 	Amount       float64
 	DurationDays int
 }{
-	models.PlanTrial:   {Amount: 5.00,    DurationDays: 3},
-	models.PlanBasic:   {Amount: 199.00,  DurationDays: 30},
-	models.PlanBasic3M: {Amount: 505.00,  DurationDays: 90},
-	models.PlanVIP:     {Amount: 399.00,  DurationDays: 30},
+	models.PlanTrial:   {Amount: 5.00, DurationDays: 3},
+	models.PlanBasic:   {Amount: 199.00, DurationDays: 30},
+	models.PlanBasic3M: {Amount: 505.00, DurationDays: 90},
+	models.PlanVIP:     {Amount: 399.00, DurationDays: 30},
 	models.PlanVIP3M:   {Amount: 1015.00, DurationDays: 90},
 }
 
@@ -61,12 +63,47 @@ func trialAvailableForUser(db *gorm.DB, userID uint) (bool, error) {
 	return successfulPayments == 0, err
 }
 
+func fiscalProductName(plan models.PlanType) string {
+	switch plan {
+	case models.PlanBasic:
+		return "Подписка премиум на сервис 1 мес"
+	case models.PlanBasic3M:
+		return "Подписка премиум на сервис 3 мес"
+	case models.PlanVIP:
+		return "Подписка вип на сервис 1 мес"
+	case models.PlanVIP3M:
+		return "Подписка вип на сервис 3 мес"
+	case models.PlanTrial:
+		return "Подписка премиум на сервис 3 дня"
+	default:
+		return fmt.Sprintf("Подписка на сервис %s", plan)
+	}
+}
+
+func yooKassaReceipt(email string, plan models.PlanType, amount float64) map[string]interface{} {
+	return map[string]interface{}{
+		"customer": map[string]interface{}{
+			"email": email,
+		},
+		"items": []map[string]interface{}{
+			{
+				"description":     fiscalProductName(plan),
+				"quantity":        1.0,
+				"amount":          map[string]interface{}{"value": fmt.Sprintf("%.2f", amount), "currency": "RUB"},
+				"vat_code":        yooKassaVatCode5Percent,
+				"payment_mode":    "full_prepayment",
+				"payment_subject": "service",
+			},
+		},
+	}
+}
+
 func paymentPreviewResponse(plan models.PlanType, promoCode string, app *promoApplication) gin.H {
 	applied := app.PromoCode != nil
 	return gin.H{
-		"plan":             plan,
-		"promo_code":       normalizePromoCode(promoCode),
-		"promo_applied":    applied,
+		"plan":          plan,
+		"promo_code":    normalizePromoCode(promoCode),
+		"promo_applied": applied,
 		"discount_percent": func() int {
 			if app.PromoCode == nil {
 				return 0
@@ -194,6 +231,12 @@ func (h *PaymentHandler) CreatePayment(c *gin.Context) {
 		return
 	}
 
+	var user models.User
+	if err := h.db.First(&user, userID).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Не удалось получить email для чека"})
+		return
+	}
+
 	// Создаём платёж в ЮKassa
 	idempotencyKey := uuid.New().String()
 	ykPayload := map[string]interface{}{
@@ -207,7 +250,8 @@ func (h *PaymentHandler) CreatePayment(c *gin.Context) {
 		},
 		"capture":             true,
 		"save_payment_method": true, // сохраняем карту для автосписания
-		"description":         fmt.Sprintf("Mr.Frake VPN — %s", planLabel(plan)),
+		"description":         fiscalProductName(plan),
+		"receipt":             yooKassaReceipt(user.Email, plan, promoApplication.FinalAmount),
 		"metadata": map[string]interface{}{
 			"user_id":    userID,
 			"plan":       plan,

@@ -152,7 +152,7 @@ void VpnConnection::onConnectionStateChanged(Vpn::ConnectionState state)
         || state == Vpn::ConnectionState::Disconnected
         || state == Vpn::ConnectionState::Error) {
 
-    auto container = m_settings->defaultContainer(m_settings->defaultServerIndex());
+    const DockerContainer container = m_lastContainer;
 
     IpcClient::withInterface([&](QSharedPointer<IpcInterfaceReplica> iface) {
         switch (state) {
@@ -254,6 +254,12 @@ void VpnConnection::connectToVpn(int serverIndex, const ServerCredentials &crede
     m_lastCredentials = credentials;
     m_lastContainer = container;
     m_lastVpnConfiguration = vpnConfiguration;
+
+    if (m_protocolStartInProgress) {
+        qDebug() << "VpnConnection::connectToVpn(): protocol start is in progress, queueing latest connect request";
+        m_connectRequestedDuringStart = true;
+        return;
+    }
 
     qDebug() << QString("Trying to connect to VPN, server index is %1, container is %2")
                         .arg(serverIndex)
@@ -417,9 +423,38 @@ void VpnConnection::startNewConnection(DockerContainer container, const QJsonObj
 
     createProtocolConnections();
 
-    if (ErrorCode err = m_vpnProtocol->start(); err != ErrorCode::NoError) {
+    m_protocolStartInProgress = true;
+    const ErrorCode err = m_vpnProtocol->start();
+    m_protocolStartInProgress = false;
+
+    if (m_userRequestedDisconnect) {
+        qDebug() << "VpnConnection::startNewConnection: disconnect was requested during protocol start";
+        QMetaObject::invokeMethod(this, &VpnConnection::disconnectFromVpn, Qt::QueuedConnection);
+        return;
+    }
+
+    if (m_connectRequestedDuringStart) {
+        qDebug() << "VpnConnection::startNewConnection: applying queued connect request after protocol start";
+        m_connectRequestedDuringStart = false;
+        QMetaObject::invokeMethod(
+            this,
+            [this]() {
+                connectToVpn(m_lastServerIndex, m_lastCredentials, m_lastContainer, m_lastVpnConfiguration);
+            },
+            Qt::QueuedConnection);
+        return;
+    }
+
+    if (err != ErrorCode::NoError) {
         setConnectionState(Vpn::ConnectionState::Error);
         emit vpnProtocolError(err);
+        return;
+    }
+
+    if (m_connectionState == Vpn::ConnectionState::Preparing
+        || m_connectionState == Vpn::ConnectionState::Connecting
+        || m_connectionState == Vpn::ConnectionState::Reconnecting) {
+        armStateWatchdog(m_connectionState);
     }
 }
 
@@ -481,8 +516,14 @@ void VpnConnection::createProtocolConnections()
 
 void VpnConnection::appendKillSwitchConfig()
 {
-    m_vpnConfiguration.insert(config_key::killSwitchOption, QVariant(m_settings->isKillSwitchEnabled()).toString());
-    m_vpnConfiguration.insert(config_key::allowedDnsServers, QVariant(m_settings->allowedDnsServers()).toJsonValue());
+    if (!m_vpnConfiguration.contains(config_key::killSwitchOption)) {
+        qWarning() << "VPN configuration has no kill-switch snapshot; using enabled default";
+        m_vpnConfiguration.insert(config_key::killSwitchOption, QStringLiteral("true"));
+    }
+    if (!m_vpnConfiguration.contains(config_key::allowedDnsServers)) {
+        qWarning() << "VPN configuration has no allowed-DNS snapshot; using empty list";
+        m_vpnConfiguration.insert(config_key::allowedDnsServers, QJsonArray());
+    }
 }
 
 void VpnConnection::appendSplitTunnelingConfig()
@@ -575,26 +616,12 @@ void VpnConnection::appendSplitTunnelingConfig()
     m_vpnConfiguration.insert(config_key::splitTunnelSites, sitesJsonArray);
     m_vpnConfiguration.insert("vipRoutingRulesMissing", missingExpectedManagedRouting);
 
-    Settings::AppsRouteMode appsRouteMode = Settings::AppsRouteMode::VpnAllApps;
-    QJsonArray appsJsonArray;
-    if (canUseAppSplitTunneling && m_settings->isAppsSplitTunnelingEnabled()) {
-        appsRouteMode = m_settings->getAppsRouteMode();
-
-        auto apps = m_settings->getVpnApps(appsRouteMode);
-        for (const auto &app : apps) {
-#ifdef Q_OS_ANDROID
-            // Android VpnService.Builder accepts application package names only.
-            if (!app.packageName.isEmpty()) {
-                appsJsonArray.append(app.packageName);
-            }
-#else
-            appsJsonArray.append(app.appPath.isEmpty() ? app.packageName : app.appPath);
-#endif
-        }
-
-        if (appsJsonArray.isEmpty()) {
-            appsRouteMode = Settings::AppsRouteMode::VpnAllApps;
-        }
+    Settings::AppsRouteMode appsRouteMode = static_cast<Settings::AppsRouteMode>(
+        m_vpnConfiguration.value(config_key::appSplitTunnelType).toInt(Settings::AppsRouteMode::VpnAllApps));
+    QJsonArray appsJsonArray = m_vpnConfiguration.value(config_key::splitTunnelApps).toArray();
+    if (!canUseAppSplitTunneling || appsJsonArray.isEmpty()) {
+        appsRouteMode = Settings::AppsRouteMode::VpnAllApps;
+        appsJsonArray = QJsonArray();
     }
 
     m_vpnConfiguration.insert(config_key::appSplitTunnelType, appsRouteMode);
@@ -611,7 +638,7 @@ void VpnConnection::appendSplitTunnelingConfig()
 
     qDebug() << QString("Site split tunneling is %1").arg(siteSplitStatus);
     qDebug() << QString("App split tunneling is %1, route mode is %2")
-                        .arg((canUseAppSplitTunneling && m_settings->isAppsSplitTunnelingEnabled()) ? "enabled" : "disabled")
+                        .arg((canUseAppSplitTunneling && !appsJsonArray.isEmpty()) ? "enabled" : "disabled")
                         .arg(appsRouteMode);
 }
 
@@ -699,6 +726,7 @@ void VpnConnection::disconnectFromVpn()
 {
     m_userRequestedDisconnect = true;
     clearRecoveryState();
+    m_connectRequestedDuringStart = false;
 
     // Stamp the disconnect time on a monotonic QElapsedTimer so connectToVpn's
     // desktop grace window can detect a rapid Connect-after-Disconnect and
@@ -719,8 +747,11 @@ void VpnConnection::disconnectFromVpn()
         m_protocolShutdownConn = QMetaObject::Connection();
     }
 
-    // Cancel any in-flight async start so it doesn't call setConnectionState
-    // after the user has requested a disconnect.
+    if (m_protocolStartInProgress) {
+        qDebug() << "VpnConnection::disconnectFromVpn(): protocol start is in progress, deferring stop";
+        setConnectionState(Vpn::ConnectionState::Disconnecting);
+        return;
+    }
 
 #if defined(Q_OS_IOS) || defined(MACOS_NE)
     // iOS/macOS NE use IosController directly; m_vpnProtocol is not set there.
@@ -865,6 +896,12 @@ void VpnConnection::handleStateWatchdogTimeout()
         return;
     }
 #endif
+
+    if (m_protocolStartInProgress) {
+        qWarning() << "State watchdog timeout while protocol start is still in progress; deferring recovery";
+        m_stateWatchdogTimer.start(5000);
+        return;
+    }
 
     if (m_connectionState == Vpn::ConnectionState::Disconnecting) {
         qWarning() << "Disconnect watchdog timeout: forcing disconnected state";

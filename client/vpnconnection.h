@@ -101,6 +101,8 @@ private:
    DockerContainer m_lastContainer = DockerContainer::None;
    bool m_reconnectScheduled = false;
    bool m_userRequestedDisconnect = false;
+   bool m_protocolStartInProgress = false;
+   bool m_connectRequestedDuringStart = false;
 
    void createProtocolConnections();
    void armStateWatchdog(Vpn::ConnectionState state);

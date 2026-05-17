@@ -285,34 +285,34 @@
     </message>
     <message>
         <location filename="../ui/controllers/connectionController.h" line="68"/>
-        <location filename="../ui/controllers/connectionController.cpp" line="155"/>
-        <location filename="../ui/controllers/connectionController.cpp" line="170"/>
-        <location filename="../ui/controllers/connectionController.cpp" line="176"/>
+        <location filename="../ui/controllers/connectionController.cpp" line="187"/>
+        <location filename="../ui/controllers/connectionController.cpp" line="202"/>
+        <location filename="../ui/controllers/connectionController.cpp" line="208"/>
         <source>Подключиться</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/connectionController.cpp" line="136"/>
+        <location filename="../ui/controllers/connectionController.cpp" line="168"/>
         <source>Подключение...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/connectionController.cpp" line="141"/>
+        <location filename="../ui/controllers/connectionController.cpp" line="173"/>
         <source>Подключено</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/connectionController.cpp" line="150"/>
+        <location filename="../ui/controllers/connectionController.cpp" line="182"/>
         <source>Переподключение...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/connectionController.cpp" line="160"/>
+        <location filename="../ui/controllers/connectionController.cpp" line="192"/>
         <source>Отключение...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/connectionController.cpp" line="165"/>
+        <location filename="../ui/controllers/connectionController.cpp" line="197"/>
         <source>Подготовка...</source>
         <translation type="unfinished"></translation>
     </message>
@@ -366,22 +366,22 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../core/controllers/coreController.cpp" line="418"/>
+        <location filename="../core/controllers/coreController.cpp" line="424"/>
         <source>Ошибка: конфигурация API недействительна</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../core/controllers/coreController.cpp" line="426"/>
+        <location filename="../core/controllers/coreController.cpp" line="432"/>
         <source>Ошибка: нет установленных контейнеров. Войдите в FBLink и получите конфигурацию.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../core/controllers/coreController.cpp" line="466"/>
+        <location filename="../core/controllers/coreController.cpp" line="419"/>
         <source>Обновление...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../core/controllers/coreController.cpp" line="483"/>
+        <location filename="../core/controllers/coreController.cpp" line="485"/>
         <source>Не удалось обновить конфигурацию перед подключением. Попробуйте ещё раз.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -7686,7 +7686,7 @@ While it offers a blend of security, stability, and speed, it&apos;s essential t
 <context>
     <name>VpnConnection</name>
     <message>
-        <location filename="../vpnconnection.cpp" line="646"/>
+        <location filename="../vpnconnection.cpp" line="673"/>
         <source>Mbps</source>
         <translation></translation>
     </message>

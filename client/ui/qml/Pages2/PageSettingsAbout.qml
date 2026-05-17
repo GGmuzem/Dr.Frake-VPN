@@ -164,6 +164,7 @@ PageType {
                 text: title
                 descriptionText: description
                 leftImageSource: imageSource
+                leftImageSize: (typeof iconSize !== "undefined") ? iconSize : 28
                 rightImageSource: (typeof rightImage !== "undefined") ? rightImage : ""
 
                 clickedFunction: handler
@@ -174,61 +175,6 @@ PageType {
 
         footer: ColumnLayout {
             width: listView.width
-
-            // ── Account section ───────────────────────────────────
-            ColumnLayout {
-                Layout.fillWidth: true
-                Layout.topMargin: 20
-                Layout.leftMargin: 16
-                Layout.rightMargin: 16
-                spacing: 8
-                visible: FBLinkController.isLoggedIn
-
-                // Logout button
-                Rectangle {
-                    Layout.fillWidth: true
-                    height: 48
-                    radius: 12
-                    color: logoutMouse.pressed
-                        ? Qt.rgba(239/255, 68/255, 68/255, 0.25)
-                        : (logoutMouse.containsMouse
-                            ? Qt.rgba(239/255, 68/255, 68/255, 0.15)
-                            : Qt.rgba(239/255, 68/255, 68/255, 0.08))
-                    border.color: Qt.rgba(239/255, 68/255, 68/255, 0.4)
-                    border.width: 1
-
-                    Behavior on color { ColorAnimation { duration: 120 } }
-
-                    RowLayout {
-                        anchors.centerIn: parent
-                        spacing: 8
-
-                        Text {
-                            text: "→"
-                            font.pixelSize: 16
-                            color: "#EF4444"
-                        }
-
-                        Text {
-                            text: qsTr("Выйти из аккаунта")
-                            font.pixelSize: 14
-                            font.weight: Font.Medium
-                            color: "#EF4444"
-                        }
-                    }
-
-                    MouseArea {
-                        id: logoutMouse
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: {
-                            FBLinkController.logout()
-                            PageController.goToPageHome()
-                        }
-                    }
-                }
-            }
 
             // Open source notice
             Rectangle {
@@ -278,6 +224,7 @@ PageType {
         readonly property string title: qsTr("Поддержка в мессенджерах")
         readonly property string description: "8 (996) 673-26-28"
         readonly property string imageSource: "qrc:/images/operator.png"
+        readonly property int iconSize: 32
         readonly property string rightImage: "qrc:/images/controls/copy.svg"
         readonly property var handler: function() {
             GC.copyToClipBoard("89966732628")
@@ -291,6 +238,7 @@ PageType {
         readonly property string title: qsTr("support@frakebit.com")
         readonly property string description: qsTr("По вопросам и жалобам")
         readonly property string imageSource: "qrc:/images/controls/mail.svg"
+        readonly property int iconSize: 28
         readonly property var handler: function() {
             Qt.openUrlExternally("mailto:support@frakebit.com")
         }

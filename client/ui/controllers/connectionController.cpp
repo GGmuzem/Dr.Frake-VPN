@@ -8,9 +8,11 @@
 
 #include "utilities.h"
 #include "core/controllers/vpnConfigurationController.h"
+#include "protocols/protocols_defs.h"
 #include "version.h"
 #include <QDateTime>
 #include <QFileInfo>
+#include <QJsonArray>
 #include <QSettings>
 
 ConnectionController::ConnectionController(const QSharedPointer<ServersModel> &serversModel,
@@ -74,6 +76,7 @@ void ConnectionController::openConnection()
     if (!serviceRunning)
     {
         emit connectionErrorOccurred(ErrorCode::FBLinkServiceNotRunning);
+        emit m_vpnConnection->connectionStateChanged(Vpn::ConnectionState::Disconnected);
         return;
     }
 #endif
@@ -85,6 +88,7 @@ void ConnectionController::openConnection()
 
     if (!m_containersModel->isSupportedByCurrentPlatform(container)) {
         emit connectionErrorOccurred(ErrorCode::NotSupportedOnThisPlatform);
+        emit m_vpnConnection->connectionStateChanged(Vpn::ConnectionState::Disconnected);
         return;
     }
 
@@ -97,6 +101,34 @@ void ConnectionController::openConnection()
     auto dns = m_serversModel->getDnsPair(serverIndex);
 
     auto vpnConfiguration = vpnConfigurationController.createVpnConfiguration(dns, serverConfig, containerConfig, container);
+
+    vpnConfiguration.insert(config_key::killSwitchOption, QVariant(m_settings->isKillSwitchEnabled()).toString());
+    vpnConfiguration.insert(config_key::allowedDnsServers, QVariant(m_settings->allowedDnsServers()).toJsonValue());
+
+    QSettings subscriptionSettings(QSettings::NativeFormat, QSettings::UserScope, "FBLinkVPN", "FBLinkVPN");
+    const bool canUseAppSplitTunneling = subscriptionSettings.value("subscriptionCanUseAppSplitTunneling", false).toBool();
+    Settings::AppsRouteMode appsRouteMode = Settings::AppsRouteMode::VpnAllApps;
+    QJsonArray appsJsonArray;
+    if (canUseAppSplitTunneling && m_settings->isAppsSplitTunnelingEnabled()) {
+        appsRouteMode = m_settings->getAppsRouteMode();
+        const auto apps = m_settings->getVpnApps(appsRouteMode);
+        for (const auto &app : apps) {
+#ifdef Q_OS_ANDROID
+            if (!app.packageName.isEmpty()) {
+                appsJsonArray.append(app.packageName);
+            }
+#else
+            appsJsonArray.append(app.appPath.isEmpty() ? app.packageName : app.appPath);
+#endif
+        }
+
+        if (appsJsonArray.isEmpty()) {
+            appsRouteMode = Settings::AppsRouteMode::VpnAllApps;
+        }
+    }
+    vpnConfiguration.insert(config_key::appSplitTunnelType, appsRouteMode);
+    vpnConfiguration.insert(config_key::splitTunnelApps, appsJsonArray);
+
     emit connectToVpn(serverIndex, credentials, container, vpnConfiguration);
 }
 

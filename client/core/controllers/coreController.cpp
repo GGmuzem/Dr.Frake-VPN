@@ -412,6 +412,12 @@ void CoreController::initPrepareConfigHandler()
             return;
         }
 
+        // Enter Preparing before potentially slow config/API validation so
+        // server selection and repeated connect clicks are fenced while the
+        // desktop UI waits for the current server's fresh config.
+        emit m_vpnConnection->connectionStateChanged(Vpn::ConnectionState::Preparing);
+        m_connectionController->setConnectionStateText(tr("Обновление..."));
+
         // 1) First check API config validity (this initiates a synchronous HTTP request if expired)
         if (!m_apiConfigsController->isConfigValid()) {
             qDebug() << "[FBLink] prepareConfig: apiConfigsController->isConfigValid() = false";
@@ -460,10 +466,6 @@ void CoreController::initPrepareConfigHandler()
         if (m_fbLinkController
             && (isBackendConfigSyncing || hasPendingRoutingSync || requiresServerConfigRefresh)) {
             qDebug() << "[FBLink] prepareConfig: backend config sync is in progress. Waiting for configFetched...";
-             
-            // Set state to Preparing IMMEDIATELY so the user sees a loading animation while waiting for API
-            emit m_vpnConnection->connectionStateChanged(Vpn::ConnectionState::Preparing);
-            m_connectionController->setConnectionStateText(tr("Обновление..."));
 
             std::shared_ptr<bool> triggered = std::make_shared<bool>(false);
 
@@ -504,9 +506,6 @@ void CoreController::initPrepareConfigHandler()
             });
             return;
         }
-
-        // 4) Only AFTER network checks succeed, emit Preparing.
-        emit m_vpnConnection->connectionStateChanged(Vpn::ConnectionState::Preparing);
 
         qDebug() << "[FBLink] prepareConfig: both valid, calling openConnection()";
         m_connectionController->openConnection();

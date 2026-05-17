@@ -111,6 +111,11 @@ func chargeAutoRenewal(db *gorm.DB, shopID, key string, sub models.Subscription)
 		return fmt.Errorf("неизвестный план: %s", sub.Plan)
 	}
 
+	var user models.User
+	if err := db.First(&user, sub.UserID).Error; err != nil {
+		return fmt.Errorf("получение email для чека: %w", err)
+	}
+
 	idempotencyKey := uuid.New().String()
 	payload := map[string]interface{}{
 		"amount": map[string]interface{}{
@@ -119,7 +124,8 @@ func chargeAutoRenewal(db *gorm.DB, shopID, key string, sub models.Subscription)
 		},
 		"capture":           true,
 		"payment_method_id": sub.PaymentMethodID,
-		"description":       fmt.Sprintf("Автопродление VPN %s (user_id=%d)", sub.Plan, sub.UserID),
+		"description":       fiscalProductName(sub.Plan),
+		"receipt":           yooKassaReceipt(user.Email, sub.Plan, priceInfo.Amount),
 		"metadata": map[string]interface{}{
 			"user_id":    sub.UserID,
 			"plan":       sub.Plan,

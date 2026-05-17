@@ -23,6 +23,8 @@ Item {
     property string leftImageSource
     property bool isLeftImageHoverEnabled: true
     property bool isSmallLeftImage: false
+    property int leftImageSlotSize: isSmallLeftImage ? 40 : 56
+    property int leftImageSize: isSmallLeftImage ? 20 : 28
 
     property alias rightButton: rightImage
     property alias eyeButton: eyeImage
@@ -124,9 +126,10 @@ Item {
 
             visible: leftImageSource ? true : false
 
-            Layout.preferredHeight: (rightImageSource || !isLeftImageHoverEnabled || isSmallLeftImage) ? 40 : 56
-            Layout.preferredWidth: (rightImageSource || !isLeftImageHoverEnabled || isSmallLeftImage)? 40 : 56
-            Layout.rightMargin: isSmallLeftImage ? 8 : (rightImageSource || !isLeftImageHoverEnabled) ? 16 : 0
+            Layout.preferredHeight: root.leftImageSlotSize
+            Layout.preferredWidth: root.leftImageSlotSize
+            Layout.rightMargin: isSmallLeftImage ? 8 : 0
+            Layout.alignment: Qt.AlignVCenter
 
             radius: 12
             color: FBLinkStyle.color.transparent
@@ -139,6 +142,11 @@ Item {
                 id: leftImage
 
                 anchors.centerIn: parent
+                width: Math.min(root.leftImageSize, leftImageBackground.width)
+                height: Math.min(root.leftImageSize, leftImageBackground.height)
+                fillMode: Image.PreserveAspectFit
+                sourceSize.width: width
+                sourceSize.height: height
                 source: leftImageSource
             }
         }
@@ -149,6 +157,8 @@ Item {
 
             property int textPixelSize: 18
             property int descriptionTextSize: 13
+
+            Layout.alignment: Qt.AlignVCenter
 
             ListItemTitleType {
                 text: root.text
@@ -226,7 +236,7 @@ Item {
             image: buttonImageSource
             imageColor: rightImageColor
 
-            Layout.alignment: Qt.AlignRight
+            Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
 
             Rectangle {
                 id: eyeImageBackground
@@ -263,7 +273,7 @@ Item {
             imageColor: rightImageColor
             visible: rightImageSource ? true : false
 
-            Layout.alignment: Qt.AlignRight
+            Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
 
             Rectangle {
                 id: rightImageBackground

@@ -134,7 +134,7 @@ ListViewType {
                         PageController.showNotificationMessage(qsTr("VIP only server"))
                         return
                     }
-                    if (ConnectionController.isConnected) {
+                    if (ConnectionController.isConnected || ConnectionController.isConnectionInProgress) {
                         PageController.showNotificationMessage(qsTr("Нельзя менять сервер во время активного подключения"))
                         return
                     }
