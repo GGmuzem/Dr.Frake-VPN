@@ -183,9 +183,7 @@
       border-color: rgba(0,200,255,.35);
     }
     .user-actions-menu {
-      position: absolute;
-      right: 0;
-      top: calc(100% + 8px);
+      position: fixed;
       min-width: 220px;
       max-width: min(320px, calc(100vw - 24px));
       padding: 8px;
@@ -194,13 +192,9 @@
       background: rgba(12,17,26,.96);
       box-shadow: 0 14px 34px rgba(0,0,0,.4);
       display: none;
-      z-index: 60;
+      z-index: 1000;
     }
     .user-actions-menu.open { display: block; }
-    .user-actions-menu.drop-up {
-      top: auto;
-      bottom: calc(100% + 8px);
-    }
     .user-actions-item {
       width: 100%;
       border: none;
@@ -684,7 +678,32 @@
     }
 
     function closeAllUserMenus() {
-      document.querySelectorAll('.user-actions-menu.open').forEach(menu => menu.classList.remove('open'));
+      document.querySelectorAll('.user-actions-menu.open').forEach(menu => {
+        menu.classList.remove('open');
+        menu.style.left = '';
+        menu.style.top = '';
+      });
+    }
+
+    function removeDetachedUserMenus() {
+      document.querySelectorAll('body > .user-actions-menu').forEach(menu => menu.remove());
+    }
+
+    function positionUserMenu(menu, trigger) {
+      const gap = 8;
+      const margin = 16;
+      const triggerRect = trigger.getBoundingClientRect();
+      const menuRect = menu.getBoundingClientRect();
+      const maxLeft = Math.max(margin, window.innerWidth - menuRect.width - margin);
+      const left = Math.min(Math.max(margin, triggerRect.right - menuRect.width), maxLeft);
+      let top = triggerRect.bottom + gap;
+      if (top + menuRect.height > window.innerHeight - margin) {
+        top = triggerRect.top - menuRect.height - gap;
+      }
+      const maxTop = Math.max(margin, window.innerHeight - menuRect.height - margin);
+      top = Math.min(Math.max(margin, top), maxTop);
+      menu.style.left = `${left}px`;
+      menu.style.top = `${top}px`;
     }
 
     function toggleUserMenu(event, userId) {
@@ -694,14 +713,9 @@
       const shouldOpen = !menu.classList.contains('open');
       closeAllUserMenus();
       if (shouldOpen) {
-        menu.classList.remove('drop-up');
-        const triggerRect = event.currentTarget.getBoundingClientRect();
-        const estimatedMenuHeight = 280;
-        const spaceBelow = window.innerHeight - triggerRect.bottom;
-        if (spaceBelow < estimatedMenuHeight) {
-          menu.classList.add('drop-up');
-        }
+        document.body.appendChild(menu);
         menu.classList.add('open');
+        positionUserMenu(menu, event.currentTarget);
       }
     }
 
@@ -726,6 +740,8 @@
     }
 
     function renderUsers() {
+      closeAllUserMenus();
+      removeDetachedUserMenus();
       const body = document.getElementById('usersBody');
       const search = normalizeText(document.getElementById('usersSearch')?.value);
       const roleFilter = document.getElementById('usersRoleFilter')?.value || '';
