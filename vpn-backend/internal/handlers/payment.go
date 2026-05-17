@@ -249,7 +249,7 @@ func (h *PaymentHandler) CreatePayment(c *gin.Context) {
 			"return_url": h.cfg.PaymentReturnURL,
 		},
 		"capture":             true,
-		"save_payment_method": true, // сохраняем карту для автосписания
+		"save_payment_method": false, // отключено, так как магазин в ЮKassa не поддерживает рекуррентные платежи
 		"description":         fiscalProductName(plan),
 		"receipt":             yooKassaReceipt(user.Email, plan, promoApplication.FinalAmount),
 		"metadata": map[string]interface{}{

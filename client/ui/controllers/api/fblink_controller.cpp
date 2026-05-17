@@ -1299,6 +1299,7 @@ void FBLinkController::createPayment(const QString &plan, const QString &promoCo
             }
         } else {
             logApiFailure("create-payment", reply);
+            qWarning().noquote() << "[FBLink API] create-payment response body:" << QString::fromUtf8(responseData);
 
             if (allowRefreshRetry && shouldRefreshToken(reply)) {
                 refreshAccessToken([this, plan, normalizedPromoCode]() {
@@ -1309,6 +1310,10 @@ void FBLinkController::createPayment(const QString &plan, const QString &promoCo
 
             QString errStr = obj.contains("error") ? obj["error"].toString()
                                                     : tr("Ошибка создания платежа: ") + reply->errorString();
+            if (obj.contains("details")) {
+                QJsonDocument detailsDoc(obj["details"].toObject());
+                errStr += "\n" + tr("Детали: ") + QString::fromUtf8(detailsDoc.toJson(QJsonDocument::Compact));
+            }
             emit paymentError(errStr);
         }
     });

@@ -382,7 +382,7 @@
     </message>
     <message>
         <location filename="../ui/controllers/api/fblink_controller.cpp" line="518"/>
-        <location filename="../ui/controllers/api/fblink_controller.cpp" line="1326"/>
+        <location filename="../ui/controllers/api/fblink_controller.cpp" line="1331"/>
         <source>Не выполнен вход в систему</source>
         <translation type="unfinished"></translation>
     </message>
@@ -407,27 +407,32 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/api/fblink_controller.cpp" line="1891"/>
+        <location filename="../ui/controllers/api/fblink_controller.cpp" line="1315"/>
+        <source>Детали: </source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/controllers/api/fblink_controller.cpp" line="1896"/>
         <source>Не удалось отправить отчёт. Диагностика скопирована в буфер обмена. %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/api/fblink_controller.cpp" line="1944"/>
-        <location filename="../ui/controllers/api/fblink_controller.cpp" line="2005"/>
-        <location filename="../ui/controllers/api/fblink_controller.cpp" line="2065"/>
-        <location filename="../ui/controllers/api/fblink_controller.cpp" line="2116"/>
+        <location filename="../ui/controllers/api/fblink_controller.cpp" line="1949"/>
+        <location filename="../ui/controllers/api/fblink_controller.cpp" line="2010"/>
+        <location filename="../ui/controllers/api/fblink_controller.cpp" line="2070"/>
+        <location filename="../ui/controllers/api/fblink_controller.cpp" line="2121"/>
         <source>Функция доступна только для VIP</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/api/fblink_controller.cpp" line="2122"/>
+        <location filename="../ui/controllers/api/fblink_controller.cpp" line="2127"/>
         <source>Код системного пресета не задан</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../ui/controllers/api/fblink_controller.cpp" line="374"/>
         <location filename="../ui/controllers/api/fblink_controller.cpp" line="825"/>
-        <location filename="../ui/controllers/api/fblink_controller.cpp" line="1414"/>
+        <location filename="../ui/controllers/api/fblink_controller.cpp" line="1419"/>
         <source>Ошибка сети: </source>
         <translation type="unfinished"></translation>
     </message>
@@ -445,16 +450,16 @@
         <location filename="../ui/controllers/api/fblink_controller.cpp" line="1172"/>
         <location filename="../ui/controllers/api/fblink_controller.cpp" line="1219"/>
         <location filename="../ui/controllers/api/fblink_controller.cpp" line="1269"/>
-        <location filename="../ui/controllers/api/fblink_controller.cpp" line="1829"/>
-        <location filename="../ui/controllers/api/fblink_controller.cpp" line="1950"/>
-        <location filename="../ui/controllers/api/fblink_controller.cpp" line="2011"/>
-        <location filename="../ui/controllers/api/fblink_controller.cpp" line="2071"/>
-        <location filename="../ui/controllers/api/fblink_controller.cpp" line="2128"/>
+        <location filename="../ui/controllers/api/fblink_controller.cpp" line="1834"/>
+        <location filename="../ui/controllers/api/fblink_controller.cpp" line="1955"/>
+        <location filename="../ui/controllers/api/fblink_controller.cpp" line="2016"/>
+        <location filename="../ui/controllers/api/fblink_controller.cpp" line="2076"/>
+        <location filename="../ui/controllers/api/fblink_controller.cpp" line="2133"/>
         <source>Необходимо войти в аккаунт</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/api/fblink_controller.cpp" line="1311"/>
+        <location filename="../ui/controllers/api/fblink_controller.cpp" line="1312"/>
         <source>Ошибка создания платежа: </source>
         <translation type="unfinished"></translation>
     </message>
@@ -3023,33 +3028,28 @@ And if you don&apos;t like the app, all the more support it - the donation will 
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageSettingsAbout.qml" line="213"/>
-        <source>Выйти из аккаунта</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../ui/qml/Pages2/PageSettingsAbout.qml" line="254"/>
+        <location filename="../ui/qml/Pages2/PageSettingsAbout.qml" line="200"/>
         <source>🏛 Основано на Amnezia (GNU GPL v3)
 Исходный код: amnezia.org</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageSettingsAbout.qml" line="278"/>
+        <location filename="../ui/qml/Pages2/PageSettingsAbout.qml" line="224"/>
         <source>Поддержка в мессенджерах</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageSettingsAbout.qml" line="284"/>
+        <location filename="../ui/qml/Pages2/PageSettingsAbout.qml" line="231"/>
         <source>Номер скопирован</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageSettingsAbout.qml" line="291"/>
+        <location filename="../ui/qml/Pages2/PageSettingsAbout.qml" line="238"/>
         <source>support@frakebit.com</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageSettingsAbout.qml" line="292"/>
+        <location filename="../ui/qml/Pages2/PageSettingsAbout.qml" line="239"/>
         <source>По вопросам и жалобам</source>
         <translation type="unfinished"></translation>
     </message>
