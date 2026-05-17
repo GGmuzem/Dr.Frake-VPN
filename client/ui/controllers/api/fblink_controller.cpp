@@ -1246,9 +1246,8 @@ void FBLinkController::previewPaymentWithPromo(const QString &plan, const QStrin
                 obj.value("discount_percent").toInt(),
                 obj.value("promo_applied").toBool());
         } else {
-            logApiFailure("payment-preview", reply);
-
             if (allowRefreshRetry && shouldRefreshToken(reply)) {
+                logApiFailure("payment-preview", reply);
                 refreshAccessToken([this, plan, normalizedPromoCode]() {
                     previewPaymentWithPromo(plan, normalizedPromoCode, false);
                 });
@@ -1257,6 +1256,14 @@ void FBLinkController::previewPaymentWithPromo(const QString &plan, const QStrin
 
             QString errStr = obj.contains("error") ? obj["error"].toString()
                                                     : tr("Не удалось проверить промокод");
+            const int httpStatus = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+            if (httpStatus >= 500 || httpStatus == 0) {
+                logApiFailure("payment-preview", reply);
+            } else {
+                qDebug().noquote()
+                    << QString("[FBLink API] payment-preview rejected: http=%1, message=\"%2\"")
+                          .arg(QString::number(httpStatus), errStr);
+            }
             emit paymentPreviewError(errStr);
         }
     });

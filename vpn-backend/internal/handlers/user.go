@@ -63,6 +63,15 @@ func (h *UserHandler) GetMe(c *gin.Context) {
 func (h *UserHandler) GetSubscription(c *gin.Context) {
 	userID := c.GetUint("user_id")
 
+	if err := reconcilePendingUserPayments(h.db, userID, h.cfg.YooKassaShopID, h.cfg.YooKassaKey); err != nil {
+		if isDatabaseBusyError(err) {
+			respondDatabaseBusy(c)
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to sync pending payments"})
+		return
+	}
+
 	// Пробный период доступен только до первой успешной покупки подписки.
 	trialAvailable, err := trialAvailableForUser(h.db, userID)
 	if err != nil {

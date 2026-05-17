@@ -41,6 +41,13 @@ PageType {
     readonly property bool wideLayout: GC.isWideWidth(width)
     readonly property real sideMargin: GC.pageHorizontalMargin(width)
     readonly property real maxContentWidth: GC.pageMaxWidth(width)
+    readonly property string subscriptionEndText: {
+        var endDate = new Date(FBLinkController.subscriptionEndDate)
+        if (isNaN(endDate.getTime())) {
+            return qsTr("в дату окончания подписки")
+        }
+        return endDate.toLocaleDateString(Qt.locale(), Locale.LongFormat)
+    }
 
     onSelectedPlanChanged: schedulePromoPreview()
     onSelectedPeriodChanged: schedulePromoPreview()
@@ -84,6 +91,20 @@ PageType {
         return root.promoCode.trim() === "" || root.promoPreviewReady
     }
 
+    function promoCodeInputError() {
+        var code = root.promoCode.trim()
+        if (code === "") {
+            return ""
+        }
+        if (code.length < 3) {
+            return qsTr("Введите минимум 3 символа промокода")
+        }
+        if (code.length > 32) {
+            return qsTr("Промокод не может быть длиннее 32 символов")
+        }
+        return ""
+    }
+
     function capturePendingPayment(planId) {
         root.pendingPaymentPlan = planId
         root.pendingSubscriptionPlanBeforePayment = FBLinkController.subscriptionPlan
@@ -119,6 +140,15 @@ PageType {
         promoPreviewTimer.stop()
         if (root.promoCode.trim() === "") {
             resetPromoPreview()
+            root.promoHint = ""
+            return
+        }
+        var localError = root.promoCodeInputError()
+        if (localError !== "") {
+            root.promoPreviewLoading = false
+            root.promoPreviewReady = false
+            root.promoApplied = false
+            root.promoPreviewError = localError
             root.promoHint = ""
             return
         }
@@ -1131,7 +1161,7 @@ PageType {
                             }
 
                             LabelTextType {
-                                text: qsTr("Действует до: ") + new Date(FBLinkController.subscriptionEndDate).toLocaleDateString(Qt.locale(), Locale.LongFormat)
+                                text: qsTr("Действует до: ") + root.subscriptionEndText
                                 font.pixelSize: 12
                                 color: FBLinkStyle.color.mutedGray
                             }
@@ -1154,76 +1184,15 @@ PageType {
                         anchors.leftMargin: 16; anchors.rightMargin: 16
                         spacing: 0
 
-                        // Auto-renew row
+                        // Payment method row
                         RowLayout {
                             Layout.fillWidth: true
-                            spacing: 12
-
-                            ColumnLayout {
-                                spacing: 3
-                                Layout.fillWidth: true
-
-                                LabelTextType {
-                                    text: qsTr("Автопродление")
-                                    font.pixelSize: 14
-                                    font.weight: 600
-                                    color: FBLinkStyle.color.paleGray
-                                }
-
-                                LabelTextType {
-                                    text: FBLinkController.autoRenew
-                                        ? qsTr("Спишем автоматически в день истечения")
-                                        : qsTr("Подписка не продлится сама")
-                                    font.pixelSize: 11
-                                    color: FBLinkStyle.color.mutedGray
-                                    wrapMode: Text.WordWrap
-                                    Layout.fillWidth: true
-                                }
-                            }
-
-                            // Toggle
-                            Rectangle {
-                                width: 46; height: 26; radius: 13
-                                color: FBLinkController.autoRenew
-                                    ? "#10B981"
-                                    : Qt.rgba(255, 255, 255, 0.12)
-                                Behavior on color { ColorAnimation { duration: 180 } }
-
-                                Rectangle {
-                                    width: 20; height: 20; radius: 10
-                                    color: "white"
-                                    anchors.verticalCenter: parent.verticalCenter
-                                    x: FBLinkController.autoRenew ? parent.width - width - 3 : 3
-                                    Behavior on x { NumberAnimation { duration: 180; easing.type: Easing.InOutQuad } }
-                                }
-
-                                MouseArea {
-                                    anchors.fill: parent
-                                    cursorShape: Qt.PointingHandCursor
-                                    onClicked: FBLinkController.setAutoRenew(!FBLinkController.autoRenew)
-                                }
-                            }
-                        }
-
-                        // Divider
-                        Rectangle {
-                            Layout.fillWidth: true
-                            height: 1
-                            color: Qt.rgba(255, 255, 255, 0.07)
-                            Layout.topMargin: 14
-                            Layout.bottomMargin: 14
-                        }
-
-                        // Card row
-                        RowLayout {
-                            Layout.fillWidth: true
-                            Layout.bottomMargin: 0
                             spacing: 12
 
                             Rectangle {
                                 width: 36; height: 36; radius: 10
                                 color: FBLinkController.cardSaved
-                                    ? Qt.rgba(16/255, 185/255, 129/255, 0.15)
+                                    ? Qt.rgba(239/255, 68/255, 68/255, 0.15)
                                     : Qt.rgba(255, 255, 255, 0.06)
 
                                 Image {
@@ -1233,7 +1202,7 @@ PageType {
                                     layer.enabled: true
                                     layer.effect: ColorOverlay {
                                         color: FBLinkController.cardSaved
-                                            ? "#10B981"
+                                            ? "#EF4444"
                                             : FBLinkStyle.color.mutedGray
                                     }
                                 }
@@ -1252,12 +1221,10 @@ PageType {
 
                                 LabelTextType {
                                     text: FBLinkController.cardSaved
-                                        ? qsTr("Карта привязана ✓")
-                                        : qsTr("Сохранится при следующей оплате")
+                                        ? qsTr("Карта привязана. Если удалить её сейчас, подписка закончится %1 и не продлится сама.").arg(root.subscriptionEndText)
+                                        : qsTr("Способ оплаты не сохранён. После окончания срока доступ придётся продлевать вручную.")
                                     font.pixelSize: 11
-                                    color: FBLinkController.cardSaved
-                                        ? "#10B981"
-                                        : FBLinkStyle.color.mutedGray
+                                    color: FBLinkStyle.color.mutedGray
                                     wrapMode: Text.WordWrap
                                     Layout.fillWidth: true
                                 }
@@ -1265,18 +1232,18 @@ PageType {
 
                             Rectangle {
                                 visible: FBLinkController.cardSaved
-                                width: 70; height: 30; radius: 8
+                                width: 128; height: 34; radius: 9
                                 color: deleteCardMouse.pressed
-                                    ? Qt.rgba(239/255, 68/255, 68/255, 0.25)
-                                    : Qt.rgba(239/255, 68/255, 68/255, 0.1)
-                                border.color: Qt.rgba(239/255, 68/255, 68/255, 0.4)
+                                    ? Qt.rgba(239/255, 68/255, 68/255, 0.30)
+                                    : Qt.rgba(239/255, 68/255, 68/255, 0.12)
+                                border.color: Qt.rgba(239/255, 68/255, 68/255, 0.55)
                                 border.width: 1
 
                                 LabelTextType {
                                     anchors.centerIn: parent
-                                    text: qsTr("Удалить")
+                                    text: qsTr("Удалить способ")
                                     font.pixelSize: 11
-                                    font.weight: 600
+                                    font.weight: 700
                                     color: "#EF4444"
                                 }
 
@@ -1308,10 +1275,27 @@ PageType {
                         spacing: 12
 
                         LabelTextType {
-                            text: qsTr("Удалить привязанную карту и отключить автосписание?")
-                            font.pixelSize: 13
-                            font.weight: 600
+                            text: qsTr("Удалить способ оплаты? Подписка НЕ продлится автоматически.")
+                            font.pixelSize: 14
+                            font.weight: 700
                             color: "#FF6B6B"
+                            wrapMode: Text.WordWrap
+                            Layout.fillWidth: true
+                        }
+
+                        LabelTextType {
+                            text: qsTr("После удаления карты списаний больше не будет. Когда текущий оплаченный срок закончится %1, доступ к платным серверам и функциям остановится, пока вы не оплатите подписку вручную.").arg(root.subscriptionEndText)
+                            font.pixelSize: 12
+                            color: FBLinkStyle.color.lightGray
+                            wrapMode: Text.WordWrap
+                            Layout.fillWidth: true
+                        }
+
+                        LabelTextType {
+                            text: qsTr("Это действие отключит автопродление сразу.")
+                            font.pixelSize: 12
+                            font.weight: 700
+                            color: "#FF9A9A"
                             wrapMode: Text.WordWrap
                             Layout.fillWidth: true
                         }
@@ -1331,8 +1315,9 @@ PageType {
 
                                 LabelTextType {
                                     anchors.centerIn: parent
-                                    text: qsTr("Отмена")
+                                    text: qsTr("Оставить продление")
                                     font.pixelSize: 13
+                                    font.weight: 600
                                     color: FBLinkStyle.color.lightGray
                                 }
                                 MouseArea {
@@ -1354,8 +1339,8 @@ PageType {
 
                                 LabelTextType {
                                     anchors.centerIn: parent
-                                    text: qsTr("Удалить")
-                                    font.pixelSize: 13
+                                    text: qsTr("Удалить карту")
+                                    font.pixelSize: 12
                                     font.weight: 600
                                     color: "#EF4444"
                                 }
@@ -1398,7 +1383,7 @@ PageType {
 
                     function onCardDeleted() {
                         root.mgmtError = ""
-                        PageController.showNotificationMessage(qsTr("Карта удалена, автосписание отключено"))
+                        PageController.showNotificationMessage(qsTr("Способ оплаты удалён. Автопродление отключено — после окончания срока подписку нужно продлить вручную."))
                     }
 
                     function onAutoRenewChanged(enabled) {

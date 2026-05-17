@@ -2,13 +2,20 @@ package handlers
 
 import (
 	"fmt"
+	"sync"
 	"time"
 	"vpn-backend/internal/models"
 
 	"gorm.io/gorm"
 )
 
+var subscriptionSchemaOnce sync.Map
+
 func ensureSubscriptionSchema(db *gorm.DB) error {
+	if _, ok := subscriptionSchemaOnce.Load(db); ok {
+		return nil
+	}
+
 	if !db.Migrator().HasColumn(&models.Subscription{}, "VIPAdBlockEnabled") {
 		if err := db.Migrator().AddColumn(&models.Subscription{}, "VIPAdBlockEnabled"); err != nil {
 			return err
@@ -32,6 +39,7 @@ func ensureSubscriptionSchema(db *gorm.DB) error {
 		}
 	}
 
+	subscriptionSchemaOnce.Store(db, struct{}{})
 	return nil
 }
 

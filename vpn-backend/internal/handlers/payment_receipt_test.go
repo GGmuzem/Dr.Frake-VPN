@@ -54,3 +54,13 @@ func TestYooKassaReceiptUsesCustomerEmailAndVat5Percent(t *testing.T) {
 		t.Fatalf("item amount value = %#v", got)
 	}
 }
+
+func TestYooKassaPaymentMethodForbidsSBP(t *testing.T) {
+	method := yooKassaBankCardOnlyPaymentMethod()
+	if got := method["type"]; got != "bank_card" {
+		t.Fatalf("payment method type = %#v, want bank_card", got)
+	}
+	if got := method["type"]; got == "sbp" {
+		t.Fatalf("payment method must not allow SBP")
+	}
+}

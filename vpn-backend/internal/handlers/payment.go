@@ -98,6 +98,12 @@ func yooKassaReceipt(email string, plan models.PlanType, amount float64) map[str
 	}
 }
 
+func yooKassaBankCardOnlyPaymentMethod() map[string]interface{} {
+	return map[string]interface{}{
+		"type": "bank_card",
+	}
+}
+
 func paymentPreviewResponse(plan models.PlanType, promoCode string, app *promoApplication) gin.H {
 	applied := app.PromoCode != nil
 	return gin.H{
@@ -249,6 +255,7 @@ func (h *PaymentHandler) CreatePayment(c *gin.Context) {
 			"return_url": h.cfg.PaymentReturnURL,
 		},
 		"capture":             true,
+		"payment_method_data": yooKassaBankCardOnlyPaymentMethod(),
 		"save_payment_method": false, // отключено, так как магазин в ЮKassa не поддерживает рекуррентные платежи
 		"description":         fiscalProductName(plan),
 		"receipt":             yooKassaReceipt(user.Email, plan, promoApplication.FinalAmount),
@@ -321,18 +328,19 @@ func (h *PaymentHandler) CreatePayment(c *gin.Context) {
 func (h *PaymentHandler) Webhook(c *gin.Context) {
 	var event map[string]interface{}
 	if err := c.ShouldBindJSON(&event); err != nil {
+		fmt.Printf("[webhook] invalid payload from ip=%s err=%v\n", c.ClientIP(), err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid payload"})
 		return
 	}
 
 	eventType, _ := event["event"].(string)
+	obj, _ := event["object"].(map[string]interface{})
+	ykPaymentID, _ := obj["id"].(string)
+	fmt.Printf("[webhook] received event=%s payment=%s ip=%s\n", eventType, ykPaymentID, c.ClientIP())
 	if eventType != "payment.succeeded" {
 		c.JSON(http.StatusOK, gin.H{"status": "ignored"})
 		return
 	}
-
-	obj, _ := event["object"].(map[string]interface{})
-	ykPaymentID, _ := obj["id"].(string)
 
 	// Верификация через re-fetch к YooKassa API.
 	// Защищает от подделки webhook — злоумышленник не может активировать
@@ -382,10 +390,12 @@ func (h *PaymentHandler) Webhook(c *gin.Context) {
 	})
 
 	if txErr != nil {
+		fmt.Printf("[webhook] processing failed payment=%s err=%v\n", ykPaymentID, txErr)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "webhook processing failed"})
 		return
 	}
 
+	fmt.Printf("[webhook] processed payment=%s\n", ykPaymentID)
 	c.JSON(http.StatusOK, gin.H{"status": "ok"})
 }
 

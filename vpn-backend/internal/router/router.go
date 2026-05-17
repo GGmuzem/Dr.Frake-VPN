@@ -1,8 +1,6 @@
 package router
 
 import (
-	"net"
-	"net/http"
 	"strings"
 	"time"
 	"vpn-backend/internal/config"
@@ -12,31 +10,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
-
-// YooKassa IP ranges для проверки webhook
-var yooKassaCIDRs = []string{
-	"185.71.76.0/27",
-	"185.71.77.0/27",
-	"77.75.153.0/24",
-	"77.75.156.0/24",
-}
-
-func isYooKassaIP(ip string) bool {
-	parsed := net.ParseIP(ip)
-	if parsed == nil {
-		return false
-	}
-	for _, cidr := range yooKassaCIDRs {
-		_, network, err := net.ParseCIDR(cidr)
-		if err != nil {
-			continue
-		}
-		if network.Contains(parsed) {
-			return true
-		}
-	}
-	return false
-}
 
 func New(db *gorm.DB, cfg *config.Config) *gin.Engine {
 	r := gin.Default()
@@ -107,16 +80,10 @@ func New(db *gorm.DB, cfg *config.Config) *gin.Engine {
 		// that only forward /api/v1/* to the backend.
 		api.GET("/tv", authH.TVApprovePage)
 
-		// Webhook — IP whitelist + rate limit
+		// Webhook — rate limited. The handler verifies the payment by fetching
+		// the payment status from YooKassa before activating a subscription.
 		api.POST("/payments/webhook",
 			middleware.RateLimit(webhookLimiter),
-			func(c *gin.Context) {
-				if !isYooKassaIP(c.ClientIP()) {
-					c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "forbidden"})
-					return
-				}
-				c.Next()
-			},
 			payH.Webhook,
 		)
 
