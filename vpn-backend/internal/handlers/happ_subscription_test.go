@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -125,6 +126,43 @@ func issueHappTokenForTest(t *testing.T, db *gorm.DB, cfg *config.Config, userID
 
 	parts := strings.Split(body.SubscriptionURL, "/")
 	return parts[len(parts)-1]
+}
+
+func TestCreateHappLinkUsesBase64DeepLinkPayload(t *testing.T) {
+	db := openHappSubscriptionDB(t)
+	cfg := &config.Config{PublicBaseURL: "https://srv.frakebit.com"}
+	seedHappUser(t, db, 1, models.PlanBasic, time.Now().Add(24*time.Hour))
+
+	handler := NewHappHandler(db, cfg)
+	recorder := httptest.NewRecorder()
+	context, _ := gin.CreateTestContext(recorder)
+	context.Set("user_id", uint(1))
+	context.Request = httptest.NewRequest(http.MethodPost, "/api/v1/me/happ-link", nil)
+	handler.CreateLink(context)
+
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected create link status 200, got %d body=%s", recorder.Code, recorder.Body.String())
+	}
+
+	var body struct {
+		SubscriptionURL string `json:"subscription_url"`
+		HappURL         string `json:"happ_url"`
+	}
+	if err := json.Unmarshal(recorder.Body.Bytes(), &body); err != nil {
+		t.Fatalf("decode create link response: %v", err)
+	}
+	if !strings.HasPrefix(body.HappURL, "happ://add/") {
+		t.Fatalf("expected Happ deep link to use add/base64 format, got %s", body.HappURL)
+	}
+
+	payload := strings.TrimPrefix(body.HappURL, "happ://add/")
+	decoded, err := base64.StdEncoding.DecodeString(payload)
+	if err != nil {
+		t.Fatalf("expected Happ payload to be standard base64: %v", err)
+	}
+	if string(decoded) != body.SubscriptionURL {
+		t.Fatalf("expected deep link payload %q, got %q", body.SubscriptionURL, string(decoded))
+	}
 }
 
 func TestHappSubscriptionAllowsPremiumVLESSWithoutVIPOnlyServers(t *testing.T) {

@@ -68,9 +68,17 @@ func (h *WebConfigHandler) configValue(key, fallback string) string {
 func webPlan(code, title string, monthlyPlan, threeMonthPlan models.PlanType) gin.H {
 	monthly := planPrices[monthlyPlan]
 	threeMonth := planPrices[threeMonthPlan]
+	description := "Быстрый защищенный доступ для ежедневной работы."
+	features := []string{"Безлимитный трафик", "Все основные платформы", "Быстрое подключение"}
+	if code == "vip" {
+		description = "Приоритетная сеть, Xray и расширенные функции приватности."
+		features = []string{"VLESS/Xray Reality", "VIP-серверы", "AdBlock DNS"}
+	}
 	return gin.H{
-		"code":  code,
-		"title": title,
+		"code":        code,
+		"title":       title,
+		"description": description,
+		"features":    features,
 		"periods": []gin.H{
 			{
 				"id":            monthlyPlan,

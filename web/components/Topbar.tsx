@@ -1,3 +1,4 @@
+import { Download } from "lucide-react";
 import { Brand } from "./Brand";
 
 export function Topbar() {
@@ -9,8 +10,8 @@ export function Topbar() {
           <a className="button button-ghost" href="/auth">
             Войти
           </a>
-          <a className="button button-primary" href="/#plans">
-            Купить подписку
+          <a className="button button-primary" href="/dashboard">
+            <Download size={16} /> Скачать
           </a>
         </div>
       </div>

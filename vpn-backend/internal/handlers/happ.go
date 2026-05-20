@@ -69,8 +69,12 @@ func (h *HappHandler) CreateLink(c *gin.Context) {
 	subscriptionURL := h.publicBaseURL(c) + "/api/v1/happ/sub/" + token
 	c.JSON(http.StatusOK, gin.H{
 		"subscription_url": subscriptionURL,
-		"happ_url":         "happ://add/" + url.QueryEscape(subscriptionURL),
+		"happ_url":         happAddURL(subscriptionURL),
 	})
+}
+
+func happAddURL(subscriptionURL string) string {
+	return "happ://add/" + base64.StdEncoding.EncodeToString([]byte(subscriptionURL))
 }
 
 // GET /api/v1/happ/sub/:token
@@ -111,6 +115,8 @@ func (h *HappHandler) Subscription(c *gin.Context) {
 	_ = h.db.Model(&models.HappSubscriptionToken{}).Where("id = ?", token.ID).Update("last_used_at", &now).Error
 
 	c.Header("Content-Type", "text/plain; charset=utf-8")
+	c.Header("Content-Disposition", `attachment; filename="fblink-happ.txt"`)
+	c.Header("Cache-Control", "no-store")
 	c.String(http.StatusOK, strings.Join(lines, "\n"))
 }
 

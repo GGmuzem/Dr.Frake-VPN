@@ -26,6 +26,13 @@ export type SiteConfig = {
   };
 };
 
+type SiteConfigInput = Partial<Omit<SiteConfig, "plans">> & {
+  plans?: Array<Partial<Omit<Plan, "periods">> & {
+    code?: Plan["code"];
+    periods?: Array<Partial<PlanPeriod> & { id?: PlanId }>;
+  }>;
+};
+
 export const defaultSiteConfig: SiteConfig = {
   brand: "FBLink VPN",
   plans: [
@@ -37,7 +44,7 @@ export const defaultSiteConfig: SiteConfig = {
         { id: "basic", label: "1 месяц", duration_days: 30, amount: 199, currency: "RUB" },
         { id: "basic_3m", label: "3 месяца", duration_days: 90, amount: 505, currency: "RUB" },
       ],
-      features: ["Безлимитный трафик", "Все основные платформы", "iOS через Happ"],
+      features: ["Безлимитный трафик", "Все основные платформы", "Быстрое подключение"],
     },
     {
       code: "vip",
@@ -67,6 +74,33 @@ export function visiblePlanIds(config: SiteConfig): PlanId[] {
   return config.plans.flatMap((plan) => plan.periods.map((period) => period.id));
 }
 
+export function normalizeSiteConfig(data: SiteConfigInput | null | undefined): SiteConfig {
+  const incomingPlans = Array.isArray(data?.plans) ? data.plans : [];
+  const plans = defaultSiteConfig.plans.map((fallbackPlan) => {
+    const incomingPlan = incomingPlans.find((plan) => plan?.code === fallbackPlan.code);
+    const incomingPeriods = Array.isArray(incomingPlan?.periods) ? incomingPlan.periods : [];
+    return {
+      ...fallbackPlan,
+      ...incomingPlan,
+      description: incomingPlan?.description || fallbackPlan.description,
+      features: Array.isArray(incomingPlan?.features) && incomingPlan.features.length > 0 ? incomingPlan.features : fallbackPlan.features,
+      periods: fallbackPlan.periods.map((fallbackPeriod) => {
+        const incomingPeriod = incomingPeriods.find((period) => period?.id === fallbackPeriod.id);
+        return { ...fallbackPeriod, ...incomingPeriod };
+      }),
+    } as Plan;
+  });
+
+  return {
+    ...defaultSiteConfig,
+    ...data,
+    brand: "FBLink VPN",
+    plans,
+    downloads: { ...defaultSiteConfig.downloads, ...data?.downloads },
+    support: { ...defaultSiteConfig.support, ...data?.support },
+  };
+}
+
 export function formatRub(amount: number): string {
   return new Intl.NumberFormat("ru-RU", {
     style: "currency",
@@ -88,13 +122,8 @@ export async function loadSiteConfig(): Promise<SiteConfig> {
     if (!response.ok) {
       return defaultSiteConfig;
     }
-    const data = (await response.json()) as SiteConfig;
-    return {
-      ...defaultSiteConfig,
-      ...data,
-      downloads: { ...defaultSiteConfig.downloads, ...data.downloads },
-      support: { ...defaultSiteConfig.support, ...data.support },
-    };
+    const data = (await response.json()) as SiteConfigInput;
+    return normalizeSiteConfig(data);
   } catch {
     return defaultSiteConfig;
   }

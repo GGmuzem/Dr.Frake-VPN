@@ -7,18 +7,17 @@ import {
   CheckCircle2,
   CreditCard,
   Download,
-  ExternalLink,
   Home,
   Laptop,
   LogOut,
   Mail,
   MonitorDown,
   Send,
-  ShieldCheck,
   Smartphone,
 } from "lucide-react";
 import { Brand } from "./Brand";
-import { defaultSiteConfig, formatRub } from "../lib/site-config";
+import Pricing04 from "@/components/ui/ruixen-pricing-04";
+import { defaultSiteConfig } from "../lib/site-config";
 import type { PlanId, SiteConfig } from "../lib/site-config";
 
 type Session = {
@@ -33,7 +32,6 @@ type Session = {
 };
 
 type HappLink = {
-  subscription_url: string;
   happ_url: string;
 };
 
@@ -68,7 +66,6 @@ export function Dashboard() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [loadingPayment, setLoadingPayment] = useState<PlanId | "">("");
-  const [happLink, setHappLink] = useState("");
 
   useEffect(() => {
     let active = true;
@@ -131,11 +128,11 @@ export function Dashboard() {
     try {
       const response = await fetch("/api/happ-link", { method: "POST" });
       const data = (await response.json()) as HappLink & { error?: string };
-      if (!response.ok) throw new Error(data.error ?? "Не удалось создать ссылку для Happ");
-      setHappLink(data.subscription_url);
-      window.location.href = data.happ_url || data.subscription_url;
+      if (!response.ok) throw new Error(data.error ?? "Не удалось создать ссылку");
+      if (!data.happ_url) throw new Error("Не удалось получить ссылку");
+      window.location.href = data.happ_url;
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Ошибка Happ-ссылки");
+      setError(err instanceof Error ? err.message : "Ошибка ссылки");
     }
   }
 
@@ -189,7 +186,7 @@ export function Dashboard() {
               <CreditCard size={17} /> Подписка
             </a>
             <a href="#downloads">
-              <Download size={17} /> Скачивание
+              <Download size={17} /> Скачать
             </a>
             <button onClick={logout}>
               <LogOut size={17} /> Выйти
@@ -212,7 +209,7 @@ export function Dashboard() {
                 <p className="muted">{session.user.email}</p>
               </div>
             </div>
-            <div>
+            <div className="subscription-date">
               <p className="muted">Действует до</p>
               <strong>{expiresAt}</strong>
             </div>
@@ -220,50 +217,27 @@ export function Dashboard() {
 
           {(message || error || selectedPlan) && (
             <motion.div className={`notice ${error ? "error" : ""}`} variants={enter}>
-              {error || message || `Выбран тариф ${selectedPlan}. Завершите оплату ниже.`}
+              {error || message || "Тариф выбран. Завершите оплату ниже."}
             </motion.div>
           )}
 
-          <motion.section className="grid-two" id="subscription" variants={enterGroup}>
-            {config.plans.map((plan) => (
-              <motion.article
-                className={`plan-card ${plan.code === "vip" ? "vip" : ""}`}
-                key={plan.code}
-                variants={enter}
-                whileHover={reduceMotion ? undefined : { y: -2 }}
-              >
-                <div className="plan-title">
-                  <h3>{plan.title}</h3>
-                  <ShieldCheck size={21} color="#EAB308" />
-                </div>
-                <p className="muted">{plan.description}</p>
-                <div className="periods">
-                  {plan.periods.map((period) => (
-                    <motion.button
-                      className="period"
-                      disabled={loadingPayment !== ""}
-                      key={period.id}
-                      onClick={() => createPayment(period.id)}
-                      type="button"
-                      whileTap={reduceMotion ? undefined : { scale: 0.985 }}
-                    >
-                      <strong>{period.label}</strong>
-                      <div className="plan-price">{formatRub(period.amount)}</div>
-                      <span className="muted">{loadingPayment === period.id ? "Создаем платеж..." : "Оплатить"}</span>
-                    </motion.button>
-                  ))}
-                </div>
-              </motion.article>
-            ))}
+          <motion.section id="subscription" variants={enter}>
+            <Pricing04
+              initialPlan={selectedPlan}
+              loadingPlan={loadingPayment}
+              mode="payment"
+              onSelect={createPayment}
+              plans={config.plans}
+            />
           </motion.section>
 
           <motion.section className="panel" id="downloads" variants={enter}>
-            <h3>Скачать приложение</h3>
-            <p className="muted">Выберите платформу. Для iOS используйте Happ и личную подписку FBLink VPN.</p>
+            <h3>Скачать FBLink VPN</h3>
+            <p className="muted">Выберите платформу. Основные приложения скачиваются напрямую.</p>
             <div className="downloads">
               {(["android", "windows", "macos", "linux", "happ"] as const).map((platform) => {
                 const Icon = platformIcons[platform];
-                const label = platform === "happ" ? "iOS Happ" : platform === "macos" ? "macOS" : platform;
+                const label = platform === "happ" ? "iPhone" : platform === "macos" ? "macOS" : platform;
                 return (
                   <motion.div
                     className="download-card"
@@ -275,7 +249,7 @@ export function Dashboard() {
                     <strong>{label}</strong>
                     {platform === "happ" ? (
                       <button className="button button-primary" onClick={openHapp} type="button">
-                        Открыть в Happ
+                        Открыть
                       </button>
                     ) : (
                       <a className="button button-secondary" href={config.downloads[platform]}>
@@ -286,15 +260,6 @@ export function Dashboard() {
                 );
               })}
             </div>
-            {happLink && (
-              <motion.p
-                animate={{ opacity: 1, y: 0 }}
-                className="muted happ-manual-link"
-                initial={reduceMotion ? false : { opacity: 0, y: 8 }}
-              >
-                Ссылка для ручного добавления в Happ: {happLink}
-              </motion.p>
-            )}
           </motion.section>
 
           <motion.section className="grid-two" variants={enterGroup}>
@@ -311,13 +276,12 @@ export function Dashboard() {
               </div>
             </motion.div>
             <motion.div className="panel support-panel" variants={enter}>
-              <h3>iOS через Happ</h3>
+              <h3>Данные аккаунта</h3>
               <p className="muted">
-                Для Premium и VIP сайт выдает VLESS/Xray подписку. Остальные платформы используют приложения FBLink.
+                Почта привязана к подписке. При смене устройства войдите в кабинет
+                и скачайте нужное приложение заново.
               </p>
-              <a className="button button-secondary" href={config.downloads.happ} target="_blank" rel="noreferrer">
-                <ExternalLink size={17} /> Найти Happ
-              </a>
+              <span className="account-email">{session.user.email}</span>
             </motion.div>
           </motion.section>
         </motion.section>
