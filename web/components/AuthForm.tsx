@@ -2,7 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ArrowRight, Eye, EyeOff, Mail, ShieldCheck } from "lucide-react";
+import { ArrowLeft, ArrowRight, Eye, EyeOff, Mail, ShieldCheck } from "lucide-react";
 import TravelConnectSignIn from "@/components/ui/travel-connect-signin";
 import { Brand } from "./Brand";
 
@@ -16,12 +16,12 @@ const COPY: Record<Mode, { title: string; subtitle: string; cta: string }> = {
   },
   register: {
     title: "Создание аккаунта",
-    subtitle: "Email — это ваш логин на всех устройствах. Пароль от 8 символов.",
-    cta: "Продолжить",
+    subtitle: "Email станет вашим логином на всех устройствах. Пароль от 8 символов.",
+    cta: "Создать аккаунт",
   },
   reset: {
-    title: "Сброс пароля",
-    subtitle: "Введите email — пришлем код подтверждения.",
+    title: "Восстановление пароля",
+    subtitle: "Введите email — пришлем код для сброса пароля.",
     cta: "Отправить код",
   },
 };
@@ -91,13 +91,13 @@ export function AuthForm() {
     setIsCodeSent(false);
     setMessage("");
     setError("");
+    setCode("");
   }
 
-  const buttonLabel = loading
-    ? "Подождите..."
-    : isCodeSent && mode !== "login"
-    ? "Подтвердить"
-    : COPY[mode].cta;
+  const showPassword = mode === "login" || (mode === "register" && !isCodeSent) || (mode === "reset" && isCodeSent);
+  const showCode = isCodeSent && mode !== "login";
+
+  const buttonLabel = loading ? "Подождите..." : showCode ? "Подтвердить" : COPY[mode].cta;
 
   return (
     <main className="auth-wrap">
@@ -109,17 +109,7 @@ export function AuthForm() {
           </span>
           <h1>{COPY[mode].title}</h1>
           <p className="muted">{COPY[mode].subtitle}</p>
-          <div className="tabs">
-            <button className={mode === "login" ? "active" : ""} onClick={() => switchMode("login")} type="button">
-              Вход
-            </button>
-            <button className={mode === "register" ? "active" : ""} onClick={() => switchMode("register")} type="button">
-              Регистрация
-            </button>
-            <button className={mode === "reset" ? "active" : ""} onClick={() => switchMode("reset")} type="button">
-              Пароль
-            </button>
-          </div>
+
           <form className="form" onSubmit={onSubmit}>
             <label>
               <span className="form-label">
@@ -134,9 +124,23 @@ export function AuthForm() {
                 required
               />
             </label>
-            {(mode !== "register" || !isCodeSent) && (
+
+            {showPassword && (
               <label>
-                <span className="form-label">Пароль</span>
+                <span className="form-label-row">
+                  <span className="form-label">
+                    {mode === "reset" ? "Новый пароль" : "Пароль"}
+                  </span>
+                  {mode === "login" && (
+                    <button
+                      className="link-button"
+                      onClick={() => switchMode("reset")}
+                      type="button"
+                    >
+                      Забыли пароль?
+                    </button>
+                  )}
+                </span>
                 <span className="password-control">
                   <input
                     type={isPasswordVisible ? "text" : "password"}
@@ -158,7 +162,8 @@ export function AuthForm() {
                 </span>
               </label>
             )}
-            {isCodeSent && (
+
+            {showCode && (
               <label>
                 <span className="form-label">Код из email</span>
                 <input
@@ -167,20 +172,51 @@ export function AuthForm() {
                   inputMode="numeric"
                   pattern="[0-9]*"
                   placeholder="6-значный код"
+                  autoComplete="one-time-code"
                   required
                 />
               </label>
             )}
+
             {message && <div className="notice">{message}</div>}
             {error && <div className="notice error">{error}</div>}
+
             <button className="button button-primary auth-submit" disabled={loading} type="submit">
               <span>{buttonLabel}</span>
               <ArrowRight size={16} />
             </button>
-            <p className="auth-fineprint">
-              Продолжая, вы соглашаетесь с условиями подписки. Без автопродления — оплата вручную.
-            </p>
+
           </form>
+
+          <div className="auth-switch">
+            {mode === "login" && (
+              <p>
+                Нет аккаунта?{" "}
+                <button className="link-button" onClick={() => switchMode("register")} type="button">
+                  Создать
+                </button>
+              </p>
+            )}
+            {mode === "register" && (
+              <p>
+                Уже есть аккаунт?{" "}
+                <button className="link-button" onClick={() => switchMode("login")} type="button">
+                  Войти
+                </button>
+              </p>
+            )}
+            {mode === "reset" && (
+              <p>
+                <button className="link-button link-button-with-icon" onClick={() => switchMode("login")} type="button">
+                  <ArrowLeft size={14} /> Назад ко входу
+                </button>
+              </p>
+            )}
+          </div>
+
+          <p className="auth-fineprint">
+            Продолжая, вы соглашаетесь с условиями подписки. Без автопродления — оплата вручную.
+          </p>
         </div>
       </TravelConnectSignIn>
     </main>
