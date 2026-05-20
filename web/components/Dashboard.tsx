@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { motion, useReducedMotion } from "motion/react";
 import {
   CheckCircle2,
   CreditCard,
@@ -44,9 +45,24 @@ const platformIcons = {
   happ: Smartphone,
 };
 
+const enter = {
+  hidden: { opacity: 0, y: 16 },
+  show: { opacity: 1, y: 0 },
+};
+
+const enterGroup = {
+  hidden: {},
+  show: {
+    transition: {
+      staggerChildren: 0.06,
+    },
+  },
+};
+
 export function Dashboard() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const reduceMotion = useReducedMotion();
   const [session, setSession] = useState<Session | null>(null);
   const [config, setConfig] = useState<SiteConfig>(defaultSiteConfig);
   const [message, setMessage] = useState("");
@@ -131,10 +147,15 @@ export function Dashboard() {
   if (!session) {
     return (
       <main className="page-shell">
-        <div className="container" style={{ padding: 32 }}>
+        <motion.div
+          animate={{ opacity: 1, y: 0 }}
+          className="container loading-state"
+          initial={reduceMotion ? false : { opacity: 0, y: 10 }}
+          transition={{ duration: 0.25 }}
+        >
           <Brand />
           <p className="muted">Загружаем кабинет...</p>
-        </div>
+        </motion.div>
       </main>
     );
   }
@@ -152,7 +173,13 @@ export function Dashboard() {
         </div>
       </header>
       <div className="container dashboard-shell">
-        <aside className="panel sidebar">
+        <motion.aside
+          animate="show"
+          className="panel sidebar"
+          initial={reduceMotion ? false : "hidden"}
+          transition={{ duration: 0.32, ease: "easeOut" }}
+          variants={enter}
+        >
           <Brand />
           <nav aria-label="Кабинет">
             <a className="active" href="#home">
@@ -168,9 +195,14 @@ export function Dashboard() {
               <LogOut size={17} /> Выйти
             </button>
           </nav>
-        </aside>
-        <section className="dashboard-main">
-          <section id="home" className="panel subscription-panel">
+        </motion.aside>
+        <motion.section
+          animate="show"
+          className="dashboard-main"
+          initial={reduceMotion ? false : "hidden"}
+          variants={enterGroup}
+        >
+          <motion.section className="panel subscription-panel" id="home" variants={enter}>
             <div className="subscription-state">
               <span className="success-icon">
                 <CheckCircle2 size={26} />
@@ -184,17 +216,22 @@ export function Dashboard() {
               <p className="muted">Действует до</p>
               <strong>{expiresAt}</strong>
             </div>
-          </section>
+          </motion.section>
 
           {(message || error || selectedPlan) && (
-            <div className={`notice ${error ? "error" : ""}`}>
+            <motion.div className={`notice ${error ? "error" : ""}`} variants={enter}>
               {error || message || `Выбран тариф ${selectedPlan}. Завершите оплату ниже.`}
-            </div>
+            </motion.div>
           )}
 
-          <section id="subscription" className="grid-two">
+          <motion.section className="grid-two" id="subscription" variants={enterGroup}>
             {config.plans.map((plan) => (
-              <article className={`plan-card ${plan.code === "vip" ? "vip" : ""}`} key={plan.code}>
+              <motion.article
+                className={`plan-card ${plan.code === "vip" ? "vip" : ""}`}
+                key={plan.code}
+                variants={enter}
+                whileHover={reduceMotion ? undefined : { y: -2 }}
+              >
                 <div className="plan-title">
                   <h3>{plan.title}</h3>
                   <ShieldCheck size={21} color="#EAB308" />
@@ -202,24 +239,25 @@ export function Dashboard() {
                 <p className="muted">{plan.description}</p>
                 <div className="periods">
                   {plan.periods.map((period) => (
-                    <button
+                    <motion.button
                       className="period"
                       disabled={loadingPayment !== ""}
                       key={period.id}
                       onClick={() => createPayment(period.id)}
                       type="button"
+                      whileTap={reduceMotion ? undefined : { scale: 0.985 }}
                     >
                       <strong>{period.label}</strong>
                       <div className="plan-price">{formatRub(period.amount)}</div>
                       <span className="muted">{loadingPayment === period.id ? "Создаем платеж..." : "Оплатить"}</span>
-                    </button>
+                    </motion.button>
                   ))}
                 </div>
-              </article>
+              </motion.article>
             ))}
-          </section>
+          </motion.section>
 
-          <section id="downloads" className="panel">
+          <motion.section className="panel" id="downloads" variants={enter}>
             <h3>Скачать приложение</h3>
             <p className="muted">Выберите платформу. Для iOS используйте Happ и личную подписку FBLink VPN.</p>
             <div className="downloads">
@@ -227,7 +265,12 @@ export function Dashboard() {
                 const Icon = platformIcons[platform];
                 const label = platform === "happ" ? "iOS Happ" : platform === "macos" ? "macOS" : platform;
                 return (
-                  <div className="download-card" key={platform}>
+                  <motion.div
+                    className="download-card"
+                    key={platform}
+                    whileHover={reduceMotion ? undefined : { y: -2 }}
+                    whileTap={reduceMotion ? undefined : { scale: 0.99 }}
+                  >
                     <Icon size={24} />
                     <strong>{label}</strong>
                     {platform === "happ" ? (
@@ -239,19 +282,23 @@ export function Dashboard() {
                         Скачать
                       </a>
                     )}
-                  </div>
+                  </motion.div>
                 );
               })}
             </div>
             {happLink && (
-              <p className="muted" style={{ marginTop: 16, overflowWrap: "anywhere" }}>
+              <motion.p
+                animate={{ opacity: 1, y: 0 }}
+                className="muted happ-manual-link"
+                initial={reduceMotion ? false : { opacity: 0, y: 8 }}
+              >
                 Ссылка для ручного добавления в Happ: {happLink}
-              </p>
+              </motion.p>
             )}
-          </section>
+          </motion.section>
 
-          <section className="grid-two">
-            <div className="panel">
+          <motion.section className="grid-two" variants={enterGroup}>
+            <motion.div className="panel support-panel" variants={enter}>
               <h3>Поддержка</h3>
               <p className="muted">Напишите нам удобным способом.</p>
               <div className="hero-actions">
@@ -262,8 +309,8 @@ export function Dashboard() {
                   <Send size={17} /> Telegram
                 </a>
               </div>
-            </div>
-            <div className="panel">
+            </motion.div>
+            <motion.div className="panel support-panel" variants={enter}>
               <h3>iOS через Happ</h3>
               <p className="muted">
                 Для Premium и VIP сайт выдает VLESS/Xray подписку. Остальные платформы используют приложения FBLink.
@@ -271,9 +318,9 @@ export function Dashboard() {
               <a className="button button-secondary" href={config.downloads.happ} target="_blank" rel="noreferrer">
                 <ExternalLink size={17} /> Найти Happ
               </a>
-            </div>
-          </section>
-        </section>
+            </motion.div>
+          </motion.section>
+        </motion.section>
       </div>
     </main>
   );

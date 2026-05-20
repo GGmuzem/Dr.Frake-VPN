@@ -1,7 +1,22 @@
 import Image from "next/image";
-import { Check, Download, Lock, ShieldCheck, Zap } from "lucide-react";
+import * as motion from "motion/react-client";
+import { Check, Download, Lock, ShieldCheck, Sparkles, Zap } from "lucide-react";
 import { Topbar } from "../components/Topbar";
 import { formatRub, loadSiteConfig } from "../lib/site-config";
+
+const reveal = {
+  hidden: { opacity: 0, y: 18 },
+  show: { opacity: 1, y: 0 },
+};
+
+const stagger = {
+  hidden: {},
+  show: {
+    transition: {
+      staggerChildren: 0.08,
+    },
+  },
+};
 
 export default async function HomePage() {
   const config = await loadSiteConfig();
@@ -10,38 +25,78 @@ export default async function HomePage() {
     <main className="page-shell">
       <Topbar />
       <section className="container hero">
-        <div className="hero-copy">
-          <h1>Безопасный доступ. Полная свобода.</h1>
-          <p>
-            FBLink VPN защищает соединение, помогает обходить сетевые ограничения и
-            остается простым: подписка, приложения и iOS через Happ в одном кабинете.
-          </p>
-          <div className="hero-actions">
+        <motion.div
+          animate="show"
+          className="hero-copy"
+          initial="hidden"
+          transition={{ duration: 0.42, ease: "easeOut" }}
+          variants={stagger}
+        >
+          <motion.h1 variants={reveal}>FBLink VPN. Подписка и приложения в одном кабинете.</motion.h1>
+          <motion.p variants={reveal}>
+            Быстрый доступ к VPN без лишних экранов: Premium или VIP, оплата, продление,
+            прямые загрузки и iOS через Happ.
+          </motion.p>
+          <motion.div className="hero-actions" variants={reveal}>
             <a className="button button-primary" href="#plans">
               <Lock size={18} /> Купить подписку
             </a>
             <a className="button button-secondary" href="/dashboard">
               <Download size={18} /> Скачать приложение
             </a>
+          </motion.div>
+          <motion.div className="hero-proof" variants={reveal}>
+            <span>Premium / VIP</span>
+            <span>1 или 3 месяца</span>
+            <span>Happ для iOS</span>
+          </motion.div>
+        </motion.div>
+        <motion.div
+          animate={{ opacity: 1, y: 0 }}
+          className="hero-device"
+          initial={{ opacity: 0, y: 24 }}
+          transition={{ duration: 0.55, delay: 0.08, ease: "easeOut" }}
+        >
+          <div className="signal-ring" aria-hidden="true" />
+          <div className="brand-orb">
+            <Image src="/brand-icon.png" width={360} height={360} alt="FBLink VPN logo" priority />
           </div>
-        </div>
-        <div className="hero-card">
-          <Image src="/brand-icon.png" width={520} height={520} alt="FBLink VPN logo" priority />
-          <div className="hero-card-row">
-            <span>Защищенное подключение</span>
+          <div className="connection-card">
+            <div>
+              <span className="eyebrow">Статус</span>
+              <strong>Защищено</strong>
+            </div>
             <span className="status-dot" aria-label="active" />
           </div>
-        </div>
+          <div className="connection-grid">
+            <div>
+              <span>Протокол</span>
+              <strong>Xray / AWG</strong>
+            </div>
+            <div>
+              <span>iOS</span>
+              <strong>Happ link</strong>
+            </div>
+          </div>
+        </motion.div>
       </section>
 
-      <section id="plans" className="container section">
+      <motion.section
+        className="container section"
+        id="plans"
+        initial="hidden"
+        transition={{ duration: 0.38, ease: "easeOut" }}
+        variants={stagger}
+        viewport={{ once: true, amount: 0.22 }}
+        whileInView="show"
+      >
         <div className="section-head">
-          <h2>Выберите тариф</h2>
+          <motion.h2 variants={reveal}>Только два тарифа</motion.h2>
           <p>Только два понятных плана: Premium для ежедневного доступа и VIP для приоритетной сети.</p>
         </div>
         <div className="plans-grid">
           {config.plans.map((plan) => (
-            <article className={`plan-card ${plan.code === "vip" ? "vip" : ""}`} key={plan.code}>
+            <motion.article className={`plan-card ${plan.code === "vip" ? "vip" : ""}`} key={plan.code} variants={reveal}>
               <div className="plan-title">
                 <h3>{plan.title}</h3>
                 {plan.code === "vip" ? <Zap size={22} color="#EAB308" /> : <ShieldCheck size={22} color="#EAB308" />}
@@ -65,29 +120,38 @@ export default async function HomePage() {
               <a className="button button-primary" href={`/auth?plan=${plan.periods[0].id}`}>
                 Купить подписку
               </a>
-            </article>
+            </motion.article>
           ))}
         </div>
-      </section>
+      </motion.section>
 
-      <section className="container section">
+      <motion.section
+        className="container section compact-section"
+        initial="hidden"
+        transition={{ duration: 0.38, ease: "easeOut" }}
+        variants={stagger}
+        viewport={{ once: true, amount: 0.22 }}
+        whileInView="show"
+      >
         <div className="grid-two">
-          <div className="panel">
+          <motion.div className="panel info-panel" variants={reveal}>
+            <Sparkles size={22} />
             <h3>Все приложения рядом</h3>
             <p className="muted">
               Android, Windows, macOS и Linux скачиваются напрямую. На iOS используем Happ и личную
               подписочную ссылку с вашими серверами.
             </p>
-          </div>
-          <div className="panel">
+          </motion.div>
+          <motion.div className="panel info-panel" variants={reveal}>
+            <ShieldCheck size={22} />
             <h3>Поддержка без лишнего шума</h3>
             <p className="muted">
               В кабинете будут только быстрые контакты: email и Telegram. Без перегруженной тикетной
               системы в первом релизе.
             </p>
-          </div>
+          </motion.div>
         </div>
-      </section>
+      </motion.section>
     </main>
   );
 }

@@ -2,6 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { motion, useReducedMotion } from "motion/react";
 import { Brand } from "./Brand";
 
 type Mode = "login" | "register" | "reset";
@@ -22,6 +23,7 @@ async function postJSON(path: string, body: unknown) {
 export function AuthForm() {
   const router = useRouter();
   const params = useSearchParams();
+  const reduceMotion = useReducedMotion();
   const initialPlan = params.get("plan") ?? "";
   const [mode, setMode] = useState<Mode>("login");
   const [email, setEmail] = useState("");
@@ -74,7 +76,12 @@ export function AuthForm() {
 
   return (
     <main className="auth-wrap">
-      <section className="auth-card">
+      <motion.section
+        animate={{ opacity: 1, y: 0 }}
+        className="auth-card"
+        initial={reduceMotion ? false : { opacity: 0, y: 16 }}
+        transition={{ duration: 0.32, ease: "easeOut" }}
+      >
         <Brand />
         <h1 style={{ marginTop: 24 }}>Личный кабинет</h1>
         <p className="muted">Войдите, купите подписку или подтвердите новый аккаунт.</p>
@@ -118,7 +125,7 @@ export function AuthForm() {
             {loading ? "Подождите..." : mode === "login" ? "Войти" : isCodeSent ? "Подтвердить" : "Продолжить"}
           </button>
         </form>
-      </section>
+      </motion.section>
     </main>
   );
 }
