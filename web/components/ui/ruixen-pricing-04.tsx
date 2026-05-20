@@ -39,6 +39,27 @@ function planCodeOf(periodId: string): "premium" | "vip" | null {
   return null;
 }
 
+function quarterlySavings(plan: Plan): { percent: number; absolute: number; monthly: number } | null {
+  const monthly = plan.periods[0];
+  const quarterly = plan.periods[1];
+  if (!monthly || !quarterly) return null;
+
+  const baseline = monthly.amount * 3;
+  const absolute = Math.max(0, baseline - quarterly.amount);
+  if (absolute <= 0) return null;
+
+  const percent = Math.round((absolute / baseline) * 100);
+  const monthlyEquivalent = Math.round(quarterly.amount / 3);
+  return { percent, absolute, monthly: monthlyEquivalent };
+}
+
+function maxQuarterlyDiscountPercent(plans: Plan[]): number {
+  return plans.reduce((max, plan) => {
+    const savings = quarterlySavings(plan);
+    return savings && savings.percent > max ? savings.percent : max;
+  }, 0);
+}
+
 type ButtonState = {
   label: string;
   disabled: boolean;
@@ -116,6 +137,8 @@ export default function Pricing04({
     setBillingPeriod((prev) => (prev === "monthly" ? "quarterly" : "monthly"));
   };
 
+  const maxDiscount = maxQuarterlyDiscountPercent(safePlans);
+
   return (
     <div className="pricing-04 relative mx-auto flex max-w-5xl flex-col items-center justify-center py-10">
       <div className="mx-auto flex max-w-2xl flex-col items-center justify-center">
@@ -138,7 +161,12 @@ export default function Pricing04({
               )}
             />
           </button>
-          <span className="text-base font-medium">3 месяца</span>
+          <span className="pricing-quarterly-label">
+            3 месяца
+            {maxDiscount > 0 && (
+              <span className="pricing-quarterly-badge">−{maxDiscount}%</span>
+            )}
+          </span>
         </div>
       </div>
 
@@ -186,6 +214,8 @@ function PlanCard({
   const buttonState = resolveButtonState({ period, plan, loadingPlan, mode, currentSubscription });
   const isCurrent = buttonState.reason === "current";
 
+  const savings = billingPeriod === "quarterly" ? quarterlySavings(plan) : null;
+
   return (
     <motion.div
       className={cn(
@@ -226,6 +256,12 @@ function PlanCard({
             }}
           />
         </h4>
+        {savings && (
+          <div className="pricing-savings">
+            <span className="pricing-savings-equivalent">≈ {savings.monthly} ₽/мес</span>
+            <span className="pricing-savings-amount">Экономия {savings.absolute} ₽</span>
+          </div>
+        )}
         <p className="mt-2 text-sm text-muted-foreground md:text-base">
           {plan.description}
         </p>
@@ -255,7 +291,11 @@ function PlanCard({
               key={billingPeriod}
               transition={{ duration: 0.2, ease: "easeOut" }}
             >
-              {billingPeriod === "monthly" ? "Оплата за 1 месяц" : "Оплата сразу за 3 месяца"}
+              {billingPeriod === "monthly"
+                ? "Оплата за 1 месяц"
+                : savings
+                  ? `Оплата сразу за 3 месяца — −${savings.percent}%`
+                  : "Оплата сразу за 3 месяца"}
             </motion.span>
           </AnimatePresence>
         </div>

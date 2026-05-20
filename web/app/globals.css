@@ -640,6 +640,54 @@ input:focus-visible {
   letter-spacing: 0.01em;
 }
 
+.pricing-quarterly-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.pricing-quarterly-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, var(--gold-3), var(--gold-2));
+  color: #1a1606;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1;
+}
+
+.pricing-savings {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.pricing-savings-equivalent {
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.pricing-savings-amount {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 9px;
+  border-radius: 999px;
+  border: 1px solid rgba(234, 179, 8, 0.4);
+  background: rgba(234, 179, 8, 0.1);
+  color: var(--gold-2);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
 .pricing-card-glow {
   position: absolute;
   inset: 46% 0 auto;
