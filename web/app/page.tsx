@@ -38,10 +38,10 @@ const stagger = {
 };
 
 const METRICS = [
-  { value: "120+", label: "серверов в 30+ странах" },
+  { value: "5", label: "быстрых серверов" },
   { value: "0", label: "логов и трекеров" },
   { value: "1 Гбит/с", label: "пропускная способность канала" },
-  { value: "5", label: "устройств на одной подписке" },
+  { value: "∞", label: "устройств на одной подписке" },
 ];
 
 const FEATURES = [
@@ -61,9 +61,9 @@ const FEATURES = [
   },
   {
     icon: Globe2,
-    title: "30+ стран",
+    title: "Ручной выбор сервера",
     badge: "Global",
-    description: "Auto Select подбирает ближайший узел. Один тап в приложении — и трафик защищен.",
+    description: "Пять локаций в разных регионах. Выберите свой в приложении — подключение в один тап.",
   },
   {
     icon: Cpu,
@@ -142,10 +142,10 @@ export default async function HomePage() {
           </motion.div>
           <motion.div className="hero-proof" variants={reveal}>
             <span>
-              <span className="dot dot-green" /> 2 500+ активных пользователей
+              <span className="dot dot-green" /> Без логов
             </span>
-            <span>5 устройств / подписка</span>
-            <span>Возврат за 7 дней</span>
+            <span>Безлимит устройств</span>
+            <span>Оплата по РФ</span>
           </motion.div>
         </motion.div>
 
@@ -170,7 +170,7 @@ export default async function HomePage() {
             </div>
             <div className="app-showcase-meta">
               <span>Сервер</span>
-              <strong>Auto Select · NL</strong>
+              <strong>FBLink · NL</strong>
               <span>Пинг</span>
               <strong>42 ms</strong>
             </div>
@@ -257,8 +257,7 @@ export default async function HomePage() {
             Один тариф — один тап. <span className="gold-gradient">Без скрытых платежей.</span>
           </motion.h2>
           <motion.p variants={reveal}>
-            Два тарифа и два срока. Выбираете план, выбираете срок, переходите к оплате.
-            Возврат в течение 7 дней — без вопросов.
+            Два тарифа и два срока. Выбираете план, срок, оплачиваете — и сразу пользуетесь. Без автопродления и скрытых списаний.
           </motion.p>
         </div>
         <Pricing04 plans={config.plans} />
@@ -331,11 +330,10 @@ export default async function HomePage() {
           <div className="cta-card-glow" aria-hidden="true" />
           <Sparkles size={22} />
           <h2>
-            Готовы начать? <span className="gold-gradient">Подписка с возвратом 7 дней.</span>
+            Готовы начать? <span className="gold-gradient">Без рекламы, без трекеров, без логов.</span>
           </h2>
           <p>
-            Создайте аккаунт за 30 секунд, выберите тариф и скачайте приложение.
-            Если что-то пойдет не так — вернем деньги без вопросов.
+            Создайте аккаунт за 30 секунд, выберите тариф и скачайте приложение на любых устройствах — одна подписка без лимитов.
           </p>
           <div className="hero-actions">
             <a className="button button-primary" href="/auth">
