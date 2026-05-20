@@ -1,21 +1,21 @@
 import { NextResponse } from "next/server";
-import { bearer, backendFetch, backendJSON, currentAccessToken } from "../../../lib/server-api";
+import { authorizedFetch, backendFetch, backendJSON, bearer } from "../../../lib/server-api";
 
 export async function GET() {
-  const token = await currentAccessToken();
-  if (!token) {
+  const meResponse = await authorizedFetch((token) =>
+    backendFetch("/api/v1/me", { headers: bearer(token) }),
+  );
+  if (meResponse.status === 401) {
     return NextResponse.json({ authenticated: false }, { status: 401 });
   }
-
-  const [meResponse, subscriptionResponse] = await Promise.all([
-    backendFetch("/api/v1/me", { headers: bearer(token) }),
-    backendFetch("/api/v1/me/subscription", { headers: bearer(token) }),
-  ]);
-
   if (!meResponse.ok) {
     const data = await backendJSON(meResponse);
     return NextResponse.json(data, { status: meResponse.status });
   }
+
+  const subscriptionResponse = await authorizedFetch((token) =>
+    backendFetch("/api/v1/me/subscription", { headers: bearer(token) }),
+  );
   if (!subscriptionResponse.ok) {
     const data = await backendJSON(subscriptionResponse);
     return NextResponse.json(data, { status: subscriptionResponse.status });
