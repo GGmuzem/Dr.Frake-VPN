@@ -886,7 +886,8 @@ input:focus-visible {
   gap: 12px;
 }
 
-.form label {
+.form label,
+.form .field {
   display: grid;
   gap: 7px;
   color: var(--muted);
