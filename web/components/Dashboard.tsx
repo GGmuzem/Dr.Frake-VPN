@@ -333,6 +333,10 @@ export function Dashboard() {
               </h2>
             </div>
             <Pricing04
+              currentSubscription={{
+                plan: session.subscription.plan,
+                status: session.subscription.status,
+              }}
               initialPlan={selectedPlan}
               loadingPlan={loadingPayment}
               mode="payment"

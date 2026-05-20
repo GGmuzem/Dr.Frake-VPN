@@ -10,12 +10,18 @@ import type { Plan, PlanId } from "@/lib/site-config";
 
 type BillingPeriod = "monthly" | "quarterly";
 
+type CurrentSubscription = {
+  plan: string;
+  status: "active" | "expired" | "cancelled" | string;
+};
+
 type Pricing04Props = {
   plans: Plan[];
   initialPlan?: PlanId | null;
   loadingPlan?: PlanId | "";
   mode?: "link" | "payment";
   onSelect?: (plan: PlanId) => void;
+  currentSubscription?: CurrentSubscription | null;
 };
 
 function findPlan(plans: Plan[], planId?: PlanId | null): Plan | undefined {
@@ -27,12 +33,76 @@ function billingPeriodForPlan(plan: Plan | undefined, planId?: PlanId | null): B
   return plan.periods[1]?.id === planId ? "quarterly" : "monthly";
 }
 
+function planCodeOf(periodId: string): "premium" | "vip" | null {
+  if (periodId === "basic" || periodId === "basic_3m") return "premium";
+  if (periodId === "vip" || periodId === "vip_3m") return "vip";
+  return null;
+}
+
+type ButtonState = {
+  label: string;
+  disabled: boolean;
+  reason?: string;
+};
+
+function resolveButtonState({
+  period,
+  plan,
+  loadingPlan,
+  mode,
+  currentSubscription,
+}: {
+  period: { id: PlanId };
+  plan: Plan;
+  loadingPlan: PlanId | "";
+  mode: "link" | "payment";
+  currentSubscription?: CurrentSubscription | null;
+}): ButtonState {
+  if (loadingPlan === period.id) {
+    return { label: "Создаем платеж...", disabled: true };
+  }
+
+  const defaultLabel = mode === "payment" ? "Оплатить" : "Продолжить";
+
+  const activeSub = currentSubscription && currentSubscription.status === "active" ? currentSubscription : null;
+  if (!activeSub) {
+    return { label: defaultLabel, disabled: loadingPlan !== "" };
+  }
+
+  const currentCode = planCodeOf(activeSub.plan);
+  if (!currentCode) {
+    return { label: defaultLabel, disabled: loadingPlan !== "" };
+  }
+
+  if (activeSub.plan === period.id) {
+    return { label: "Текущий тариф", disabled: true, reason: "current" };
+  }
+
+  if (plan.code === currentCode) {
+    return {
+      label: mode === "payment" ? "Продлить" : "Продлить",
+      disabled: loadingPlan !== "",
+    };
+  }
+
+  if (currentCode === "vip" && plan.code === "premium") {
+    return { label: "VIP активен", disabled: true, reason: "downgrade" };
+  }
+
+  if (currentCode === "premium" && plan.code === "vip") {
+    return { label: "Перейти на VIP", disabled: loadingPlan !== "" };
+  }
+
+  return { label: defaultLabel, disabled: loadingPlan !== "" };
+}
+
 export default function Pricing04({
   plans,
   initialPlan,
   loadingPlan = "",
   mode = "link",
   onSelect,
+  currentSubscription,
 }: Pricing04Props) {
   const reduceMotion = useReducedMotion();
   const safePlans = useMemo(() => plans.filter((plan) => Array.isArray(plan.periods) && plan.periods.length > 0), [plans]);
@@ -76,6 +146,7 @@ export default function Pricing04({
         {safePlans.map((plan) => (
           <PlanCard
             billingPeriod={billingPeriod}
+            currentSubscription={currentSubscription}
             key={plan.code}
             loadingPlan={loadingPlan}
             mode={mode}
@@ -96,6 +167,7 @@ function PlanCard({
   mode,
   onSelect,
   reduceMotion,
+  currentSubscription,
 }: {
   plan: Plan;
   billingPeriod: BillingPeriod;
@@ -103,19 +175,23 @@ function PlanCard({
   mode: "link" | "payment";
   onSelect?: (plan: PlanId) => void;
   reduceMotion: boolean | null;
+  currentSubscription?: CurrentSubscription | null;
 }) {
   const period = billingPeriod === "quarterly" ? plan.periods[1] ?? plan.periods[0] : plan.periods[0];
   if (!period) return null;
 
   const isVip = plan.code === "vip";
-  const buttonText = loadingPlan === period.id ? "Создаем платеж..." : mode === "payment" ? "Оплатить" : "Продолжить";
   const Icon = isVip ? Crown : ShieldCheck;
+
+  const buttonState = resolveButtonState({ period, plan, loadingPlan, mode, currentSubscription });
+  const isCurrent = buttonState.reason === "current";
 
   return (
     <motion.div
       className={cn(
         "pricing-card relative flex w-full flex-col items-start overflow-hidden rounded-2xl border border-foreground/10 transition-all lg:rounded-3xl",
         isVip && "pricing-card-featured",
+        isCurrent && "pricing-card-current",
       )}
       initial={reduceMotion ? false : { opacity: 0, y: 18 }}
       transition={{ duration: 0.28, ease: "easeOut" }}
@@ -131,6 +207,11 @@ function PlanCard({
             <Icon size={20} />
           </span>
         </div>
+        {isCurrent && (
+          <span className="pricing-current-badge" aria-label="Активная подписка">
+            Активная подписка
+          </span>
+        )}
         <h4 className="mt-3 text-3xl font-bold md:text-5xl">
           <NumberFlow
             value={period.amount}
@@ -153,15 +234,15 @@ function PlanCard({
         {mode === "payment" ? (
           <Button
             className="w-full"
-            disabled={loadingPlan !== ""}
+            disabled={buttonState.disabled}
             onClick={() => onSelect?.(period.id)}
             size="lg"
           >
-            {buttonText}
+            {buttonState.label}
           </Button>
         ) : (
           <Button asChild className="w-full" size="lg">
-            <a href={`/auth?plan=${period.id}`}>{buttonText}</a>
+            <a href={`/auth?plan=${period.id}`}>{buttonState.label}</a>
           </Button>
         )}
         <div className="mx-auto h-8 w-full overflow-hidden">
