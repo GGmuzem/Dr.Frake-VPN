@@ -1602,8 +1602,58 @@ input:focus-visible {
   color: var(--text);
 }
 
+.form-label-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+}
+
+.link-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: 0;
+  padding: 0;
+  color: var(--gold-2);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color 160ms var(--ease-out);
+}
+
+.link-button:hover {
+  color: var(--gold-3);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.link-button-with-icon {
+  font-size: 14px;
+}
+
 .auth-submit {
+  margin-top: 8px;
+}
+
+.auth-switch {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14px 0 0;
   margin-top: 4px;
+  border-top: 1px solid var(--border);
+}
+
+.auth-switch p {
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 14px;
 }
 
 .auth-fineprint {
