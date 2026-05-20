@@ -259,7 +259,6 @@ function PlanCard({
         {savings && (
           <div className="pricing-savings">
             <span className="pricing-savings-equivalent">≈ {savings.monthly} ₽/мес</span>
-            <span className="pricing-savings-amount">Экономия {savings.absolute} ₽</span>
           </div>
         )}
         <p className="mt-2 text-sm text-muted-foreground md:text-base">
