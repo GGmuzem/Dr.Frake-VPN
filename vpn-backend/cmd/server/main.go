@@ -29,6 +29,7 @@ func main() {
 	database.AutoMigrate(db)
 
 	safeGo("sync-servers", func() { handlers.SyncAllServers(db) })
+	safeGo("vless-template-refresher", func() { handlers.RunVLESSTemplateRefresher(db) })
 	safeGo("backup-scheduler", func() { backup.RunScheduler(db, cfg) })
 	safeGo("renewal-scheduler", func() {
 		handlers.RunAutoRenewalScheduler(db, cfg.YooKassaShopID, cfg.YooKassaKey)

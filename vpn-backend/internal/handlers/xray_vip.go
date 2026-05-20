@@ -401,6 +401,86 @@ func fetchVLESSTemplateFromServer(server *models.VPNServer, existing *models.VLE
 	return template, nil
 }
 
+// loadUsableVLESSTemplate returns a cached VLESS template for the server
+// without ever performing SSH I/O. It is meant for request-time hot paths
+// (Happ subscription, dashboard config preview) where waiting on a remote
+// VPS would make the endpoint unusable.
+func loadUsableVLESSTemplate(db *gorm.DB, server *models.VPNServer) *models.VLESSServerTemplate {
+	template := server.VLESSTemplate
+	if template == nil {
+		var loaded models.VLESSServerTemplate
+		if err := db.Where("server_id = ?", server.ID).First(&loaded).Error; err == nil {
+			template = &loaded
+			server.VLESSTemplate = template
+		}
+	}
+	if template == nil {
+		return nil
+	}
+	xrayTemplateDefaults(template, server)
+	if !hasUsableVLESSTemplate(template) {
+		return nil
+	}
+	return template
+}
+
+// ensureVLESSCredentialNoSSH returns or creates a VLESSCredential row in the
+// database without ever performing SSH I/O. If a new credential is created
+// or revived from a revoked state, an asynchronous addXrayClient call is
+// scheduled so the remote xray instance picks it up. The user still gets a
+// valid subscription URL immediately; the remote propagation happens in the
+// background and is retried by the periodic refresher.
+func ensureVLESSCredentialNoSSH(db *gorm.DB, userID uint, server *models.VPNServer, template *models.VLESSServerTemplate) (*models.VLESSCredential, error) {
+	var credential models.VLESSCredential
+	err := db.Where("user_id = ? AND server_id = ?", userID, server.ID).First(&credential).Error
+	if err == nil {
+		if credential.RevokedAt == nil {
+			return &credential, nil
+		}
+		credential.RevokedAt = nil
+		if err := db.Save(&credential).Error; err != nil {
+			return nil, err
+		}
+		scheduleAddXrayClient(server, template, credential.ClientID)
+		return &credential, nil
+	}
+
+	credential = models.VLESSCredential{
+		UserID:   userID,
+		ServerID: server.ID,
+		ClientID: uuid.New().String(),
+	}
+	if err := db.Create(&credential).Error; err != nil {
+		return nil, err
+	}
+	scheduleAddXrayClient(server, template, credential.ClientID)
+	return &credential, nil
+}
+
+// scheduleAddXrayClient pushes the credential to the remote xray instance
+// in a separate goroutine. Failures are logged; the periodic refresher will
+// retry on the next tick.
+func scheduleAddXrayClient(server *models.VPNServer, template *models.VLESSServerTemplate, clientID string) {
+	if server == nil || template == nil || strings.TrimSpace(clientID) == "" {
+		return
+	}
+	if strings.TrimSpace(template.ClientID) != "" || strings.TrimSpace(server.SSHPassword) == "" {
+		return
+	}
+	serverCopy := *server
+	templateCopy := *template
+	go func() {
+		defer func() {
+			if r := recover(); r != nil {
+				fmt.Printf("[PANIC] scheduleAddXrayClient server=%s: %v\n", serverCopy.Name, r)
+			}
+		}()
+		if err := addXrayClient(&serverCopy, &templateCopy, clientID); err != nil {
+			fmt.Printf("[WARN] scheduleAddXrayClient server=%s: %v\n", serverCopy.Name, err)
+		}
+	}()
+}
+
 func ensureVLESSTemplate(db *gorm.DB, server *models.VPNServer) (*models.VLESSServerTemplate, error) {
 	if server.VLESSTemplate != nil {
 		xrayTemplateDefaults(server.VLESSTemplate, server)

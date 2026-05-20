@@ -134,19 +134,18 @@ func (h *HappHandler) happVLESSLinks(userID uint, sub models.Subscription) ([]st
 	links := make([]string, 0, len(servers))
 	for i := range servers {
 		server := &servers[i]
-		template, err := ensureVLESSTemplate(h.db, server)
-		if err != nil || template == nil || !hasUsableVLESSTemplate(template) {
+		// Never touch SSH on the subscription hot path — the per-server
+		// refresh can stack tens of seconds and iOS clients give up with
+		// "url подписки не валиден". Templates are refreshed by the
+		// background scheduler (see RefreshAllVLESSTemplates).
+		template := loadUsableVLESSTemplate(h.db, server)
+		if template == nil {
 			continue
 		}
 
 		clientID := strings.TrimSpace(template.ClientID)
 		if clientID == "" {
-			var credential *models.VLESSCredential
-			err = h.db.Transaction(func(tx *gorm.DB) error {
-				var txErr error
-				credential, txErr = ensureVLESSCredential(tx, userID, server, template)
-				return txErr
-			})
+			credential, err := ensureVLESSCredentialNoSSH(h.db, userID, server, template)
 			if err != nil || credential == nil {
 				continue
 			}
