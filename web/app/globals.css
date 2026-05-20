@@ -1603,6 +1603,12 @@ input:focus-visible {
   color: var(--text);
 }
 
+.form-link-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 2px;
+}
+
 .form-label-row {
   display: flex;
   align-items: baseline;
