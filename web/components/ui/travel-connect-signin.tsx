@@ -81,20 +81,19 @@ function DotMap() {
     if (!dimensions.width || !dimensions.height) return;
 
     const canvas = canvasRef.current;
-    const ctx = canvas?.getContext("2d");
-    if (!canvas || !ctx) return;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
 
     let animationFrameId = 0;
     let startTime = Date.now();
 
-    function point(routePoint: RoutePoint) {
-      return {
-        x: routePoint.x * dimensions.width,
-        y: routePoint.y * dimensions.height,
-      };
-    }
+    const point = (routePoint: RoutePoint) => ({
+      x: routePoint.x * dimensions.width,
+      y: routePoint.y * dimensions.height,
+    });
 
-    function draw() {
+    const draw = () => {
       ctx.clearRect(0, 0, dimensions.width, dimensions.height);
 
       dots.forEach((dot) => {
@@ -147,7 +146,7 @@ function DotMap() {
 
       if (currentTime > 12) startTime = Date.now();
       animationFrameId = requestAnimationFrame(draw);
-    }
+    };
 
     draw();
     return () => cancelAnimationFrame(animationFrameId);
