@@ -177,6 +177,17 @@ type VLESSCredential struct {
 	Server VPNServer `gorm:"foreignKey:ServerID"`
 }
 
+type HappSubscriptionToken struct {
+	gorm.Model
+	UserID     uint       `gorm:"not null;index"`
+	TokenHash  string     `gorm:"uniqueIndex;not null"`
+	Label      string     `gorm:"default:'iOS Happ'"`
+	RevokedAt *time.Time
+	LastUsedAt *time.Time
+
+	User User
+}
+
 type RoutingProfileKind string
 
 const (

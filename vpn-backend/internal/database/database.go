@@ -59,6 +59,7 @@ func AutoMigrate(db *gorm.DB) {
 		&models.VPNKey{},
 		&models.VLESSServerTemplate{},
 		&models.VLESSCredential{},
+		&models.HappSubscriptionToken{},
 		&models.RoutingProfile{},
 		&models.PromoCode{},
 		&models.Payment{},
