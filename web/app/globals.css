@@ -905,7 +905,8 @@ input:focus-visible {
   gap: 12px;
 }
 
-.form label {
+.form label,
+.form .field {
   display: grid;
   gap: 7px;
   color: var(--muted);
@@ -1619,6 +1620,12 @@ input:focus-visible {
   font-size: 13px;
   font-weight: 600;
   color: var(--text);
+}
+
+.form-link-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 2px;
 }
 
 .form-label-row {

@@ -126,23 +126,13 @@ export function AuthForm() {
             </label>
 
             {showPassword && (
-              <label>
-                <span className="form-label-row">
-                  <span className="form-label">
-                    {mode === "reset" ? "Новый пароль" : "Пароль"}
-                  </span>
-                  {mode === "login" && (
-                    <button
-                      className="link-button"
-                      onClick={() => switchMode("reset")}
-                      type="button"
-                    >
-                      Забыли пароль?
-                    </button>
-                  )}
-                </span>
+              <div className="field">
+                <label className="form-label" htmlFor="auth-password">
+                  {mode === "reset" ? "Новый пароль" : "Пароль"}
+                </label>
                 <span className="password-control">
                   <input
+                    id="auth-password"
                     type={isPasswordVisible ? "text" : "password"}
                     value={password}
                     onChange={(event) => setPassword(event.target.value)}
@@ -160,7 +150,18 @@ export function AuthForm() {
                     {isPasswordVisible ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
                 </span>
-              </label>
+                {mode === "login" && (
+                  <div className="form-link-row">
+                    <button
+                      className="link-button"
+                      onClick={() => switchMode("reset")}
+                      type="button"
+                    >
+                      Забыли пароль?
+                    </button>
+                  </div>
+                )}
+              </div>
             )}
 
             {showCode && (
