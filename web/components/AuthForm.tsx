@@ -2,11 +2,29 @@
 
 import { FormEvent, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ArrowRight, Eye, EyeOff } from "lucide-react";
+import { ArrowRight, Eye, EyeOff, Mail, ShieldCheck } from "lucide-react";
 import TravelConnectSignIn from "@/components/ui/travel-connect-signin";
 import { Brand } from "./Brand";
 
 type Mode = "login" | "register" | "reset";
+
+const COPY: Record<Mode, { title: string; subtitle: string; cta: string }> = {
+  login: {
+    title: "С возвращением",
+    subtitle: "Войдите, чтобы продлить подписку или скачать приложение.",
+    cta: "Войти",
+  },
+  register: {
+    title: "Создание аккаунта",
+    subtitle: "Email — это ваш логин на всех устройствах. Пароль от 8 символов.",
+    cta: "Продолжить",
+  },
+  reset: {
+    title: "Сброс пароля",
+    subtitle: "Введите email — пришлем код подтверждения.",
+    cta: "Отправить код",
+  },
+};
 
 async function postJSON(path: string, body: unknown) {
   const response = await fetch(path, {
@@ -75,13 +93,22 @@ export function AuthForm() {
     setError("");
   }
 
+  const buttonLabel = loading
+    ? "Подождите..."
+    : isCodeSent && mode !== "login"
+    ? "Подтвердить"
+    : COPY[mode].cta;
+
   return (
     <main className="auth-wrap">
       <TravelConnectSignIn>
         <div className="auth-main">
           <Brand />
-          <h1>Войти в FBLink VPN</h1>
-          <p className="muted">Оплата, продление и скачивание приложений собраны в одном кабинете.</p>
+          <span className="eyebrow auth-eyebrow">
+            <ShieldCheck size={12} /> Шифрование AmneziaWG · Без логов
+          </span>
+          <h1>{COPY[mode].title}</h1>
+          <p className="muted">{COPY[mode].subtitle}</p>
           <div className="tabs">
             <button className={mode === "login" ? "active" : ""} onClick={() => switchMode("login")} type="button">
               Вход
@@ -95,17 +122,28 @@ export function AuthForm() {
           </div>
           <form className="form" onSubmit={onSubmit}>
             <label>
-              Email
-              <input type="email" value={email} onChange={(event) => setEmail(event.target.value)} required />
+              <span className="form-label">
+                <Mail size={14} /> Email
+              </span>
+              <input
+                type="email"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                placeholder="you@example.com"
+                autoComplete="email"
+                required
+              />
             </label>
             {(mode !== "register" || !isCodeSent) && (
               <label>
-                Пароль
+                <span className="form-label">Пароль</span>
                 <span className="password-control">
                   <input
                     type={isPasswordVisible ? "text" : "password"}
                     value={password}
                     onChange={(event) => setPassword(event.target.value)}
+                    placeholder="от 8 символов"
+                    autoComplete={mode === "login" ? "current-password" : "new-password"}
                     minLength={8}
                     required
                   />
@@ -122,16 +160,26 @@ export function AuthForm() {
             )}
             {isCodeSent && (
               <label>
-                Код из email
-                <input value={code} onChange={(event) => setCode(event.target.value)} required />
+                <span className="form-label">Код из email</span>
+                <input
+                  value={code}
+                  onChange={(event) => setCode(event.target.value)}
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  placeholder="6-значный код"
+                  required
+                />
               </label>
             )}
             {message && <div className="notice">{message}</div>}
             {error && <div className="notice error">{error}</div>}
-            <button className="button button-primary" disabled={loading} type="submit">
-              <span>{loading ? "Подождите..." : mode === "login" ? "Войти" : isCodeSent ? "Подтвердить" : "Продолжить"}</span>
+            <button className="button button-primary auth-submit" disabled={loading} type="submit">
+              <span>{buttonLabel}</span>
               <ArrowRight size={16} />
             </button>
+            <p className="auth-fineprint">
+              Продолжая, вы соглашаетесь с условиями подписки. Возврат — в течение 7 дней.
+            </p>
           </form>
         </div>
       </TravelConnectSignIn>

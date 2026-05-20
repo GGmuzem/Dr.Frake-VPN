@@ -4,8 +4,10 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion, useReducedMotion } from "motion/react";
 import {
+  Apple,
   CheckCircle2,
   CreditCard,
+  Crown,
   Download,
   Home,
   Laptop,
@@ -13,7 +15,9 @@ import {
   Mail,
   MonitorDown,
   Send,
+  ShieldCheck,
   Smartphone,
+  Sparkles,
 } from "lucide-react";
 import { Brand } from "./Brand";
 import Pricing04 from "@/components/ui/ruixen-pricing-04";
@@ -40,7 +44,15 @@ const platformIcons = {
   windows: MonitorDown,
   macos: Laptop,
   linux: Download,
-  happ: Smartphone,
+  happ: Apple,
+};
+
+const platformLabels: Record<keyof typeof platformIcons, string> = {
+  android: "Android",
+  windows: "Windows",
+  macos: "macOS",
+  linux: "Linux",
+  happ: "iPhone",
 };
 
 const enter = {
@@ -56,6 +68,18 @@ const enterGroup = {
     },
   },
 };
+
+const PLAN_BADGE: Record<string, { label: string; icon: typeof Crown }> = {
+  vip: { label: "VIP", icon: Crown },
+  vip_3m: { label: "VIP", icon: Crown },
+  basic: { label: "Premium", icon: ShieldCheck },
+  basic_3m: { label: "Premium", icon: ShieldCheck },
+  trial: { label: "Trial", icon: Sparkles },
+  free: { label: "Free", icon: Sparkles },
+};
+
+const DAYS_TOTAL = 90;
+const RING_CIRCUM = 2 * Math.PI * 54;
 
 export function Dashboard() {
   const router = useRouter();
@@ -93,10 +117,22 @@ export function Dashboard() {
   }, [router]);
 
   const selectedPlan = searchParams.get("plan") as PlanId | null;
-  const expiresAt = useMemo(() => {
-    if (!session?.subscription.expires_at) return "неизвестно";
-    return new Intl.DateTimeFormat("ru-RU", { dateStyle: "long" }).format(new Date(session.subscription.expires_at));
-  }, [session?.subscription.expires_at]);
+
+  const subscriptionMeta = useMemo(() => {
+    if (!session) return null;
+    const expiresAtRaw = session.subscription.expires_at;
+    const expiresDate = expiresAtRaw ? new Date(expiresAtRaw) : null;
+    const formatted = expiresDate
+      ? new Intl.DateTimeFormat("ru-RU", { dateStyle: "long" }).format(expiresDate)
+      : "—";
+    const now = Date.now();
+    const ms = expiresDate ? expiresDate.getTime() - now : 0;
+    const daysLeft = Math.max(0, Math.ceil(ms / (1000 * 60 * 60 * 24)));
+    const progress = Math.min(1, Math.max(0, daysLeft / DAYS_TOTAL));
+    const planMeta = PLAN_BADGE[session.subscription.plan] ?? PLAN_BADGE.free;
+    const isActive = session.subscription.status === "active" && daysLeft > 0;
+    return { formatted, daysLeft, progress, planMeta, isActive };
+  }, [session]);
 
   async function createPayment(plan: PlanId) {
     setError("");
@@ -141,7 +177,7 @@ export function Dashboard() {
     router.replace("/");
   }
 
-  if (!session) {
+  if (!session || !subscriptionMeta) {
     return (
       <main className="page-shell">
         <motion.div
@@ -157,12 +193,19 @@ export function Dashboard() {
     );
   }
 
+  const { formatted, daysLeft, progress, planMeta, isActive } = subscriptionMeta;
+  const PlanIcon = planMeta.icon;
+  const dashOffset = RING_CIRCUM * (1 - progress);
+
   return (
     <main className="page-shell">
       <header className="topbar">
         <div className="container topbar-inner">
           <Brand />
           <div className="nav-actions">
+            <a className="button button-ghost" href={config.support.telegram} rel="noreferrer" target="_blank">
+              <Send size={16} /> Telegram
+            </a>
             <a className="button button-secondary" href={`mailto:${config.support.email}`}>
               <Mail size={16} /> Поддержка
             </a>
@@ -177,7 +220,17 @@ export function Dashboard() {
           transition={{ duration: 0.32, ease: "easeOut" }}
           variants={enter}
         >
-          <Brand />
+          <div className="sidebar-user">
+            <div className="sidebar-avatar" aria-hidden="true">
+              {session.user.email.charAt(0).toUpperCase()}
+            </div>
+            <div className="sidebar-user-info">
+              <strong>{session.user.email}</strong>
+              <span>
+                <PlanIcon size={12} /> {planMeta.label}
+              </span>
+            </div>
+          </div>
           <nav aria-label="Кабинет">
             <a className="active" href="#home">
               <Home size={17} /> Главная
@@ -193,25 +246,74 @@ export function Dashboard() {
             </button>
           </nav>
         </motion.aside>
+
         <motion.section
           animate="show"
           className="dashboard-main"
           initial={reduceMotion ? false : "hidden"}
           variants={enterGroup}
         >
-          <motion.section className="panel subscription-panel" id="home" variants={enter}>
-            <div className="subscription-state">
-              <span className="success-icon">
-                <CheckCircle2 size={26} />
-              </span>
-              <div>
-                <h2>{session.subscription.status === "active" ? "Подписка активна" : "Подписка не активна"}</h2>
-                <p className="muted">{session.user.email}</p>
+          <motion.section className="connection-hero" id="home" variants={enter}>
+            <div className="connection-hero-glow" aria-hidden="true" />
+            <div className="connection-hero-ring">
+              <svg viewBox="0 0 120 120" width={140} height={140} aria-hidden="true">
+                <defs>
+                  <linearGradient id="ring-gradient" x1="0%" x2="100%" y1="0%" y2="100%">
+                    <stop offset="0%" stopColor="#FACC15" />
+                    <stop offset="100%" stopColor="#EAB308" />
+                  </linearGradient>
+                </defs>
+                <circle cx="60" cy="60" r="54" stroke="rgba(255,255,255,0.08)" strokeWidth="6" fill="none" />
+                <circle
+                  cx="60"
+                  cy="60"
+                  r="54"
+                  stroke={isActive ? "url(#ring-gradient)" : "rgba(239,68,68,0.6)"}
+                  strokeWidth="6"
+                  fill="none"
+                  strokeLinecap="round"
+                  strokeDasharray={RING_CIRCUM}
+                  strokeDashoffset={dashOffset}
+                  transform="rotate(-90 60 60)"
+                  style={{ transition: "stroke-dashoffset 800ms ease" }}
+                />
+              </svg>
+              <div className="connection-hero-ring-center">
+                <ShieldCheck size={26} />
+                <strong>{isActive ? "Защита включена" : "Подписка истекла"}</strong>
               </div>
             </div>
-            <div className="subscription-date">
-              <p className="muted">Действует до</p>
-              <strong>{expiresAt}</strong>
+
+            <div className="connection-hero-body">
+              <div className="status-pill" data-active={isActive ? "true" : "false"}>
+                <span className={`dot ${isActive ? "dot-green" : "dot-red"}`} />
+                {isActive ? "Подписка активна" : "Требуется продление"}
+              </div>
+              <h2>
+                {isActive ? `Осталось ${daysLeft} ${pluralizeDays(daysLeft)}` : "Подписка истекла"}
+              </h2>
+              <p className="muted">
+                {isActive
+                  ? `Действует до ${formatted}. Управляйте подпиской ниже.`
+                  : "Выберите план — и подключение восстановится сразу после оплаты."}
+              </p>
+
+              <div className="connection-hero-meta">
+                <div>
+                  <span>План</span>
+                  <strong>
+                    <PlanIcon size={14} /> {planMeta.label}
+                  </strong>
+                </div>
+                <div>
+                  <span>Email</span>
+                  <strong className="account-email">{session.user.email}</strong>
+                </div>
+                <div>
+                  <span>Автопродление</span>
+                  <strong>{session.subscription.auto_renew ? "Включено" : "Выключено"}</strong>
+                </div>
+              </div>
             </div>
           </motion.section>
 
@@ -221,7 +323,15 @@ export function Dashboard() {
             </motion.div>
           )}
 
-          <motion.section id="subscription" variants={enter}>
+          <motion.section className="dashboard-section" id="subscription" variants={enter}>
+            <div className="dashboard-section-head">
+              <span className="eyebrow">
+                <CreditCard size={12} /> Подписка
+              </span>
+              <h2>
+                {isActive ? "Продлить или сменить план" : "Активировать доступ"}
+              </h2>
+            </div>
             <Pricing04
               initialPlan={selectedPlan}
               loadingPlan={loadingPayment}
@@ -232,12 +342,17 @@ export function Dashboard() {
           </motion.section>
 
           <motion.section className="panel" id="downloads" variants={enter}>
-            <h3>Скачать FBLink VPN</h3>
-            <p className="muted">Выберите платформу. Основные приложения скачиваются напрямую.</p>
+            <div className="dashboard-section-head">
+              <span className="eyebrow">
+                <Download size={12} /> Приложения
+              </span>
+              <h2>Скачать FBLink VPN</h2>
+              <p className="muted">Выберите платформу. Авторизация — тем же email.</p>
+            </div>
             <div className="downloads">
               {(["android", "windows", "macos", "linux", "happ"] as const).map((platform) => {
                 const Icon = platformIcons[platform];
-                const label = platform === "happ" ? "iPhone" : platform === "macos" ? "macOS" : platform;
+                const label = platformLabels[platform];
                 return (
                   <motion.div
                     className="download-card"
@@ -245,7 +360,7 @@ export function Dashboard() {
                     whileHover={reduceMotion ? undefined : { y: -2 }}
                     whileTap={reduceMotion ? undefined : { scale: 0.99 }}
                   >
-                    <Icon size={24} />
+                    <Icon size={28} />
                     <strong>{label}</strong>
                     {platform === "happ" ? (
                       <button className="button button-primary" onClick={openHapp} type="button">
@@ -264,22 +379,27 @@ export function Dashboard() {
 
           <motion.section className="grid-two" variants={enterGroup}>
             <motion.div className="panel support-panel" variants={enter}>
-              <h3>Поддержка</h3>
-              <p className="muted">Напишите нам удобным способом.</p>
+              <div className="info-panel-icon">
+                <Mail size={20} />
+              </div>
+              <h3>Поддержка 24/7</h3>
+              <p className="muted">Отвечаем в течение часа. Email или Telegram — что удобнее.</p>
               <div className="hero-actions">
+                <a className="button button-primary" href={config.support.telegram} target="_blank" rel="noreferrer">
+                  <Send size={17} /> Telegram
+                </a>
                 <a className="button button-secondary" href={`mailto:${config.support.email}`}>
                   <Mail size={17} /> Email
-                </a>
-                <a className="button button-secondary" href={config.support.telegram} target="_blank" rel="noreferrer">
-                  <Send size={17} /> Telegram
                 </a>
               </div>
             </motion.div>
             <motion.div className="panel support-panel" variants={enter}>
+              <div className="info-panel-icon">
+                <CheckCircle2 size={20} />
+              </div>
               <h3>Данные аккаунта</h3>
               <p className="muted">
-                Почта привязана к подписке. При смене устройства войдите в кабинет
-                и скачайте нужное приложение заново.
+                Подписка привязана к email. На любом устройстве — тот же логин и пароль.
               </p>
               <span className="account-email">{session.user.email}</span>
             </motion.div>
@@ -288,4 +408,12 @@ export function Dashboard() {
       </div>
     </main>
   );
+}
+
+function pluralizeDays(n: number): string {
+  const mod10 = n % 10;
+  const mod100 = n % 100;
+  if (mod10 === 1 && mod100 !== 11) return "день";
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) return "дня";
+  return "дней";
 }
