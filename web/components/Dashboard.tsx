@@ -51,7 +51,7 @@ const platformIcons = {
 
 const platformLabels: Record<keyof typeof platformIcons, string> = {
   android: "Android",
-  androidtv: "Android TV",
+  androidtv: "TV",
   windows: "Windows",
   macos: "macOS",
   linux: "Linux",

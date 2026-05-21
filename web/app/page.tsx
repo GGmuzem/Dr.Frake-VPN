@@ -92,7 +92,7 @@ export default async function HomePage() {
   const config = await loadSiteConfig();
   const platforms = [
     { label: "Android", icon: Smartphone, href: config.downloads.android },
-    { label: "Android TV", icon: Tv, href: config.downloads.androidtv },
+    { label: "TV", icon: Tv, href: config.downloads.androidtv },
     { label: "Windows", icon: MonitorDown, href: config.downloads.windows },
     { label: "macOS", icon: Laptop, href: config.downloads.macos },
     { label: "Linux", icon: Download, href: config.downloads.linux },
