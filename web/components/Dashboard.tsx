@@ -94,6 +94,7 @@ export function Dashboard() {
   const [error, setError] = useState("");
   const [loadingPayment, setLoadingPayment] = useState<PlanId | "">("");
   const [loadingAutoRenew, setLoadingAutoRenew] = useState(false);
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -139,7 +140,6 @@ export function Dashboard() {
   }, [session]);
 
   async function toggleAutoRenew(enabled: boolean) {
-    if (!enabled && !confirm("Вы уверены, что хотите отключить автосписание? Подписка не будет продлена автоматически.")) return;
     setError("");
     setLoadingAutoRenew(true);
     try {
@@ -341,15 +341,20 @@ export function Dashboard() {
                 {session.subscription.auto_renew && (
                   <div>
                     <span>Автопродление</span>
-                    <strong style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                    <strong style={{ display: "flex", alignItems: "center", gap: "12px" }}>
                       Включено
                       <button 
-                        className="button button-secondary" 
-                        style={{ padding: "4px 8px", minHeight: "unset", fontSize: "12px", opacity: loadingAutoRenew ? 0.5 : 1 }}
-                        onClick={() => toggleAutoRenew(false)}
+                        style={{ 
+                          background: "none", border: "none", padding: 0, 
+                          color: "#71717A", fontSize: "12px", textDecoration: "underline", 
+                          cursor: loadingAutoRenew ? "not-allowed" : "pointer", 
+                          opacity: loadingAutoRenew ? 0.5 : 1 
+                        }}
+                        onClick={() => setShowCancelConfirm(true)}
                         disabled={loadingAutoRenew}
+                        title="Нажмите, чтобы отключить"
                       >
-                        Отключить
+                        {loadingAutoRenew ? "Отключение..." : "Отключить"}
                       </button>
                     </strong>
                   </div>
@@ -451,6 +456,52 @@ export function Dashboard() {
           </motion.section>
         </motion.section>
       </div>
+
+      {showCancelConfirm && (
+        <div style={{
+          position: 'fixed',
+          top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.6)',
+          backdropFilter: 'blur(4px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9999
+        }}>
+          <div style={{
+            background: '#18181b',
+            border: '1px solid rgba(255,255,255,0.1)',
+            borderRadius: '16px',
+            padding: '28px 24px',
+            maxWidth: '380px',
+            width: '90%',
+            textAlign: 'center',
+            boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)'
+          }}>
+            <h3 style={{ margin: '0 0 12px', color: '#FFF', fontSize: '18px', fontWeight: 600 }}>Вы уверены?</h3>
+            <p style={{ margin: '0 0 24px', color: '#A1A1AA', fontSize: '14px', lineHeight: '1.5' }}>
+              Отключая автосписание, вы рискуете остаться без защиты в самый неподходящий момент.
+              Ваша подписка не будет продлена автоматически.
+            </p>
+            <div style={{ display: 'flex', gap: '12px', flexDirection: 'column' }}>
+              <button 
+                className="button button-primary" 
+                onClick={() => setShowCancelConfirm(false)}
+                style={{ width: '100%' }}
+              >
+                Оставить включенным
+              </button>
+              <button 
+                className="button button-secondary" 
+                onClick={() => { setShowCancelConfirm(false); toggleAutoRenew(false); }} 
+                style={{ width: '100%', opacity: 0.8, color: '#ef4444' }}
+              >
+                Всё равно отключить
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
