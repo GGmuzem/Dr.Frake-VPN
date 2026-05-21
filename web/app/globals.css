@@ -522,13 +522,15 @@ input:focus-visible {
   min-height: 48px;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 6px;
+  padding: 0 4px;
   border: 1px solid var(--border);
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.045);
   color: var(--text);
   font-size: 13px;
   font-weight: 820;
+  white-space: nowrap;
   transition: border-color 180ms ease, background 180ms ease, color 180ms ease;
 }
 
