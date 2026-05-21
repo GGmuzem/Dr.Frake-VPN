@@ -19,36 +19,63 @@ var yooKassaStatusHTTPClient = &http.Client{
 	Timeout: yooKassaStatusTimeout,
 }
 
+type yooKassaPaymentDetails struct {
+	Status              string
+	PaymentMethodID     string
+	ReceiptRegistration string
+}
+
 func verifyYooKassaPaymentStatus(shopID, key, paymentID string) (string, error) {
-	req, err := http.NewRequest("GET", "https://api.yookassa.ru/v3/payments/"+paymentID, nil)
+	details, err := fetchYooKassaPaymentDetails(shopID, key, paymentID)
 	if err != nil {
 		return "", err
+	}
+	return details.Status, nil
+}
+
+func fetchYooKassaPaymentDetails(shopID, key, paymentID string) (yooKassaPaymentDetails, error) {
+	req, err := http.NewRequest("GET", "https://api.yookassa.ru/v3/payments/"+paymentID, nil)
+	if err != nil {
+		return yooKassaPaymentDetails{}, err
 	}
 	req.SetBasicAuth(shopID, key)
 
 	resp, err := yooKassaStatusHTTPClient.Do(req)
 	if err != nil {
-		return "", err
+		return yooKassaPaymentDetails{}, err
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusMultipleChoices {
-		return "", fmt.Errorf("yookassa status check returned http %d", resp.StatusCode)
+		return yooKassaPaymentDetails{}, fmt.Errorf("yookassa status check returned http %d", resp.StatusCode)
 	}
 
 	body, _ := io.ReadAll(resp.Body)
 	var data map[string]interface{}
 	if err := json.Unmarshal(body, &data); err != nil {
-		return "", err
+		return yooKassaPaymentDetails{}, err
 	}
 
 	status, _ := data["status"].(string)
-	return status, nil
+	receiptRegistration, _ := data["receipt_registration"].(string)
+	details := yooKassaPaymentDetails{
+		Status:              status,
+		ReceiptRegistration: receiptRegistration,
+	}
+	if pm, ok := data["payment_method"].(map[string]interface{}); ok {
+		if saved, _ := pm["saved"].(bool); saved {
+			details.PaymentMethodID, _ = pm["id"].(string)
+		}
+	}
+	return details, nil
 }
 
 func activateSubscriptionFromPayment(tx *gorm.DB, payment *models.Payment, paymentMethodID string) error {
 	now := time.Now()
 	priceInfo := planPrices[payment.Plan]
+	if !yooKassaRecurringPaymentsEnabled() {
+		paymentMethodID = ""
+	}
 	autoRenew := payment.Plan != models.PlanTrial && paymentMethodID != ""
 
 	var sub models.Subscription
@@ -110,14 +137,14 @@ func reconcilePendingUserPayments(db *gorm.DB, userID uint, shopID, key string) 
 			continue
 		}
 
-		status, err := verifyYooKassaPaymentStatus(shopID, key, payment.YooKassaID)
+		details, err := fetchYooKassaPaymentDetails(shopID, key, payment.YooKassaID)
 		if err != nil {
 			log.Printf("[payment-sync] status check failed payment_id=%d yookassa_id=%s user_id=%d err=%v",
 				payment.ID, payment.YooKassaID, userID, err)
 			continue
 		}
 
-		switch status {
+		switch details.Status {
 		case "succeeded":
 			if err := db.Transaction(func(tx *gorm.DB) error {
 				var current models.Payment
@@ -138,15 +165,15 @@ func reconcilePendingUserPayments(db *gorm.DB, userID uint, shopID, key string) 
 				current.Status = models.PaymentSucceeded
 				current.ConfirmedAt = &now
 
-				if err := activateSubscriptionFromPayment(tx, &current, ""); err != nil {
+				if err := activateSubscriptionFromPayment(tx, &current, details.PaymentMethodID); err != nil {
 					return err
 				}
 				return markPromoCodeUsed(tx, &current)
 			}); err != nil {
 				return err
 			}
-			log.Printf("[payment-sync] activated pending payment payment_id=%d yookassa_id=%s user_id=%d",
-				payment.ID, payment.YooKassaID, userID)
+			log.Printf("[payment-sync] activated pending payment payment_id=%d yookassa_id=%s user_id=%d receipt_registration=%q payment_method_saved=%t",
+				payment.ID, payment.YooKassaID, userID, details.ReceiptRegistration, details.PaymentMethodID != "")
 		case "canceled":
 			if err := db.Model(&models.Payment{}).
 				Where("id = ? AND status = ?", payment.ID, models.PaymentPending).

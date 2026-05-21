@@ -18,13 +18,15 @@ func (fn roundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) {
 }
 
 func TestReconcilePendingUserPaymentsActivatesSucceededPayment(t *testing.T) {
+	t.Setenv("YOOKASSA_RECURRING_ENABLED", "")
+
 	originalClient := yooKassaStatusHTTPClient
 	yooKassaStatusHTTPClient = &http.Client{
 		Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
 			return &http.Response{
 				StatusCode: http.StatusOK,
 				Header:     make(http.Header),
-				Body:       io.NopCloser(strings.NewReader(`{"status":"succeeded"}`)),
+				Body:       io.NopCloser(strings.NewReader(`{"status":"succeeded","payment_method":{"id":"pm-card-1","type":"bank_card","saved":true}}`)),
 			}, nil
 		}),
 	}
@@ -76,6 +78,63 @@ func TestReconcilePendingUserPaymentsActivatesSucceededPayment(t *testing.T) {
 		t.Fatalf("subscription = plan %q status %q, want vip active", sub.Plan, sub.Status)
 	}
 	if sub.AutoRenew {
-		t.Fatalf("expected auto_renew to stay false without saved payment method")
+		t.Fatalf("auto_renew must stay disabled while recurring payments are disabled")
+	}
+	if sub.PaymentMethodID != "" {
+		t.Fatalf("payment_method_id = %q, want empty while recurring payments are disabled", sub.PaymentMethodID)
+	}
+}
+
+func TestReconcilePendingUserPaymentsSavesPaymentMethodWhenRecurringEnabled(t *testing.T) {
+	t.Setenv("YOOKASSA_RECURRING_ENABLED", "true")
+
+	originalClient := yooKassaStatusHTTPClient
+	yooKassaStatusHTTPClient = &http.Client{
+		Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+			return &http.Response{
+				StatusCode: http.StatusOK,
+				Header:     make(http.Header),
+				Body:       io.NopCloser(strings.NewReader(`{"status":"succeeded","payment_method":{"id":"pm-card-1","type":"bank_card","saved":true}}`)),
+			}, nil
+		}),
+	}
+	t.Cleanup(func() {
+		yooKassaStatusHTTPClient = originalClient
+	})
+
+	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
+	if err != nil {
+		t.Fatalf("open sqlite: %v", err)
+	}
+	if err := db.AutoMigrate(&models.Subscription{}, &models.Payment{}); err != nil {
+		t.Fatalf("migrate: %v", err)
+	}
+
+	payment := models.Payment{
+		UserID:         43,
+		YooKassaID:     "2f1f2f52-000f-5000-9000-1b7e7b000002",
+		Amount:         399,
+		OriginalAmount: 399,
+		Currency:       "RUB",
+		Status:         models.PaymentPending,
+		Plan:           models.PlanVIP,
+	}
+	if err := db.Create(&payment).Error; err != nil {
+		t.Fatalf("create payment: %v", err)
+	}
+
+	if err := reconcilePendingUserPayments(db, 43, "shop", "key"); err != nil {
+		t.Fatalf("reconcilePendingUserPayments: %v", err)
+	}
+
+	var sub models.Subscription
+	if err := db.Where("user_id = ?", 43).First(&sub).Error; err != nil {
+		t.Fatalf("load subscription: %v", err)
+	}
+	if !sub.AutoRenew {
+		t.Fatalf("expected auto_renew to be enabled with saved payment method")
+	}
+	if sub.PaymentMethodID != "pm-card-1" {
+		t.Fatalf("payment_method_id = %q, want pm-card-1", sub.PaymentMethodID)
 	}
 }

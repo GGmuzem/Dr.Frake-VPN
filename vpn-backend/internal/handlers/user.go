@@ -109,8 +109,8 @@ func (h *UserHandler) GetSubscription(c *gin.Context) {
 		"plan":                         sub.Plan,
 		"status":                       sub.Status,
 		"expires_at":                   sub.ExpiresAt,
-		"auto_renew":                   sub.AutoRenew,
-		"card_saved":                   sub.PaymentMethodID != "",
+		"auto_renew":                   yooKassaRecurringPaymentsEnabled() && sub.AutoRenew,
+		"card_saved":                   yooKassaRecurringPaymentsEnabled() && sub.PaymentMethodID != "",
 		"vip_ad_block_enabled":         sub.VIPAdBlockEnabled,
 		"trial_available":              trialAvailable,
 		"allowed_protocols":            capabilities.AllowedProtocols,
@@ -177,6 +177,11 @@ func (h *UserHandler) SetAutoRenew(c *gin.Context) {
 	var sub models.Subscription
 	if err := h.db.Where("user_id = ?", userID).First(&sub).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "subscription not found"})
+		return
+	}
+
+	if req.Enabled && !yooKassaRecurringPaymentsEnabled() {
+		c.JSON(http.StatusConflict, gin.H{"error": "Автопродление временно недоступно"})
 		return
 	}
 

@@ -103,6 +103,27 @@ vpn-backend/certs/
 vpn-backend/vendor/
 
 # =========================
+# Web (Next.js)
+# =========================
+web/.next/
+web/node_modules/
+web/out/
+web/dist/
+web/.vercel/
+web/.turbo/
+web/coverage/
+web/playwright-report/
+web/test-results/
+web/*.tsbuildinfo
+web/next-env.d.ts
+web/.env
+web/.env*.local
+web/npm-debug.log*
+web/yarn-debug.log*
+web/yarn-error.log*
+web/pnpm-debug.log*
+
+# =========================
 # Fastlane & iOS/macOS
 # =========================
 client/fastlane/report.xml

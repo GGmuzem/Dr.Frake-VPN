@@ -150,9 +150,15 @@ export default function Pricing04({
             Premium для ежедневного VPN или VIP для приоритетной сети. Дальше останется только оплатить и скачать приложение.
           </p>
         </div>
-        <div className="mt-6 flex items-center justify-center gap-4">
-          <span className="text-base font-medium">1 месяц</span>
-          <button className="relative rounded-full focus:outline-none" onClick={handleSwitch} type="button">
+        <div className="mt-6 grid w-full max-w-xl grid-cols-[1fr_auto_1fr] items-center gap-4">
+          <span className="justify-self-end text-base font-medium">1 месяц</span>
+          <button
+            aria-label="Переключить срок подписки"
+            aria-pressed={billingPeriod === "quarterly"}
+            className="relative justify-self-center rounded-full focus:outline-none"
+            onClick={handleSwitch}
+            type="button"
+          >
             <div className="h-7 w-14 rounded-full bg-primary transition shadow-md outline-none" />
             <div
               className={cn(
@@ -161,7 +167,7 @@ export default function Pricing04({
               )}
             />
           </button>
-          <span className="pricing-quarterly-label">
+          <span className="pricing-quarterly-label justify-self-start">
             3 месяца
             {maxDiscount > 0 && (
               <span className="pricing-quarterly-badge">−{maxDiscount}%</span>

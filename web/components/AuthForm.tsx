@@ -216,7 +216,7 @@ export function AuthForm() {
           </div>
 
           <p className="auth-fineprint">
-            Продолжая, вы соглашаетесь с условиями подписки. Без автопродления — оплата вручную.
+            Продолжая, вы соглашаетесь с условиями подписки.
           </p>
         </div>
       </TravelConnectSignIn>

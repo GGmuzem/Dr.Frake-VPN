@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
+	"strings"
 	"time"
 	"vpn-backend/internal/config"
 	"vpn-backend/internal/models"
@@ -25,10 +27,10 @@ func NewPaymentHandler(db *gorm.DB, shopID, key string, cfg *config.Config) *Pay
 	return &PaymentHandler{db: db, yooKassaShopID: shopID, yooKassaKey: key, cfg: cfg}
 }
 
-// verifyYooKassaPayment делает GET-запрос к YooKassa API для подтверждения
-// реального статуса платежа. Защищает webhook от подделки (forgery).
-func (h *PaymentHandler) verifyYooKassaPayment(paymentID string) (string, error) {
-	return verifyYooKassaPaymentStatus(h.yooKassaShopID, h.yooKassaKey, paymentID)
+// fetchYooKassaPayment делает GET-запрос к YooKassa API для подтверждения
+// реального статуса платежа и сохранённого способа оплаты.
+func (h *PaymentHandler) fetchYooKassaPayment(paymentID string) (yooKassaPaymentDetails, error) {
+	return fetchYooKassaPaymentDetails(h.yooKassaShopID, h.yooKassaKey, paymentID)
 }
 
 type createPaymentRequest struct {
@@ -85,6 +87,7 @@ func yooKassaReceipt(email string, plan models.PlanType, amount float64) map[str
 		"customer": map[string]interface{}{
 			"email": email,
 		},
+		"internet": true,
 		"items": []map[string]interface{}{
 			{
 				"description":     fiscalProductName(plan),
@@ -98,9 +101,25 @@ func yooKassaReceipt(email string, plan models.PlanType, amount float64) map[str
 	}
 }
 
+func yooKassaReceiptRegistration(payment map[string]interface{}) string {
+	status, _ := payment["receipt_registration"].(string)
+	return status
+}
+
 func yooKassaBankCardOnlyPaymentMethod() map[string]interface{} {
 	return map[string]interface{}{
 		"type": "bank_card",
+	}
+}
+
+func yooKassaRecurringPaymentsEnabled() bool {
+	value := strings.TrimSpace(os.Getenv("YOOKASSA_RECURRING_ENABLED"))
+	return value == "1" || strings.EqualFold(value, "true") || strings.EqualFold(value, "yes")
+}
+
+func yooKassaApplyRecurringPaymentOptions(payload map[string]interface{}) {
+	if yooKassaRecurringPaymentsEnabled() {
+		payload["save_payment_method"] = true
 	}
 }
 
@@ -256,7 +275,6 @@ func (h *PaymentHandler) CreatePayment(c *gin.Context) {
 		},
 		"capture":             true,
 		"payment_method_data": yooKassaBankCardOnlyPaymentMethod(),
-		"save_payment_method": false, // отключено, так как магазин в ЮKassa не поддерживает рекуррентные платежи
 		"description":         fiscalProductName(plan),
 		"receipt":             yooKassaReceipt(user.Email, plan, promoApplication.FinalAmount),
 		"metadata": map[string]interface{}{
@@ -265,6 +283,7 @@ func (h *PaymentHandler) CreatePayment(c *gin.Context) {
 			"promo_code": normalizePromoCode(req.PromoCode),
 		},
 	}
+	yooKassaApplyRecurringPaymentOptions(ykPayload)
 
 	body, _ := json.Marshal(ykPayload)
 	httpReq, _ := http.NewRequest("POST", "https://api.yookassa.ru/v3/payments", bytes.NewReader(body))
@@ -286,6 +305,8 @@ func (h *PaymentHandler) CreatePayment(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Платёжная система не приняла запрос", "details": ykResp})
 		return
 	}
+	fmt.Printf("[payment] created yookassa_id=%v status=%v receipt_registration=%q\n",
+		ykResp["id"], ykResp["status"], yooKassaReceiptRegistration(ykResp))
 
 	confirmURL := ""
 	if conf, ok := ykResp["confirmation"].(map[string]interface{}); ok {
@@ -345,10 +366,12 @@ func (h *PaymentHandler) Webhook(c *gin.Context) {
 	// Верификация через re-fetch к YooKassa API.
 	// Защищает от подделки webhook — злоумышленник не может активировать
 	// подписку отправив поддельный payload с чужим payment_id.
-	actualStatus, err := h.verifyYooKassaPayment(ykPaymentID)
-	if err != nil || actualStatus != "succeeded" {
+	paymentDetails, err := h.fetchYooKassaPayment(ykPaymentID)
+	fmt.Printf("[webhook] fetched payment=%s status=%s receipt_registration=%q payment_method_saved=%t\n",
+		ykPaymentID, paymentDetails.Status, paymentDetails.ReceiptRegistration, paymentDetails.PaymentMethodID != "")
+	if err != nil || paymentDetails.Status != "succeeded" {
 		// Логируем, но отвечаем 200 — иначе YooKassa будет повторно слать webhook
-		fmt.Printf("[webhook] Verification failed for payment %s: err=%v status=%s\n", ykPaymentID, err, actualStatus)
+		fmt.Printf("[webhook] Verification failed for payment %s: err=%v status=%s\n", ykPaymentID, err, paymentDetails.Status)
 		c.JSON(http.StatusOK, gin.H{"status": "verification_failed"})
 		return
 	}
@@ -377,6 +400,9 @@ func (h *PaymentHandler) Webhook(c *gin.Context) {
 			if saved, _ := pm["saved"].(bool); saved {
 				paymentMethodID, _ = pm["id"].(string)
 			}
+		}
+		if paymentMethodID == "" {
+			paymentMethodID = paymentDetails.PaymentMethodID
 		}
 
 		var sub models.Subscription

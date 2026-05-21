@@ -30,6 +30,9 @@ func TestYooKassaReceiptUsesCustomerEmailAndVat5Percent(t *testing.T) {
 	if got := customer["email"]; got != "buyer@example.com" {
 		t.Fatalf("customer email = %#v", got)
 	}
+	if got := receipt["internet"]; got != true {
+		t.Fatalf("receipt internet = %#v, want true", got)
+	}
 
 	items, ok := receipt["items"].([]map[string]interface{})
 	if !ok || len(items) != 1 {
@@ -62,5 +65,45 @@ func TestYooKassaPaymentMethodForbidsSBP(t *testing.T) {
 	}
 	if got := method["type"]; got == "sbp" {
 		t.Fatalf("payment method must not allow SBP")
+	}
+}
+
+func TestYooKassaRecurringPaymentsAreDisabled(t *testing.T) {
+	t.Setenv("YOOKASSA_RECURRING_ENABLED", "")
+
+	if yooKassaRecurringPaymentsEnabled() {
+		t.Fatal("recurring payments must stay disabled until YooKassa enables them for the shop")
+	}
+
+	payload := map[string]interface{}{
+		"payment_method_data": yooKassaBankCardOnlyPaymentMethod(),
+	}
+	yooKassaApplyRecurringPaymentOptions(payload)
+	if _, ok := payload["save_payment_method"]; ok {
+		t.Fatalf("save_payment_method must be omitted while recurring payments are disabled: %#v", payload["save_payment_method"])
+	}
+
+	method, ok := payload["payment_method_data"].(map[string]interface{})
+	if !ok {
+		t.Fatalf("payment_method_data has unexpected type: %#v", payload["payment_method_data"])
+	}
+	if got := method["type"]; got != "bank_card" {
+		t.Fatalf("payment method type = %#v, want bank_card", got)
+	}
+}
+
+func TestYooKassaRecurringPaymentsCanBeEnabledForConfirmation(t *testing.T) {
+	t.Setenv("YOOKASSA_RECURRING_ENABLED", "true")
+
+	if !yooKassaRecurringPaymentsEnabled() {
+		t.Fatal("recurring payments should be enabled by YOOKASSA_RECURRING_ENABLED=true")
+	}
+
+	payload := map[string]interface{}{
+		"payment_method_data": yooKassaBankCardOnlyPaymentMethod(),
+	}
+	yooKassaApplyRecurringPaymentOptions(payload)
+	if got := payload["save_payment_method"]; got != true {
+		t.Fatalf("save_payment_method = %#v, want true", got)
 	}
 }

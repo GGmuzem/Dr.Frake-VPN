@@ -69,13 +69,60 @@ PageType {
         }
     }
 
+    PremiumPanel {
+        id: configSyncBanner
+        visible: root.hasLocationsAccess && FBLinkController.isConfigSyncing
+        width: Math.min(560, parent.width - 32)
+        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.top: header.bottom
+        anchors.topMargin: 14
+        padding: 14
+        fillColor: Qt.rgba(18/255, 18/255, 18/255, 1.0)
+        outlineColor: Qt.rgba(234/255, 179/255, 8/255, 0.38)
+        accentVisible: true
+        accentColor: "#EAB308"
+
+        RowLayout {
+            Layout.fillWidth: true
+            spacing: 12
+
+            BusyIndicator {
+                Layout.preferredWidth: 30
+                Layout.preferredHeight: 30
+                Layout.alignment: Qt.AlignVCenter
+                running: configSyncBanner.visible
+            }
+
+            ColumnLayout {
+                Layout.fillWidth: true
+                spacing: 2
+
+                LabelTextType {
+                    Layout.fillWidth: true
+                    text: qsTr("Загружаем локации")
+                    font.pixelSize: 15
+                    font.weight: 700
+                    color: FBLinkStyle.color.paleGray
+                    elide: Text.ElideRight
+                }
+
+                CaptionTextType {
+                    Layout.fillWidth: true
+                    text: qsTr("Конфигурации подтянутся автоматически. Подождите немного.")
+                    color: FBLinkStyle.color.mutedGray
+                    wrapMode: Text.WordWrap
+                }
+            }
+        }
+    }
+
     ListViewType {
         id: servers
         objectName: "servers"
         visible: root.hasLocationsAccess
 
         width: parent.width
-        anchors.top: header.bottom
+        anchors.top: configSyncBanner.visible ? configSyncBanner.bottom : header.bottom
         anchors.topMargin: 16
         anchors.bottom: parent.bottom
         anchors.left: parent.left

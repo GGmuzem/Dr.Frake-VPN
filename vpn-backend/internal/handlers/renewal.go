@@ -16,6 +16,10 @@ import (
 // RunAutoRenewalScheduler проверяет каждый час подписки, истекшие сегодня,
 // и списывает оплату с сохранённой карты. Вызывать как горутину из main.
 func RunAutoRenewalScheduler(db *gorm.DB, shopID, key string) {
+	if !yooKassaRecurringPaymentsEnabled() {
+		log.Println("[renewal] рекуррентные платежи временно отключены")
+		return
+	}
 	if shopID == "" || key == "" {
 		log.Println("[renewal] YooKassa не настроена — автосписание отключено")
 		return
@@ -38,17 +42,19 @@ func processAutoRenewals(db *gorm.DB, shopID, key string) {
 	now := time.Now()
 
 	// 1. Автосписание для подписок с картой и включённым auto_renew
-	var subs []models.Subscription
-	db.Where(
-		"auto_renew = true AND payment_method_id != '' AND status = ? AND expires_at <= ?",
-		models.SubActive, now,
-	).Find(&subs)
+	if yooKassaRecurringPaymentsEnabled() {
+		var subs []models.Subscription
+		db.Where(
+			"auto_renew = true AND payment_method_id != '' AND status = ? AND expires_at <= ?",
+			models.SubActive, now,
+		).Find(&subs)
 
-	if len(subs) > 0 {
-		log.Printf("[renewal] Найдено %d истёкших подписок к автосписанию", len(subs))
-		for _, sub := range subs {
-			if err := chargeAutoRenewal(db, shopID, key, sub); err != nil {
-				log.Printf("[renewal] Ошибка списания user_id=%d: %v", sub.UserID, err)
+		if len(subs) > 0 {
+			log.Printf("[renewal] Найдено %d истёкших подписок к автосписанию", len(subs))
+			for _, sub := range subs {
+				if err := chargeAutoRenewal(db, shopID, key, sub); err != nil {
+					log.Printf("[renewal] Ошибка списания user_id=%d: %v", sub.UserID, err)
+				}
 			}
 		}
 	}

@@ -309,10 +309,6 @@ export function Dashboard() {
                   <span>Email</span>
                   <strong className="account-email">{session.user.email}</strong>
                 </div>
-                <div>
-                  <span>Автопродление</span>
-                  <strong>{session.subscription.auto_renew ? "Включено" : "Выключено"}</strong>
-                </div>
               </div>
             </div>
           </motion.section>
@@ -368,7 +364,7 @@ export function Dashboard() {
                     <strong>{label}</strong>
                     {platform === "happ" ? (
                       <button className="button button-primary" onClick={openHapp} type="button">
-                        Открыть
+                        Добавить в Happ
                       </button>
                     ) : (
                       <a className="button button-secondary" href={config.downloads[platform]}>

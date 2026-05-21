@@ -257,7 +257,7 @@ export default async function HomePage() {
             Один тариф — один тап. <span className="gold-gradient">Без скрытых платежей.</span>
           </motion.h2>
           <motion.p variants={reveal}>
-            Два тарифа и два срока. Выбираете план, срок, оплачиваете — и сразу пользуетесь. Без автопродления и скрытых списаний.
+            Два тарифа и два срока. Выбираете план, срок, оплачиваете — и сразу пользуетесь. Все условия показаны до оплаты.
           </motion.p>
         </div>
         <Pricing04 plans={config.plans} />
@@ -290,7 +290,7 @@ export default async function HomePage() {
               >
                 <Icon size={28} />
                 <strong>{platform.label}</strong>
-                <span>Скачать</span>
+                <span>{platform.label === "iPhone" ? "Добавить в Happ" : "Скачать"}</span>
               </motion.a>
             );
           })}

@@ -33,8 +33,8 @@ PageType {
     readonly property string homeStateTitle: ConnectionController.isConnected
         ? qsTr("VPN активен")
         : (ConnectionController.isConnectionInProgress ? qsTr("Подготавливаем подключение") : qsTr("Готово к подключению"))
-    readonly property string homeStateSubtitle: FBLinkController.isLoading
-        ? qsTr("Обновление конфигураций...")
+    readonly property string homeStateSubtitle: (FBLinkController.isLoading || FBLinkController.isConfigSyncing)
+        ? qsTr("Загружаем конфигурации...")
         : (ServersModel.defaultServerName !== ""
             ? ServersModel.defaultServerName
             : qsTr("Выберите локацию и нажмите подключение"))
@@ -230,7 +230,7 @@ PageType {
             width: homeFlickable.width
             height: 60
             y: -80
-            visible: FBLinkController.isLoading || homeFlickable.contentY < 0
+            visible: FBLinkController.isLoading || FBLinkController.isConfigSyncing || homeFlickable.contentY < 0
 
             RowLayout {
                 anchors.centerIn: parent
@@ -239,13 +239,13 @@ PageType {
                 BusyIndicator {
                     Layout.preferredWidth: 24
                     Layout.preferredHeight: 24
-                    running: FBLinkController.isLoading || homeFlickable.contentY < -40
+                    running: FBLinkController.isLoading || FBLinkController.isConfigSyncing || homeFlickable.contentY < -40
                     visible: running
                 }
                 
                 LabelTextType {
-                    text: FBLinkController.isLoading 
-                        ? qsTr("Обновление конфигураций...") 
+                    text: (FBLinkController.isLoading || FBLinkController.isConfigSyncing)
+                        ? qsTr("Загружаем конфигурации...")
                         : (homeFlickable.contentY < -70 ? qsTr("Отпустите для обновления") : qsTr("Потяните для обновления"))
                     font.pixelSize: 13
                     color: FBLinkStyle.color.mutedGray
@@ -254,7 +254,7 @@ PageType {
         }
 
         onMovementEnded: {
-            if (contentY < -70 && !FBLinkController.isLoading) {
+            if (contentY < -70 && !FBLinkController.isLoading && !FBLinkController.isConfigSyncing) {
                 if (FBLinkController.isLoggedIn) {
                     FBLinkController.syncAll()
                 } else {
@@ -341,13 +341,66 @@ PageType {
             }
         }
 
+        PremiumPanel {
+            id: configSyncBanner
+            visible: FBLinkController.isConfigSyncing
+            width: root.contentWidth
+            anchors.horizontalCenter: parent.horizontalCenter
+            anchors.top: FBLinkController.safeModeActive ? safeModeBanner.bottom : parent.top
+            anchors.topMargin: FBLinkController.safeModeActive ? 12 : (14 + SettingsController.safeAreaTopMargin)
+            padding: 14
+            fillColor: Qt.rgba(18/255, 18/255, 18/255, 1.0)
+            outlineColor: Qt.rgba(234/255, 179/255, 8/255, 0.38)
+            accentVisible: true
+            accentColor: "#EAB308"
+            opacity: visible ? 1 : 0
+            Behavior on opacity { NumberAnimation { duration: 170; easing.type: Easing.OutCubic } }
+
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: 12
+
+                BusyIndicator {
+                    Layout.preferredWidth: 34
+                    Layout.preferredHeight: 34
+                    Layout.alignment: Qt.AlignVCenter
+                    running: configSyncBanner.visible
+                }
+
+                ColumnLayout {
+                    Layout.fillWidth: true
+                    spacing: 2
+
+                    LabelTextType {
+                        Layout.fillWidth: true
+                        text: qsTr("Загружаем конфигурации")
+                        font.pixelSize: 15
+                        font.weight: 700
+                        color: FBLinkStyle.color.paleGray
+                        elide: Text.ElideRight
+                    }
+
+                    CaptionTextType {
+                        Layout.fillWidth: true
+                        text: qsTr("Серверы появятся автоматически. Обычно это занимает меньше минуты.")
+                        color: FBLinkStyle.color.mutedGray
+                        wrapMode: Text.WordWrap
+                    }
+                }
+            }
+        }
+
         Item {
             id: homeCenterStage
             anchors.left: parent.left
             anchors.right: parent.right
-            anchors.top: FBLinkController.safeModeActive ? safeModeBanner.bottom : parent.top
+            anchors.top: configSyncBanner.visible
+                ? configSyncBanner.bottom
+                : (FBLinkController.safeModeActive ? safeModeBanner.bottom : parent.top)
             anchors.bottom: adLabel.top
-            anchors.topMargin: FBLinkController.safeModeActive ? 14 : (16 + SettingsController.safeAreaTopMargin)
+            anchors.topMargin: (configSyncBanner.visible || FBLinkController.safeModeActive)
+                ? 14
+                : (16 + SettingsController.safeAreaTopMargin)
             anchors.bottomMargin: 20
 
             ColumnLayout {
