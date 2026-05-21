@@ -137,6 +137,31 @@ export function Dashboard() {
     return { formatted, daysLeft, progress, planMeta, isActive };
   }, [session]);
 
+  async function toggleAutoRenew(enabled: boolean) {
+    if (!enabled && !confirm("Вы уверены, что хотите отключить автосписание? Подписка не будет продлена автоматически.")) return;
+    setError("");
+    setLoadingPayment(true); // Reusing loading state to prevent double clicks
+    try {
+      const response = await fetch("/api/subscription/auto-renew", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ enabled }),
+      });
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || "Ошибка при изменении автосписания");
+      }
+      setSession(s => s ? {
+        ...s,
+        subscription: { ...s.subscription, auto_renew: enabled }
+      } : null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Произошла ошибка");
+    } finally {
+      setLoadingPayment(false);
+    }
+  }
+
   async function createPayment(plan: PlanId) {
     setError("");
     setMessage("");
@@ -312,6 +337,22 @@ export function Dashboard() {
                   <span>Email</span>
                   <strong className="account-email">{session.user.email}</strong>
                 </div>
+                {session.subscription.auto_renew && (
+                  <div>
+                    <span>Автопродление</span>
+                    <strong style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                      Включено
+                      <button 
+                        className="button button-secondary" 
+                        style={{ padding: "4px 8px", minHeight: "unset", fontSize: "12px", opacity: loadingPayment ? 0.5 : 1 }}
+                        onClick={() => toggleAutoRenew(false)}
+                        disabled={loadingPayment}
+                      >
+                        Отключить
+                      </button>
+                    </strong>
+                  </div>
+                )}
               </div>
             </div>
           </motion.section>

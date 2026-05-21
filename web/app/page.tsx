@@ -358,6 +358,9 @@ export default async function HomePage() {
             <a href="#features">Возможности</a>
             <a href="#plans">Тарифы</a>
             <a href="#faq">FAQ</a>
+            <a href="/legal/terms.pdf" target="_blank" rel="noreferrer">
+              Пользовательское соглашение
+            </a>
             <a href={`mailto:${config.support.email}`}>
               <MailQuestion size={14} /> {config.support.email}
             </a>
