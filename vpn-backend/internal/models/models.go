@@ -77,6 +77,15 @@ type TVLogin struct {
 	User *User
 }
 
+type AppDownload struct {
+	gorm.Model
+	Platform     string `gorm:"uniqueIndex;not null"`
+	OriginalName string `gorm:"not null"`
+	FileName     string `gorm:"not null"`
+	Path         string `gorm:"not null"`
+	Size         int64  `gorm:"not null"`
+}
+
 type VPNServer struct {
 	gorm.Model
 	Name        string `gorm:"not null"`

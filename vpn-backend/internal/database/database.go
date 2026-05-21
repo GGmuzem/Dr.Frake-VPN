@@ -55,6 +55,7 @@ func AutoMigrate(db *gorm.DB) {
 		&models.User{},
 		&models.Subscription{},
 		&models.TVLogin{},
+		&models.AppDownload{},
 		&models.VPNServer{},
 		&models.VPNKey{},
 		&models.VLESSServerTemplate{},

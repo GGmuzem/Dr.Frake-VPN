@@ -52,7 +52,8 @@ func New(db *gorm.DB, cfg *config.Config) *gin.Engine {
 	payH := handlers.NewPaymentHandler(db, cfg.YooKassaShopID, cfg.YooKassaKey, cfg)
 	adminH := handlers.NewAdminHandler(db, cfg)
 	happH := handlers.NewHappHandler(db, cfg)
-	webConfigH := handlers.NewWebConfigHandler(cfg)
+	webConfigH := handlers.NewWebConfigHandler(db, cfg)
+	downloadH := handlers.NewDownloadHandler(db)
 
 	auth := middleware.AuthRequired(cfg.JWTSecret)
 	admin := middleware.AdminRequired()
@@ -139,6 +140,8 @@ func New(db *gorm.DB, cfg *config.Config) *gin.Engine {
 			adminGrp.POST("/promo-codes", adminH.CreatePromoCode)
 			adminGrp.PUT("/promo-codes/:id", adminH.UpdatePromoCode)
 			adminGrp.DELETE("/promo-codes/:id", adminH.DeletePromoCode)
+			adminGrp.GET("/downloads", adminH.GetDownloads)
+			adminGrp.POST("/downloads/:platform", adminH.UploadDownload)
 			adminGrp.GET("/stats", adminH.GetStats)
 			adminGrp.GET("/export/:entity", adminH.ExportCSV)
 			adminGrp.POST("/backup/send", adminH.TriggerBackup)
@@ -151,6 +154,7 @@ func New(db *gorm.DB, cfg *config.Config) *gin.Engine {
 	})
 
 	// Веб-панель администратора
+	r.GET("/download/:platform", downloadH.Download)
 	r.Static("/admin", "./admin")
 	r.GET("/tv", authH.TVApprovePage)
 	r.GET("/", func(c *gin.Context) {

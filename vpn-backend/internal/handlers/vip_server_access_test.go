@@ -32,7 +32,7 @@ func openVIPServerAccessDB(t *testing.T) *gorm.DB {
 		&models.VLESSServerTemplate{},
 		&models.VLESSCredential{},
 		&models.RoutingProfile{},
-	).Error; err != nil {
+	); err != nil {
 		t.Fatalf("migrate: %v", err)
 	}
 

@@ -32,7 +32,7 @@ func openHappSubscriptionDB(t *testing.T) *gorm.DB {
 		&models.VLESSServerTemplate{},
 		&models.VLESSCredential{},
 		&models.HappSubscriptionToken{},
-	).Error; err != nil {
+	); err != nil {
 		t.Fatalf("migrate: %v", err)
 	}
 

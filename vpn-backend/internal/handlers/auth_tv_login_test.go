@@ -26,7 +26,7 @@ func openTVLoginDB(t *testing.T) *gorm.DB {
 	if err != nil {
 		t.Fatalf("open sqlite: %v", err)
 	}
-	if err := db.AutoMigrate(&models.User{}, &models.Subscription{}, &models.TVLogin{}).Error; err != nil {
+	if err := db.AutoMigrate(&models.User{}, &models.Subscription{}, &models.TVLogin{}); err != nil {
 		t.Fatalf("migrate: %v", err)
 	}
 

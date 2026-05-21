@@ -268,6 +268,22 @@
     .switch-field { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; color: var(--muted); font-size: 14px; }
     .switch-field input { width: auto; }
     .promo-summary { color: var(--muted); font-size: 13px; line-height: 1.45; }
+    .download-upload { display: grid; gap: 10px; min-width: 260px; }
+    .download-upload input[type="file"] {
+      width: 100%;
+      max-width: 340px;
+      color: var(--muted);
+      border: 1px dashed rgba(255,255,255,.16);
+      border-radius: 14px;
+      padding: 10px;
+      background: rgba(255,255,255,.03);
+    }
+    .download-link {
+      color: var(--cyan2);
+      overflow-wrap: anywhere;
+      text-decoration: none;
+    }
+    .download-link:hover { text-decoration: underline; }
     @keyframes button-spin { to { transform: rotate(360deg); } }
     @media (max-width: 1180px) { .hero, .analytics-grid { grid-template-columns: 1fr; } .kpi-grid { grid-template-columns: repeat(2, minmax(0,1fr)); } }
     @media (max-width: 860px) {
@@ -311,6 +327,7 @@
         <button onclick="showPage('servers', this)">Серверы</button>
         <button onclick="showPage('payments', this)">Платежи</button>
         <button onclick="showPage('promo-codes', this)">Промокоды</button>
+        <button onclick="showPage('downloads', this)">Приложения</button>
       </div>
       <div class="sidebar-footer">Панель использует фирменную палитру и SVG-ассеты из VPN-клиента.</div>
       <button class="btn btn-secondary" onclick="logout()">Выйти</button>
@@ -376,6 +393,7 @@
       <section id="page-servers" class="page hidden"><div class="section-head"><h2>Серверы</h2><div class="btn-row"><button class="btn btn-secondary" onclick="loadServers()">Обновить</button><button class="btn btn-primary" onclick="exportCSV('servers')">Экспорт CSV</button><button class="btn btn-primary" onclick="openAddServerModal()">Добавить сервер</button><button class="btn btn-success" id="piholeBtn" onclick="runPiholeSync()">🛡 Pi-hole Sync</button></div></div><div class="table-toolbar"><input id="serversSearch" type="text" placeholder="Поиск по названию, региону, endpoint" oninput="renderServers()"><select id="serversStatusFilter" onchange="renderServers()"><option value="">Все статусы</option><option value="active">Активные</option><option value="inactive">Отключённые</option></select><select id="serversCountryFilter" onchange="renderServers()"><option value="">Все страны</option></select></div><div class="glass" style="overflow:hidden"><table><thead><tr><th>ID</th><th>Сервер</th><th>Регион</th><th>Endpoint</th><th>Ключи</th><th>Лимит</th><th>Pi-hole</th><th>Статус</th><th>Действия</th></tr></thead><tbody id="serversBody"><tr><td colspan="9" class="empty">Загрузка серверов...</td></tr></tbody></table></div></section>
       <section id="page-payments" class="page hidden"><div class="section-head"><h2>Платежи</h2><div class="btn-row"><button class="btn btn-secondary" onclick="loadPayments()">Обновить</button><button class="btn btn-primary" onclick="exportCSV('payments')">Экспорт CSV</button></div></div><div class="table-toolbar"><input id="paymentsSearch" type="text" placeholder="Поиск по email" oninput="renderPayments()"><select id="paymentsPlanFilter" onchange="renderPayments()"><option value="">Все планы</option><option value="trial">Trial</option><option value="basic">Premium</option><option value="vip">VIP</option><option value="free">Free</option></select><select id="paymentsStatusFilter" onchange="renderPayments()"><option value="">Все статусы</option><option value="pending">Ожидают</option><option value="succeeded">Успешные</option><option value="failed">Неуспешные</option></select></div><div class="glass" style="overflow:hidden"><table><thead><tr><th>ID</th><th>Email</th><th>Сумма</th><th>Скидка</th><th>Промокод</th><th>План</th><th>Статус</th><th>Создан</th><th>Действия</th></tr></thead><tbody id="paymentsBody"><tr><td colspan="9" class="empty">Загрузка платежей...</td></tr></tbody></table></div></section>
       <section id="page-promo-codes" class="page hidden"><div class="section-head"><h2>Промокоды</h2><div class="btn-row"><button class="btn btn-secondary" onclick="loadPromoCodes()">Обновить</button><button class="btn btn-primary" onclick="exportCSV('promo-codes')">Экспорт CSV</button><button class="btn btn-primary" onclick="openPromoModal()">Добавить промокод</button></div></div><div class="table-toolbar"><input id="promoSearch" type="text" placeholder="Поиск по коду или описанию" oninput="renderPromoCodes()"><select id="promoStatusFilter" onchange="renderPromoCodes()"><option value="">Все статусы</option><option value="active">Активные</option><option value="inactive">Отключённые</option></select></div><div class="glass" style="overflow:hidden"><table><thead><tr><th>Код</th><th>Скидка</th><th>Использовано</th><th>Тарифы</th><th>Истекает</th><th>Статус</th><th>Действия</th></tr></thead><tbody id="promoCodesBody"><tr><td colspan="7" class="empty">Загрузка промокодов...</td></tr></tbody></table></div></section>
+      <section id="page-downloads" class="page hidden"><div class="section-head"><h2>Приложения</h2><div class="btn-row"><button class="btn btn-secondary" onclick="loadDownloads()">Обновить</button></div></div><div class="glass" style="overflow:hidden"><table><thead><tr><th>Платформа</th><th>Текущий файл</th><th>Разрешено</th><th>Публичная ссылка</th><th>Загрузка</th></tr></thead><tbody id="downloadsBody"><tr><td colspan="5" class="empty">Загрузка приложений...</td></tr></tbody></table></div></section>
     </main>
   </div>
 
@@ -465,7 +483,15 @@
     let serversData = [];
     let paymentsData = [];
     let promoCodesData = [];
+    let downloadsData = [];
     let editingPromoCodeId = null;
+
+    const downloadPlatformLabels = {
+      android: 'Android',
+      windows: 'Windows',
+      macos: 'macOS',
+      linux: 'Linux'
+    };
 
     function escapeHtml(value) {
       return String(value ?? '')
@@ -949,6 +975,106 @@
       renderPromoCodes();
     }
 
+    function fmtBytes(value) {
+      const bytes = Number(value || 0);
+      if (!bytes) return '—';
+      const units = ['Б', 'КБ', 'МБ', 'ГБ'];
+      let size = bytes;
+      let unit = 0;
+      while (size >= 1024 && unit < units.length - 1) {
+        size /= 1024;
+        unit += 1;
+      }
+      return `${size.toFixed(unit === 0 ? 0 : 1)} ${units[unit]}`;
+    }
+
+    function fileHasAllowedExtension(fileName, allowedExtensions) {
+      const lowerName = String(fileName || '').toLowerCase();
+      return (allowedExtensions || []).some(ext => lowerName.endsWith(String(ext).toLowerCase()));
+    }
+
+    function renderDownloads() {
+      const body = document.getElementById('downloadsBody');
+      if (!downloadsData.length) {
+        body.innerHTML = '<tr><td colspan="5" class="empty">Платформы для загрузки не настроены</td></tr>';
+        return;
+      }
+      body.innerHTML = downloadsData.map(item => {
+        const platform = item.platform;
+        const allowed = item.allowed_extensions || [];
+        const currentFile = item.original_name
+          ? `<strong>${escapeHtml(item.original_name)}</strong><div class="promo-summary">${fmtBytes(item.size)} · ${fmtDate(item.uploaded_at)}</div>`
+          : '<span class="promo-summary">Файл ещё не загружен</span>';
+        const publicURL = item.url
+          ? `<a class="download-link" href="${escapeHtml(item.url)}" target="_blank" rel="noopener">${escapeHtml(item.url)}</a>`
+          : '<span class="promo-summary">Появится после загрузки</span>';
+        return `
+          <tr>
+            <td>${badge(downloadPlatformLabels[platform] || platform, item.original_name ? 'ok' : 'warn')}</td>
+            <td>${currentFile}</td>
+            <td>${escapeHtml(allowed.join(', '))}</td>
+            <td>${publicURL}</td>
+            <td>
+              <div class="download-upload">
+                <input id="downloadFile-${escapeHtml(platform)}" type="file" accept="${escapeHtml(allowed.join(','))}">
+                <button class="btn btn-primary" id="downloadButton-${escapeHtml(platform)}" onclick="uploadDownload('${escapeHtml(platform)}')">Загрузить</button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    async function loadDownloads() {
+      const res = await api('/api/v1/admin/downloads');
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'failed to load downloads');
+      }
+      downloadsData = data.downloads || [];
+      renderDownloads();
+    }
+
+    async function uploadDownload(platform) {
+      const item = downloadsData.find(entry => entry.platform === platform);
+      const allowed = item?.allowed_extensions || [];
+      const input = document.getElementById(`downloadFile-${platform}`);
+      const button = document.getElementById(`downloadButton-${platform}`);
+      const file = input?.files?.[0];
+      if (!file) {
+        alert('Выберите файл приложения');
+        return;
+      }
+      if (!fileHasAllowedExtension(file.name, allowed)) {
+        alert(`Для ${downloadPlatformLabels[platform] || platform} можно загрузить только ${allowed.join(', ')}`);
+        input.value = '';
+        return;
+      }
+
+      const form = new FormData();
+      form.append('file', file);
+      button.disabled = true;
+      button.classList.add('is-loading');
+      button.textContent = 'Загружаем...';
+      try {
+        const res = await fetch(API + `/api/v1/admin/downloads/${platform}`, {
+          method: 'POST',
+          headers: { Authorization: 'Bearer ' + token },
+          body: form
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          alert(data.error || 'Не удалось загрузить файл');
+          return;
+        }
+        await loadDownloads();
+      } finally {
+        button.disabled = false;
+        button.classList.remove('is-loading');
+        button.textContent = 'Загрузить';
+      }
+    }
+
     function toDatetimeLocal(value) {
       if (!value) return '';
       const date = new Date(value);
@@ -1278,7 +1404,7 @@
 
     async function refreshAll() {
       try {
-        await Promise.all([loadStats(), loadUsers(), loadServers(), loadPayments(), loadPromoCodes()]);
+        await Promise.all([loadStats(), loadUsers(), loadServers(), loadPayments(), loadPromoCodes(), loadDownloads()]);
       } catch (err) {
         console.error(err);
         alert('Не удалось загрузить часть данных админ-панели');

@@ -6,14 +6,16 @@ import (
 	"vpn-backend/internal/models"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 type WebConfigHandler struct {
+	db  *gorm.DB
 	cfg *config.Config
 }
 
-func NewWebConfigHandler(cfg *config.Config) *WebConfigHandler {
-	return &WebConfigHandler{cfg: cfg}
+func NewWebConfigHandler(db *gorm.DB, cfg *config.Config) *WebConfigHandler {
+	return &WebConfigHandler{db: db, cfg: cfg}
 }
 
 // GET /api/v1/web/config
@@ -25,10 +27,10 @@ func (h *WebConfigHandler) Get(c *gin.Context) {
 			webPlan("vip", "VIP", models.PlanVIP, models.PlanVIP3M),
 		},
 		"downloads": gin.H{
-			"android": h.configValue("android", "https://srv.frakebit.com/download/android"),
-			"windows": h.configValue("windows", "https://srv.frakebit.com/download/windows"),
-			"macos":   h.configValue("macos", "https://srv.frakebit.com/download/macos"),
-			"linux":   h.configValue("linux", "https://srv.frakebit.com/download/linux"),
+			"android": h.downloadURL("android", "https://srv.frakebit.com/download/android"),
+			"windows": h.downloadURL("windows", "https://srv.frakebit.com/download/windows"),
+			"macos":   h.downloadURL("macos", "https://srv.frakebit.com/download/macos"),
+			"linux":   h.downloadURL("linux", "https://srv.frakebit.com/download/linux"),
 			"happ":    h.configValue("happ", "https://apps.apple.com/search?term=happ%20proxy"),
 		},
 		"support": gin.H{
@@ -36,6 +38,16 @@ func (h *WebConfigHandler) Get(c *gin.Context) {
 			"telegram": h.configValue("support_telegram", "https://t.me/fblinkvpn_support"),
 		},
 	})
+}
+
+func (h *WebConfigHandler) downloadURL(platform, fallback string) string {
+	if h.db != nil {
+		var download models.AppDownload
+		if err := h.db.Select("id").Where("platform = ?", platform).First(&download).Error; err == nil {
+			return publicDownloadURL(h.cfg, platform)
+		}
+	}
+	return h.configValue(platform, fallback)
 }
 
 func (h *WebConfigHandler) configValue(key, fallback string) string {
