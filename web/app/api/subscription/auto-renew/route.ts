@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { authorizedFetch, backendFetch, backendJSON, bearer } from "../../../lib/server-api";
+import { authorizedFetch, backendFetch, backendJSON, bearer } from "../../../../lib/server-api";
 
 export async function PATCH(req: Request) {
   const body = await req.json();
