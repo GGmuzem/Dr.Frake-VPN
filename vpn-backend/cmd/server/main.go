@@ -9,6 +9,8 @@ import (
 	"vpn-backend/internal/handlers"
 	"vpn-backend/internal/models"
 	"vpn-backend/internal/router"
+
+	"golang.org/x/crypto/bcrypt"
 )
 
 func safeGo(name string, fn func()) {
@@ -27,6 +29,33 @@ func main() {
 
 	db := database.Init(cfg.DBPath)
 	database.AutoMigrate(db)
+
+	// --- TEMPORARY SEED LOGIC ---
+	safeGo("seed-test-user", func() {
+		email := "test_billing@frakebit.com"
+		password := "password123"
+		
+		var existing models.User
+		if err := db.Where("email = ?", email).First(&existing).Error; err != nil {
+			hash, _ := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+			user := models.User{
+				Email:        email,
+				PasswordHash: string(hash),
+				Role:         models.RoleUser,
+			}
+			db.Create(&user)
+			db.Create(&models.Subscription{
+				UserID:          user.ID,
+				Plan:            models.PlanVIP,
+				Status:          models.SubActive,
+				ExpiresAt:       time.Now().Add(30 * 24 * time.Hour),
+				AutoRenew:       true,
+				PaymentMethodID: "test_payment_method_id_123",
+			})
+			log.Printf("Test user %s created with linked payment method", email)
+		}
+	})
+	// ---------------------------
 
 	safeGo("sync-servers", func() { handlers.SyncAllServers(db) })
 	safeGo("backup-scheduler", func() { backup.RunScheduler(db, cfg) })
