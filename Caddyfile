@@ -17,7 +17,7 @@ https://srv.frakebit.com {
 	}
 
 	@backend {
-		path /api /api/* /api/** /admin /admin/* /admin/** /health
+		path /api* /admin* /health
 	}
 
 	handle @backend {
@@ -28,7 +28,7 @@ https://srv.frakebit.com {
 	}
 
 	handle {
-		reverse_proxy bot:8080 {
+		reverse_proxy web:3000 {
 			header_up Host {host}
 			header_up X-Real-IP {remote}
 			lb_try_duration 5s

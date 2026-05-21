@@ -13,6 +13,7 @@ type Config struct {
 	DBPath         string
 	JWTSecret      string
 	AllowedOrigins string // CORS: "*" или "https://example.com,https://app.example.com"
+	PublicBaseURL  string
 	YooKassaShopID string
 	YooKassaKey    string
 
@@ -26,6 +27,15 @@ type Config struct {
 
 	// Платежи
 	PaymentReturnURL string // URL для редиректа после оплаты
+
+	// Web app public settings
+	AndroidDownloadURL string
+	WindowsDownloadURL string
+	MacOSDownloadURL   string
+	LinuxDownloadURL   string
+	HappAppURL         string
+	SupportEmail       string
+	SupportTelegramURL string
 
 	// Client Updater
 	ClientLatestVersion  string
@@ -54,7 +64,8 @@ func Load() *Config {
 		Port:           getEnv("PORT", "8081"),
 		DBPath:         getEnv("DB_PATH", "data/vpn.db"),
 		JWTSecret:      secret,
-		AllowedOrigins: getEnv("ALLOWED_ORIGINS", "*"),
+		PublicBaseURL:  getEnv("PUBLIC_BASE_URL", "https://srv.frakebit.com"),
+		AllowedOrigins: getEnv("ALLOWED_ORIGINS", "https://srv.frakebit.com,http://localhost:3000,http://localhost:3001"),
 		YooKassaShopID: getEnv("YOOKASSA_SHOP_ID", ""),
 		YooKassaKey:    getEnv("YOOKASSA_SECRET_KEY", ""),
 
@@ -65,6 +76,13 @@ func Load() *Config {
 		SMTPFrom:            getEnv("SMTP_FROM", ""),
 		BackupIntervalHours: backupInterval,
 		PaymentReturnURL:    getEnv("PAYMENT_RETURN_URL", "https://frakebit.com/payment/success"),
+		AndroidDownloadURL:  getEnv("ANDROID_DOWNLOAD_URL", "https://srv.frakebit.com/download/android"),
+		WindowsDownloadURL:  getEnv("WINDOWS_DOWNLOAD_URL", "https://srv.frakebit.com/download/windows"),
+		MacOSDownloadURL:    getEnv("MACOS_DOWNLOAD_URL", "https://srv.frakebit.com/download/macos"),
+		LinuxDownloadURL:    getEnv("LINUX_DOWNLOAD_URL", "https://srv.frakebit.com/download/linux"),
+		HappAppURL:          getEnv("HAPP_APP_URL", "https://apps.apple.com/search?term=happ%20proxy"),
+		SupportEmail:        getEnv("SUPPORT_EMAIL", "support@frakebit.com"),
+		SupportTelegramURL:  getEnv("SUPPORT_TELEGRAM_URL", "https://t.me/fblinkvpn_support"),
 
 		ClientLatestVersion:  getEnv("CLIENT_LATEST_VERSION", "1.0.0"),
 		ClientDownloadURL:    getEnv("CLIENT_DOWNLOAD_URL", "https://frakebit.com/download"),

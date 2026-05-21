@@ -15,6 +15,22 @@ services:
       - default
       - bot-network
 
+  web:
+    build:
+      context: ../web
+    container_name: fblink-web
+    restart: always
+    environment:
+      BACKEND_API_URL: http://backend:8081
+      NEXT_PUBLIC_API_BASE_URL: http://backend:8081
+    ports:
+      - "3001:3001"
+    depends_on:
+      - backend
+    networks:
+      - default
+      - bot-network
+
   redis:
     image: redis:7-alpine
     container_name: vpn-redis

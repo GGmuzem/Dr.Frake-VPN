@@ -51,6 +51,8 @@ func New(db *gorm.DB, cfg *config.Config) *gin.Engine {
 	vpnH := handlers.NewVPNHandler(db)
 	payH := handlers.NewPaymentHandler(db, cfg.YooKassaShopID, cfg.YooKassaKey, cfg)
 	adminH := handlers.NewAdminHandler(db, cfg)
+	happH := handlers.NewHappHandler(db, cfg)
+	webConfigH := handlers.NewWebConfigHandler(cfg)
 
 	auth := middleware.AuthRequired(cfg.JWTSecret)
 	admin := middleware.AdminRequired()
@@ -73,6 +75,8 @@ func New(db *gorm.DB, cfg *config.Config) *gin.Engine {
 
 		// Client Updates (Public)
 		api.GET("/client/latest-version", handlers.GetLatestClientVersion(cfg))
+		api.GET("/web/config", webConfigH.Get)
+		api.GET("/happ/sub/:token", happH.Subscription)
 
 		// TV approve confirmation page, also exposed under /tv at the
 		// root for the original device-flow URL. Mounted under the API
@@ -104,6 +108,7 @@ func New(db *gorm.DB, cfg *config.Config) *gin.Engine {
 			me.POST("/support/bug-report", userH.SubmitBugReport)
 			me.GET("/config", vpnH.GetConfig)
 			me.POST("/config/revoke", vpnH.RevokeConfig)
+			me.POST("/happ-link", happH.CreateLink)
 			me.POST("/tv/approve", authH.TVApproveAuthenticated)
 		}
 
