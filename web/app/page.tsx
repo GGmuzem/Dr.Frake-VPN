@@ -16,6 +16,7 @@ import {
   Sparkles,
   Wifi,
   Zap,
+  Tv,
 } from "lucide-react";
 import { DitheringShader } from "@/components/ui/dithering-shader";
 import Pricing04 from "@/components/ui/ruixen-pricing-04";
@@ -91,6 +92,7 @@ export default async function HomePage() {
   const config = await loadSiteConfig();
   const platforms = [
     { label: "Android", icon: Smartphone, href: config.downloads.android },
+    { label: "Android TV", icon: Tv, href: config.downloads.androidtv },
     { label: "Windows", icon: MonitorDown, href: config.downloads.windows },
     { label: "macOS", icon: Laptop, href: config.downloads.macos },
     { label: "Linux", icon: Download, href: config.downloads.linux },
@@ -176,7 +178,7 @@ export default async function HomePage() {
             </div>
           </div>
           <div className="platform-dock">
-            {platforms.slice(0, 4).map((platform) => {
+            {platforms.slice(0, 5).map((platform) => {
               const Icon = platform.icon;
               return (
                 <a href={platform.href} key={platform.label}>

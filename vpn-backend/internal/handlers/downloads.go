@@ -15,13 +15,14 @@ import (
 	"gorm.io/gorm"
 )
 
-var appDownloadPlatforms = []string{"android", "windows", "macos", "linux"}
+var appDownloadPlatforms = []string{"android", "windows", "macos", "linux", "androidtv"}
 
 var appDownloadExtensions = map[string][]string{
-	"android": {".apk"},
-	"windows": {".exe", ".msi"},
-	"macos":   {".dmg", ".pkg"},
-	"linux":   {".AppImage", ".deb", ".rpm", ".tar.gz"},
+	"android":   {".apk"},
+	"androidtv": {".apk"},
+	"windows":   {".exe", ".msi"},
+	"macos":     {".dmg", ".pkg"},
+	"linux":     {".AppImage", ".deb", ".rpm", ".tar.gz", ".zip"},
 }
 
 type DownloadHandler struct {

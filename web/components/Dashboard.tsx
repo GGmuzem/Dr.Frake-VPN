@@ -18,6 +18,7 @@ import {
   ShieldCheck,
   Smartphone,
   Sparkles,
+  Tv,
 } from "lucide-react";
 import { Brand } from "./Brand";
 import Pricing04 from "@/components/ui/ruixen-pricing-04";
@@ -41,6 +42,7 @@ type HappLink = {
 
 const platformIcons = {
   android: Smartphone,
+  androidtv: Tv,
   windows: MonitorDown,
   macos: Laptop,
   linux: Download,
@@ -49,6 +51,7 @@ const platformIcons = {
 
 const platformLabels: Record<keyof typeof platformIcons, string> = {
   android: "Android",
+  androidtv: "Android TV",
   windows: "Windows",
   macos: "macOS",
   linux: "Linux",
@@ -350,7 +353,7 @@ export function Dashboard() {
               <p className="muted">Выберите платформу. Авторизация — тем же email.</p>
             </div>
             <div className="downloads">
-              {(["android", "windows", "macos", "linux", "happ"] as const).map((platform) => {
+              {(["android", "androidtv", "windows", "macos", "linux", "happ"] as const).map((platform) => {
                 const Icon = platformIcons[platform];
                 const label = platformLabels[platform];
                 return (

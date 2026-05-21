@@ -17,7 +17,7 @@ https://srv.frakebit.com {
 	}
 
 	@backend {
-		path /api* /admin* /health
+		path /api* /admin* /health /download*
 	}
 
 	handle @backend {

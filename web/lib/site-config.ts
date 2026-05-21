@@ -19,7 +19,7 @@ export type Plan = {
 export type SiteConfig = {
   brand: "FBLink VPN";
   plans: Plan[];
-  downloads: Record<"android" | "windows" | "macos" | "linux" | "happ", string>;
+  downloads: Record<"android" | "windows" | "macos" | "linux" | "happ" | "androidtv", string>;
   support: {
     email: string;
     telegram: string;
@@ -63,6 +63,7 @@ export const defaultSiteConfig: SiteConfig = {
     macos: "https://srv.frakebit.com/download/macos",
     linux: "https://srv.frakebit.com/download/linux",
     happ: "https://apps.apple.com/search?term=happ%20proxy",
+    androidtv: "https://srv.frakebit.com/download/androidtv",
   },
   support: {
     email: "support@frakebit.com",
