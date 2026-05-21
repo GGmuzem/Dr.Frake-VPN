@@ -67,7 +67,7 @@ export const defaultSiteConfig: SiteConfig = {
   },
   support: {
     email: "support@frakebit.com",
-    telegram: "https://t.me/fblinkvpn_support",
+    telegram: "https://t.me/+79966732628",
   },
 };
 
