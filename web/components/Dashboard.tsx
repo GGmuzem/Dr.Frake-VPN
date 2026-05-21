@@ -93,6 +93,7 @@ export function Dashboard() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [loadingPayment, setLoadingPayment] = useState<PlanId | "">("");
+  const [loadingAutoRenew, setLoadingAutoRenew] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -140,7 +141,7 @@ export function Dashboard() {
   async function toggleAutoRenew(enabled: boolean) {
     if (!enabled && !confirm("Вы уверены, что хотите отключить автосписание? Подписка не будет продлена автоматически.")) return;
     setError("");
-    setLoadingPayment(true); // Reusing loading state to prevent double clicks
+    setLoadingAutoRenew(true);
     try {
       const response = await fetch("/api/subscription/auto-renew", {
         method: "PATCH",
@@ -158,7 +159,7 @@ export function Dashboard() {
     } catch (err) {
       setError(err instanceof Error ? err.message : "Произошла ошибка");
     } finally {
-      setLoadingPayment(false);
+      setLoadingAutoRenew(false);
     }
   }
 
@@ -344,9 +345,9 @@ export function Dashboard() {
                       Включено
                       <button 
                         className="button button-secondary" 
-                        style={{ padding: "4px 8px", minHeight: "unset", fontSize: "12px", opacity: loadingPayment ? 0.5 : 1 }}
+                        style={{ padding: "4px 8px", minHeight: "unset", fontSize: "12px", opacity: loadingAutoRenew ? 0.5 : 1 }}
                         onClick={() => toggleAutoRenew(false)}
-                        disabled={loadingPayment}
+                        disabled={loadingAutoRenew}
                       >
                         Отключить
                       </button>
