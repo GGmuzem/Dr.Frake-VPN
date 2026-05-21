@@ -367,7 +367,7 @@ export function Dashboard() {
                     <strong>{label}</strong>
                     {platform === "happ" ? (
                       <button className="button button-primary" onClick={openHapp} type="button">
-                        Добавить в Happ
+                        В Happ
                       </button>
                     ) : (
                       <a className="button button-secondary" href={config.downloads[platform]}>
