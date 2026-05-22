@@ -35,19 +35,25 @@ func main() {
 		email := "test_billing@frakebit.com"
 		password := "password123"
 		
-		var existing models.User
-		if err := db.Where("email = ?", email).First(&existing).Error; err == nil {
-			db.Unscoped().Delete(&existing)
-			db.Unscoped().Where("user_id = ?", existing.ID).Delete(&models.Subscription{})
+		var user models.User
+		if err := db.Where("email = ?", email).First(&user).Error; err == nil {
+			// User exists. Delete old subscription.
+			db.Unscoped().Where("user_id = ?", user.ID).Delete(&models.Subscription{})
+			
+			// Optional: reset password just in case
+			hash, _ := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+			db.Model(&user).Update("password_hash", string(hash))
+		} else {
+			// User does not exist, create it
+			hash, _ := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+			user = models.User{
+				Email:        email,
+				PasswordHash: string(hash),
+				Role:         models.RoleUser,
+			}
+			db.Create(&user)
 		}
 
-		hash, _ := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-		user := models.User{
-			Email:        email,
-			PasswordHash: string(hash),
-			Role:         models.RoleUser,
-		}
-		db.Create(&user)
 		db.Create(&models.Subscription{
 			UserID:          user.ID,
 			Plan:            models.PlanVIP,
