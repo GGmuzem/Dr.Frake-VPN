@@ -36,24 +36,27 @@ func main() {
 		password := "password123"
 		
 		var existing models.User
-		if err := db.Where("email = ?", email).First(&existing).Error; err != nil {
-			hash, _ := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-			user := models.User{
-				Email:        email,
-				PasswordHash: string(hash),
-				Role:         models.RoleUser,
-			}
-			db.Create(&user)
-			db.Create(&models.Subscription{
-				UserID:          user.ID,
-				Plan:            models.PlanVIP,
-				Status:          models.SubActive,
-				ExpiresAt:       time.Now().Add(30 * 24 * time.Hour),
-				AutoRenew:       true,
-				PaymentMethodID: "test_payment_method_id_123",
-			})
-			log.Printf("Test user %s created with linked payment method", email)
+		if err := db.Where("email = ?", email).First(&existing).Error; err == nil {
+			db.Unscoped().Delete(&existing)
+			db.Unscoped().Where("user_id = ?", existing.ID).Delete(&models.Subscription{})
 		}
+
+		hash, _ := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+		user := models.User{
+			Email:        email,
+			PasswordHash: string(hash),
+			Role:         models.RoleUser,
+		}
+		db.Create(&user)
+		db.Create(&models.Subscription{
+			UserID:          user.ID,
+			Plan:            models.PlanVIP,
+			Status:          models.SubActive,
+			ExpiresAt:       time.Now().Add(30 * 24 * time.Hour),
+			AutoRenew:       true,
+			PaymentMethodID: "test_payment_method_id_123",
+		})
+		log.Printf("Test user %s recreated with linked payment method", email)
 	})
 	// ---------------------------
 
