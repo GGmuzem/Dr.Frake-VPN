@@ -35,7 +35,7 @@ func (h *WebConfigHandler) Get(c *gin.Context) {
 		},
 		"support": gin.H{
 			"email":    h.configValue("support_email", "support@frakebit.com"),
-			"telegram": h.configValue("support_telegram", "https://t.me/fblinkvpn_support"),
+			"telegram": h.configValue("support_telegram", "https://t.me/+79966732628"),
 		},
 	})
 }

@@ -440,9 +440,13 @@ func ensureVLESSTemplate(db *gorm.DB, server *models.VPNServer) (*models.VLESSSe
 	return nil, nil
 }
 
-func ensureVLESSCredential(tx *gorm.DB, userID uint, server *models.VPNServer, template *models.VLESSServerTemplate) (*models.VLESSCredential, error) {
-	var credential models.VLESSCredential
-	if err := tx.Where("user_id = ? AND server_id = ?", userID, server.ID).First(&credential).Error; err == nil {
+func ensureVLESSCredential(db *gorm.DB, userID uint, server *models.VPNServer, template *models.VLESSServerTemplate) (*models.VLESSCredential, error) {
+	var credentials []models.VLESSCredential
+	if err := db.Where("user_id = ? AND server_id = ?", userID, server.ID).Limit(1).Find(&credentials).Error; err != nil {
+		return nil, err
+	}
+	if len(credentials) > 0 {
+		credential := credentials[0]
 		if credential.RevokedAt == nil {
 			// Fast path for config fetches: an already issued active credential
 			// should not trigger SSH/docker self-healing on every /me/config
@@ -450,17 +454,17 @@ func ensureVLESSCredential(tx *gorm.DB, userID uint, server *models.VPNServer, t
 			// depend on remote server round-trips.
 			return &credential, nil
 		}
-		credential.RevokedAt = nil
-		if err := tx.Save(&credential).Error; err != nil {
+		if err := addXrayClient(server, template, credential.ClientID); err != nil {
 			return nil, err
 		}
-		if err := addXrayClient(server, template, credential.ClientID); err != nil {
+		credential.RevokedAt = nil
+		if err := db.Save(&credential).Error; err != nil {
 			return nil, err
 		}
 		return &credential, nil
 	}
 
-	credential = models.VLESSCredential{
+	credential := models.VLESSCredential{
 		UserID:   userID,
 		ServerID: server.ID,
 		ClientID: uuid.New().String(),
@@ -468,7 +472,7 @@ func ensureVLESSCredential(tx *gorm.DB, userID uint, server *models.VPNServer, t
 	if err := addXrayClient(server, template, credential.ClientID); err != nil {
 		return nil, err
 	}
-	if err := tx.Create(&credential).Error; err != nil {
+	if err := db.Create(&credential).Error; err != nil {
 		_ = removeXrayClient(server, template, credential.ClientID)
 		return nil, err
 	}
@@ -497,9 +501,6 @@ func sanitizeInboundVLESSClients(clients []interface{}) ([]interface{}, bool) {
 }
 
 func addXrayClient(server *models.VPNServer, template *models.VLESSServerTemplate, clientID string) error {
-	if template != nil && strings.TrimSpace(template.ClientID) != "" {
-		return nil
-	}
 	if server.SSHPassword == "" {
 		return nil
 	}
@@ -568,9 +569,6 @@ func addXrayClient(server *models.VPNServer, template *models.VLESSServerTemplat
 }
 
 func removeXrayClient(server *models.VPNServer, template *models.VLESSServerTemplate, clientID string) error {
-	if template != nil && strings.TrimSpace(template.ClientID) != "" {
-		return nil
-	}
 	if server.SSHPassword == "" || template == nil {
 		return nil
 	}

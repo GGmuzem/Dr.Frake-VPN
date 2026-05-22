@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 	"vpn-backend/internal/models"
 
@@ -16,21 +17,15 @@ import (
 // RunAutoRenewalScheduler проверяет каждый час подписки, истекшие сегодня,
 // и списывает оплату с сохранённой карты. Вызывать как горутину из main.
 func RunAutoRenewalScheduler(db *gorm.DB, shopID, key string) {
-	if !yooKassaRecurringPaymentsEnabled() {
-		log.Println("[renewal] рекуррентные платежи временно отключены")
-		return
+	if autoRenewalChargesEnabled(shopID, key) {
+		log.Println("[renewal] Subscription maintenance and auto-renewal scheduler started (interval: 1h)")
+	} else {
+		log.Println("[renewal] Subscription maintenance scheduler started (interval: 1h); auto-renewal charges disabled")
 	}
-	if shopID == "" || key == "" {
-		log.Println("[renewal] YooKassa не настроена — автосписание отключено")
-		return
-	}
-
-	log.Println("[renewal] Планировщик автосписания запущен (интервал: 1ч)")
 
 	ticker := time.NewTicker(1 * time.Hour)
 	defer ticker.Stop()
 
-	// Запускаем сразу при старте, чтобы не ждать первый запуск
 	processAutoRenewals(db, shopID, key)
 
 	for range ticker.C {
@@ -38,11 +33,15 @@ func RunAutoRenewalScheduler(db *gorm.DB, shopID, key string) {
 	}
 }
 
+func autoRenewalChargesEnabled(shopID, key string) bool {
+	return yooKassaRecurringPaymentsEnabled() && strings.TrimSpace(shopID) != "" && strings.TrimSpace(key) != ""
+}
+
 func processAutoRenewals(db *gorm.DB, shopID, key string) {
 	now := time.Now()
 
 	// 1. Автосписание для подписок с картой и включённым auto_renew
-	if yooKassaRecurringPaymentsEnabled() {
+	if autoRenewalChargesEnabled(shopID, key) {
 		var subs []models.Subscription
 		db.Where(
 			"auto_renew = true AND payment_method_id != '' AND status = ? AND expires_at <= ?",
@@ -83,29 +82,43 @@ func processAutoRenewals(db *gorm.DB, shopID, key string) {
 		db.Where("status = ? AND expires_at <= ?", models.SubExpired, now).Find(&expiredSubs)
 
 		for _, s := range expiredSubs {
+			if err := revokeHappTokens(db, s.UserID, now); err != nil {
+				log.Printf("[renewal] Failed to revoke Happ tokens for expired subscription user_id=%d: %v", s.UserID, err)
+			}
+
 			var keys []models.VPNKey
 			// Ищем активные ключи этого пользователя (revoked_at IS NULL)
 			if err := db.Where("user_id = ? AND revoked_at IS NULL", s.UserID).Preload("Server").Find(&keys).Error; err == nil && len(keys) > 0 {
+				revokedKeyIDs := make([]uint, 0, len(keys))
 				for _, k := range keys {
 					if k.PublicKey != "" {
 						if err := removeAWGPeer(&k.Server, k.PublicKey); err != nil {
-							log.Printf("[renewal] Ошибка удаления ключа (user_id=%d) с сервера %s: %v", s.UserID, k.Server.Name, err)
+							log.Printf("[renewal] Failed to remove AWG key user_id=%d server=%s: %v", s.UserID, k.Server.Name, err)
+							continue
 						}
 					}
+					revokedKeyIDs = append(revokedKeyIDs, k.ID)
 				}
-				// Помечаем их как отозванные в БД
-				db.Model(&models.VPNKey{}).Where("user_id = ? AND revoked_at IS NULL", s.UserID).Update("revoked_at", now)
-				log.Printf("[renewal] Отозваны VPN ключи для пользователя %d (подписка истекла)", s.UserID)
+				if len(revokedKeyIDs) > 0 {
+					db.Model(&models.VPNKey{}).Where("id IN ? AND revoked_at IS NULL", revokedKeyIDs).Update("revoked_at", now)
+					log.Printf("[renewal] Revoked %d AWG keys for expired subscription user_id=%d", len(revokedKeyIDs), s.UserID)
+				}
 			}
 
 			var xrayCreds []models.VLESSCredential
 			if err := db.Where("user_id = ? AND revoked_at IS NULL", s.UserID).Preload("Server.VLESSTemplate").Find(&xrayCreds).Error; err == nil {
+				revokedCredentialIDs := make([]uint, 0, len(xrayCreds))
 				for _, cred := range xrayCreds {
 					if err := removeXrayClient(&cred.Server, cred.Server.VLESSTemplate, cred.ClientID); err != nil {
-						log.Printf("[renewal] Ошибка удаления VLESS credential (user_id=%d) с сервера %s: %v", s.UserID, cred.Server.Name, err)
+						log.Printf("[renewal] Failed to remove VLESS credential user_id=%d server=%s: %v", s.UserID, cred.Server.Name, err)
+						continue
 					}
+					revokedCredentialIDs = append(revokedCredentialIDs, cred.ID)
 				}
-				db.Model(&models.VLESSCredential{}).Where("user_id = ? AND revoked_at IS NULL", s.UserID).Update("revoked_at", now)
+				if len(revokedCredentialIDs) > 0 {
+					db.Model(&models.VLESSCredential{}).Where("id IN ? AND revoked_at IS NULL", revokedCredentialIDs).Update("revoked_at", now)
+					log.Printf("[renewal] Revoked %d VLESS credentials for expired subscription user_id=%d", len(revokedCredentialIDs), s.UserID)
+				}
 			}
 		}
 	}

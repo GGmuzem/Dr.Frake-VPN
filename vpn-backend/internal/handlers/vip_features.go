@@ -402,15 +402,15 @@ func ensureDefaultRoutingProfiles(db *gorm.DB, userID uint) error {
 		}
 	}
 
-	var enabledSystemProfile models.RoutingProfile
+	var enabledSystemProfiles []models.RoutingProfile
 	if err := db.Select("id").
 		Where("user_id = ? AND kind = ? AND enabled = ?", userID, models.RoutingProfileSystem, true).
 		Limit(1).
-		First(&enabledSystemProfile).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
-			return nil
-		}
+		Find(&enabledSystemProfiles).Error; err != nil {
 		return err
+	}
+	if len(enabledSystemProfiles) == 0 {
+		return nil
 	}
 
 	if err := migrateEnabledSystemProfilesToCustomCopies(db, userID); err != nil {

@@ -62,6 +62,7 @@ func main() {
 	safeGo("renewal-scheduler", func() {
 		handlers.RunAutoRenewalScheduler(db, cfg.YooKassaShopID, cfg.YooKassaKey)
 	})
+	safeGo("config-generator", func() { handlers.RunAutoConfigGenerator(db) })
 	// Очистка истёкших кодов подтверждения раз в час
 	safeGo("code-cleanup", func() {
 		for {

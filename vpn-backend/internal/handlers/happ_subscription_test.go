@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -104,6 +105,40 @@ func seedHappServer(t *testing.T, db *gorm.DB, name string, vipOnly bool) models
 	return server
 }
 
+func seedSharedHappTemplateClientID(t *testing.T, db *gorm.DB, serverID uint) {
+	t.Helper()
+
+	if err := db.Model(&models.VLESSServerTemplate{}).
+		Where("server_id = ?", serverID).
+		Update("client_id", "11111111-1111-4111-8111-111111111111").Error; err != nil {
+		t.Fatalf("seed shared client id: %v", err)
+	}
+}
+
+func seedHappCredential(t *testing.T, db *gorm.DB, userID uint, serverID uint, clientID string) {
+	t.Helper()
+
+	if err := db.Create(&models.VLESSCredential{
+		UserID:   userID,
+		ServerID: serverID,
+		ClientID: clientID,
+	}).Error; err != nil {
+		t.Fatalf("seed happ credential: %v", err)
+	}
+}
+
+func storeHappTokenForTest(t *testing.T, db *gorm.DB, userID uint, token string) {
+	t.Helper()
+
+	if err := db.Create(&models.HappSubscriptionToken{
+		UserID:    userID,
+		TokenHash: happTokenHash(token),
+		Label:     "iOS Happ",
+	}).Error; err != nil {
+		t.Fatalf("store happ token: %v", err)
+	}
+}
+
 func issueHappTokenForTest(t *testing.T, db *gorm.DB, cfg *config.Config, userID uint) string {
 	t.Helper()
 
@@ -124,7 +159,11 @@ func issueHappTokenForTest(t *testing.T, db *gorm.DB, cfg *config.Config, userID
 		t.Fatalf("decode create link response: %v", err)
 	}
 
-	parts := strings.Split(body.SubscriptionURL, "/")
+	parsed, err := url.Parse(body.SubscriptionURL)
+	if err != nil {
+		t.Fatalf("parse subscription URL: %v", err)
+	}
+	parts := strings.Split(strings.Trim(parsed.Path, "/"), "/")
 	return parts[len(parts)-1]
 }
 
@@ -163,6 +202,114 @@ func TestCreateHappLinkUsesBase64DeepLinkPayload(t *testing.T) {
 	if string(decoded) != body.SubscriptionURL {
 		t.Fatalf("expected deep link payload %q, got %q", body.SubscriptionURL, string(decoded))
 	}
+
+	parsed, err := url.Parse(body.SubscriptionURL)
+	if err != nil {
+		t.Fatalf("parse subscription URL: %v", err)
+	}
+	if parsed.Fragment != happSubscriptionTitle {
+		t.Fatalf("expected subscription title %q, got %q", happSubscriptionTitle, parsed.Fragment)
+	}
+}
+
+func TestCreateHappLinkRejectsFreeSubscription(t *testing.T) {
+	db := openHappSubscriptionDB(t)
+	cfg := &config.Config{PublicBaseURL: "https://srv.frakebit.com"}
+	seedHappUser(t, db, 1, models.PlanFree, time.Now().Add(24*time.Hour))
+
+	handler := NewHappHandler(db, cfg)
+	recorder := httptest.NewRecorder()
+	context, _ := gin.CreateTestContext(recorder)
+	context.Set("user_id", uint(1))
+	context.Request = httptest.NewRequest(http.MethodPost, "/api/v1/me/happ-link", nil)
+	handler.CreateLink(context)
+
+	if recorder.Code != http.StatusForbidden {
+		t.Fatalf("expected free subscription status 403, got %d body=%s", recorder.Code, recorder.Body.String())
+	}
+}
+
+func TestCreateHappLinkUsesCryptoAPIWhenConfigured(t *testing.T) {
+	db := openHappSubscriptionDB(t)
+	seedHappUser(t, db, 1, models.PlanBasic, time.Now().Add(24*time.Hour))
+
+	var receivedURL string
+	cryptoServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			t.Fatalf("expected POST to crypto API, got %s", r.Method)
+		}
+		var payload struct {
+			URL string `json:"url"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+			t.Fatalf("decode crypto API payload: %v", err)
+		}
+		receivedURL = payload.URL
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"encrypted_link":"happ://crypt5/encrypted"}`))
+	}))
+	defer cryptoServer.Close()
+
+	cfg := &config.Config{
+		PublicBaseURL:    "https://srv.frakebit.com",
+		HappCryptoAPIURL: cryptoServer.URL,
+	}
+	handler := NewHappHandler(db, cfg)
+	recorder := httptest.NewRecorder()
+	context, _ := gin.CreateTestContext(recorder)
+	context.Set("user_id", uint(1))
+	context.Request = httptest.NewRequest(http.MethodPost, "/api/v1/me/happ-link", nil)
+	handler.CreateLink(context)
+
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected create link status 200, got %d body=%s", recorder.Code, recorder.Body.String())
+	}
+
+	var body struct {
+		SubscriptionURL string `json:"subscription_url"`
+		HappURL         string `json:"happ_url"`
+	}
+	if err := json.Unmarshal(recorder.Body.Bytes(), &body); err != nil {
+		t.Fatalf("decode create link response: %v", err)
+	}
+	if body.HappURL != "happ://crypt5/encrypted" {
+		t.Fatalf("expected encrypted Happ link, got %s", body.HappURL)
+	}
+	if receivedURL != body.SubscriptionURL {
+		t.Fatalf("expected crypto API URL %q, got %q", body.SubscriptionURL, receivedURL)
+	}
+}
+
+func TestCreateHappLinkDoesNotBlockOnCredentialPreparation(t *testing.T) {
+	db := openHappSubscriptionDB(t)
+	cfg := &config.Config{PublicBaseURL: "https://srv.frakebit.com"}
+	seedHappUser(t, db, 1, models.PlanBasic, time.Now().Add(24*time.Hour))
+	server := seedHappServer(t, db, "Normal", false)
+	if err := db.Model(&models.VPNServer{}).
+		Where("id = ?", server.ID).
+		Updates(map[string]interface{}{
+			"ssh_host":     "203.0.113.1",
+			"ssh_password": "bad-password",
+		}).Error; err != nil {
+		t.Fatalf("mark server ssh configured: %v", err)
+	}
+
+	handler := NewHappHandler(db, cfg)
+	recorder := httptest.NewRecorder()
+	context, _ := gin.CreateTestContext(recorder)
+	context.Set("user_id", uint(1))
+	context.Request = httptest.NewRequest(http.MethodPost, "/api/v1/me/happ-link", nil)
+
+	start := time.Now()
+	handler.CreateLink(context)
+	elapsed := time.Since(start)
+
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected create link status 200, got %d body=%s", recorder.Code, recorder.Body.String())
+	}
+	if elapsed > time.Second {
+		t.Fatalf("create Happ link should not wait on SSH credential preparation, elapsed=%s", elapsed)
+	}
 }
 
 func TestHappSubscriptionAllowsPremiumVLESSWithoutVIPOnlyServers(t *testing.T) {
@@ -171,6 +318,8 @@ func TestHappSubscriptionAllowsPremiumVLESSWithoutVIPOnlyServers(t *testing.T) {
 	seedHappUser(t, db, 1, models.PlanBasic, time.Now().Add(24*time.Hour))
 	normalServer := seedHappServer(t, db, "Normal", false)
 	vipServer := seedHappServer(t, db, "VIP", true)
+	seedSharedHappTemplateClientID(t, db, normalServer.ID)
+	seedHappCredential(t, db, 1, normalServer.ID, "22222222-2222-4222-8222-222222222222")
 	token := issueHappTokenForTest(t, db, cfg, 1)
 
 	handler := NewHappHandler(db, cfg)
@@ -190,6 +339,78 @@ func TestHappSubscriptionAllowsPremiumVLESSWithoutVIPOnlyServers(t *testing.T) {
 	if strings.Contains(body, vipServer.Host) {
 		t.Fatalf("Premium Happ subscription leaked VIP-only server: %s", body)
 	}
+
+	var credential models.VLESSCredential
+	if err := db.Where("user_id = ? AND server_id = ?", 1, normalServer.ID).First(&credential).Error; err != nil {
+		t.Fatalf("expected personal Happ VLESS credential: %v", err)
+	}
+	if strings.Contains(body, "11111111-1111-4111-8111-111111111111") {
+		t.Fatalf("Happ subscription leaked shared template client id: %s", body)
+	}
+	if !strings.Contains(body, credential.ClientID) {
+		t.Fatalf("expected Happ subscription to use personal credential %s, got %s", credential.ClientID, body)
+	}
+}
+
+func TestHappSubscriptionDoesNotUseSharedTemplateClientIDWithoutCredential(t *testing.T) {
+	db := openHappSubscriptionDB(t)
+	cfg := &config.Config{PublicBaseURL: "https://srv.frakebit.com"}
+	seedHappUser(t, db, 1, models.PlanBasic, time.Now().Add(24*time.Hour))
+	seedHappServer(t, db, "Normal", false)
+	token := "manual-token"
+	storeHappTokenForTest(t, db, 1, token)
+
+	handler := NewHappHandler(db, cfg)
+	recorder := httptest.NewRecorder()
+	context, _ := gin.CreateTestContext(recorder)
+	context.Params = gin.Params{{Key: "token", Value: token}}
+	context.Request = httptest.NewRequest(http.MethodGet, "/api/v1/happ/sub/"+token, nil)
+	handler.Subscription(context)
+
+	if recorder.Code != http.StatusServiceUnavailable {
+		t.Fatalf("expected no personal Happ configs status 503, got %d body=%s", recorder.Code, recorder.Body.String())
+	}
+}
+
+func TestHappSubscriptionDoesNotRefreshTemplatesOverSSH(t *testing.T) {
+	db := openHappSubscriptionDB(t)
+	cfg := &config.Config{PublicBaseURL: "https://srv.frakebit.com"}
+	seedHappUser(t, db, 1, models.PlanBasic, time.Now().Add(24*time.Hour))
+	server := seedHappServer(t, db, "Normal", false)
+	seedHappCredential(t, db, 1, server.ID, "33333333-3333-4333-8333-333333333333")
+	token := issueHappTokenForTest(t, db, cfg, 1)
+
+	stale := time.Now().Add(-48 * time.Hour)
+	if err := db.Model(&models.VPNServer{}).
+		Where("id = ?", server.ID).
+		Updates(map[string]interface{}{
+			"ssh_host":     "203.0.113.1",
+			"ssh_password": "bad-password",
+		}).Error; err != nil {
+		t.Fatalf("mark server ssh configured: %v", err)
+	}
+	if err := db.Model(&models.VLESSServerTemplate{}).
+		Where("server_id = ?", server.ID).
+		Update("updated_at", stale).Error; err != nil {
+		t.Fatalf("mark vless template stale: %v", err)
+	}
+
+	handler := NewHappHandler(db, cfg)
+	recorder := httptest.NewRecorder()
+	context, _ := gin.CreateTestContext(recorder)
+	context.Params = gin.Params{{Key: "token", Value: token}}
+	context.Request = httptest.NewRequest(http.MethodGet, "/api/v1/happ/sub/"+token, nil)
+
+	start := time.Now()
+	handler.Subscription(context)
+	elapsed := time.Since(start)
+
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected subscription status 200, got %d body=%s", recorder.Code, recorder.Body.String())
+	}
+	if elapsed > 2*time.Second {
+		t.Fatalf("Happ subscription should not wait on SSH refresh, elapsed=%s", elapsed)
+	}
 }
 
 func TestHappSubscriptionAllowsVIPOnlyServersForVIP(t *testing.T) {
@@ -198,6 +419,8 @@ func TestHappSubscriptionAllowsVIPOnlyServersForVIP(t *testing.T) {
 	seedHappUser(t, db, 1, models.PlanVIP, time.Now().Add(24*time.Hour))
 	normalServer := seedHappServer(t, db, "Normal", false)
 	vipServer := seedHappServer(t, db, "VIP", true)
+	seedHappCredential(t, db, 1, normalServer.ID, "44444444-4444-4444-8444-444444444444")
+	seedHappCredential(t, db, 1, vipServer.ID, "55555555-5555-4555-8555-555555555555")
 	token := issueHappTokenForTest(t, db, cfg, 1)
 
 	handler := NewHappHandler(db, cfg)
@@ -221,7 +444,8 @@ func TestHappSubscriptionRejectsExpiredSubscription(t *testing.T) {
 	cfg := &config.Config{PublicBaseURL: "https://srv.frakebit.com"}
 	seedHappUser(t, db, 1, models.PlanBasic, time.Now().Add(-time.Hour))
 	seedHappServer(t, db, "Normal", false)
-	token := issueHappTokenForTest(t, db, cfg, 1)
+	token := "expired-token"
+	storeHappTokenForTest(t, db, 1, token)
 
 	handler := NewHappHandler(db, cfg)
 	recorder := httptest.NewRecorder()
@@ -232,6 +456,26 @@ func TestHappSubscriptionRejectsExpiredSubscription(t *testing.T) {
 
 	if recorder.Code != http.StatusForbidden {
 		t.Fatalf("expected expired subscription status 403, got %d body=%s", recorder.Code, recorder.Body.String())
+	}
+}
+
+func TestHappSubscriptionRejectsFreeSubscription(t *testing.T) {
+	db := openHappSubscriptionDB(t)
+	cfg := &config.Config{PublicBaseURL: "https://srv.frakebit.com"}
+	seedHappUser(t, db, 1, models.PlanFree, time.Now().Add(24*time.Hour))
+	seedHappServer(t, db, "Normal", false)
+	token := "free-token"
+	storeHappTokenForTest(t, db, 1, token)
+
+	handler := NewHappHandler(db, cfg)
+	recorder := httptest.NewRecorder()
+	context, _ := gin.CreateTestContext(recorder)
+	context.Params = gin.Params{{Key: "token", Value: token}}
+	context.Request = httptest.NewRequest(http.MethodGet, "/api/v1/happ/sub/"+token, nil)
+	handler.Subscription(context)
+
+	if recorder.Code != http.StatusForbidden {
+		t.Fatalf("expected free subscription status 403, got %d body=%s", recorder.Code, recorder.Body.String())
 	}
 }
 

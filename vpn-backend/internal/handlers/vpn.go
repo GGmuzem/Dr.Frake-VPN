@@ -188,12 +188,7 @@ func (h *VPNHandler) GetConfig(c *gin.Context) {
 				clientID := strings.TrimSpace(template.ClientID)
 				issuedAt := time.Now()
 				if clientID == "" {
-					var credential *models.VLESSCredential
-					err = h.db.Transaction(func(tx *gorm.DB) error {
-						var txErr error
-						credential, txErr = ensureVLESSCredential(tx, userID, server, template)
-						return txErr
-					})
+					credential, err := ensureVLESSCredential(h.db, userID, server, template)
 					if err != nil || credential == nil {
 						fmt.Printf("[WARN] ensureVLESSCredential failed for server %s: %v\n", server.Name, err)
 						return

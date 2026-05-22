@@ -34,6 +34,7 @@ type Config struct {
 	MacOSDownloadURL   string
 	LinuxDownloadURL   string
 	HappAppURL         string
+	HappCryptoAPIURL   string
 	DownloadsDir       string
 	SupportEmail       string
 	SupportTelegramURL string
@@ -82,9 +83,10 @@ func Load() *Config {
 		MacOSDownloadURL:    getEnv("MACOS_DOWNLOAD_URL", "https://srv.frakebit.com/download/macos"),
 		LinuxDownloadURL:    getEnv("LINUX_DOWNLOAD_URL", "https://srv.frakebit.com/download/linux"),
 		HappAppURL:          getEnv("HAPP_APP_URL", "https://apps.apple.com/search?term=happ%20proxy"),
+		HappCryptoAPIURL:    getEnv("HAPP_CRYPTO_API_URL", "https://crypto.happ.su/api-v2.php"),
 		DownloadsDir:        getEnv("DOWNLOADS_DIR", "data/downloads"),
 		SupportEmail:        getEnv("SUPPORT_EMAIL", "support@frakebit.com"),
-		SupportTelegramURL:  getEnv("SUPPORT_TELEGRAM_URL", "https://t.me/fblinkvpn_support"),
+		SupportTelegramURL:  getEnv("SUPPORT_TELEGRAM_URL", "https://t.me/+79966732628"),
 
 		ClientLatestVersion:  getEnv("CLIENT_LATEST_VERSION", "1.0.0"),
 		ClientDownloadURL:    getEnv("CLIENT_DOWNLOAD_URL", "https://frakebit.com/download"),
