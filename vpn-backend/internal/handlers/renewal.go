@@ -191,6 +191,11 @@ func chargeAutoRenewal(db *gorm.DB, shopID, key string, sub models.Subscription)
 
 		// Продлеваем подписку сразу
 		newExpiry := sub.ExpiresAt.AddDate(0, 0, priceInfo.DurationDays)
+		if newExpiry.Before(now) {
+			// Protection against runaway charges if auto-renew ran too late
+			newExpiry = now.AddDate(0, 0, priceInfo.DurationDays)
+		}
+		
 		db.Model(&sub).Updates(map[string]interface{}{
 			"status":     models.SubActive,
 			"expires_at": newExpiry,
