@@ -81,7 +81,6 @@ const PLAN_BADGE: Record<string, { label: string; icon: typeof Crown }> = {
   free: { label: "Free", icon: Sparkles },
 };
 
-const DAYS_TOTAL = 90;
 const RING_CIRCUM = 2 * Math.PI * 54;
 
 export function Dashboard() {
@@ -133,7 +132,12 @@ export function Dashboard() {
     const now = Date.now();
     const ms = expiresDate ? expiresDate.getTime() - now : 0;
     const daysLeft = Math.max(0, Math.ceil(ms / (1000 * 60 * 60 * 24)));
-    const progress = Math.min(1, Math.max(0, daysLeft / DAYS_TOTAL));
+    
+    // Dynamically calculate period length based on plan
+    const is3Months = session.subscription.plan.endsWith("_3m");
+    const periodDays = is3Months ? 90 : 30;
+    const progress = Math.min(1, Math.max(0, daysLeft / periodDays));
+    
     const planMeta = PLAN_BADGE[session.subscription.plan] ?? PLAN_BADGE.free;
     const isActive = session.subscription.status === "active" && daysLeft > 0;
     return { formatted, daysLeft, progress, planMeta, isActive };
