@@ -97,8 +97,19 @@ func activateSubscriptionFromPayment(tx *gorm.DB, payment *models.Payment, payme
 			// Early renewal for the exact same plan: add to remaining time
 			newExpiry = sub.ExpiresAt.AddDate(0, 0, priceInfo.DurationDays)
 		} else {
-			// Plan upgrade/downgrade: start from now to avoid exploits
-			newExpiry = now.AddDate(0, 0, priceInfo.DurationDays)
+			// Cross-plan upgrade/downgrade logic (Prorated conversion)
+			oldPriceInfo, ok := planPrices[sub.Plan]
+			if !ok || oldPriceInfo.DurationDays == 0 {
+				newExpiry = now.AddDate(0, 0, priceInfo.DurationDays)
+			} else {
+				remainingHours := sub.ExpiresAt.Sub(now).Hours()
+				oldPricePerDay := oldPriceInfo.Amount / float64(oldPriceInfo.DurationDays)
+				newPricePerDay := priceInfo.Amount / float64(priceInfo.DurationDays)
+				ratio := oldPricePerDay / newPricePerDay
+				convertedHours := remainingHours * ratio
+				
+				newExpiry = now.Add(time.Duration(convertedHours) * time.Hour).AddDate(0, 0, priceInfo.DurationDays)
+			}
 		}
 	} else {
 		newExpiry = now.AddDate(0, 0, priceInfo.DurationDays)
