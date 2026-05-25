@@ -341,7 +341,7 @@
             <div class="hero-subtitle">Единый дашборд по росту аудитории, статусам подписок, выручке и загрузке регионов.</div>
             <div class="btn-row">
               <button class="btn btn-primary" onclick="refreshAll()">Обновить всё</button>
-              <button class="btn btn-secondary" onclick="triggerBackup()">Отправить бэкап</button>
+              <button class="btn btn-secondary" disabled title="Бэкап выполняется внешним зашифрованным restic-заданием">Бэкап: restic</button>
             </div>
           </div>
           <div class="panel glass period-card">
@@ -1206,12 +1206,6 @@
         return;
       }
       renderPayments();
-    }
-
-    async function triggerBackup() {
-      const res = await api('/api/v1/admin/backup/send', { method: 'POST' });
-      const data = await res.json().catch(() => ({}));
-      alert(data.message || data.error || 'Операция выполнена');
     }
 
     async function exportCSV(entity) {

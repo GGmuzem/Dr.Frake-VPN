@@ -80,14 +80,14 @@ func defaultRoutingProfileSeeds() []defaultRoutingProfileSeed {
 	return []defaultRoutingProfileSeed{
 		{
 			Code:             "ru_direct",
-			Name:             "RU без VPN",
+			Name:             "Россия без VPN",
 			Action:           models.RoutingProfileDirect,
-			Description:      "Базовый системный пресет для .ru, .xn--p1ai и локальных российских ресурсов.",
+			Description:      "Российские домены (.ru, .рф) и локальные ресурсы идут напрямую.",
 			Icon:             "map-pin.svg",
 			SortOrder:        10,
 			EnabledByDefault: false,
 			DomainSuffixes:   []string{".ru", ".xn--p1ai"},
-			LegacyNames:      []string{legacyVIPRoutingProfileName},
+			LegacyNames:      []string{legacyVIPRoutingProfileName, "RU без VPN"},
 		},
 		{
 			Code:             "banks_gosuslugi_direct",
@@ -424,6 +424,14 @@ func ensureCustomRoutingProfileFromTemplate(db *gorm.DB, userID uint, template m
 	var existing models.RoutingProfile
 	if err := db.Where("user_id = ? AND kind = ? AND template_code = ?", userID, models.RoutingProfileCustom, template.Code).
 		First(&existing).Error; err == nil {
+		if enabled && !existing.Enabled {
+			if err := db.Model(&models.RoutingProfile{}).
+				Where("id = ? AND user_id = ?", existing.ID, userID).
+				Update("enabled", true).Error; err != nil {
+				return models.RoutingProfile{}, false, err
+			}
+			existing.Enabled = true
+		}
 		return existing, false, nil
 	} else if err != gorm.ErrRecordNotFound {
 		return models.RoutingProfile{}, false, err
@@ -588,6 +596,9 @@ func buildRoutingTemplateCopyIndex(profiles []models.RoutingProfile) map[string]
 	index := map[string]models.RoutingProfile{}
 	for _, profile := range profiles {
 		if profile.Kind == models.RoutingProfileSystem {
+			continue
+		}
+		if !profile.Enabled {
 			continue
 		}
 		templateCode := strings.TrimSpace(profile.TemplateCode)

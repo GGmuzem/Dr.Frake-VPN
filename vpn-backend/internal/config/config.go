@@ -23,7 +23,7 @@ type Config struct {
 	SMTPUser            string
 	SMTPPassword        string
 	SMTPFrom            string
-	BackupIntervalHours int
+	AgentSigningPrivateKey string
 
 	// Платежи
 	PaymentReturnURL string // URL для редиректа после оплаты
@@ -57,11 +57,6 @@ func Load() *Config {
 	}
 
 	smtpPort, _ := strconv.Atoi(getEnv("SMTP_PORT", "587"))
-	backupInterval, _ := strconv.Atoi(getEnv("BACKUP_INTERVAL_HOURS", "24"))
-	if backupInterval <= 0 {
-		backupInterval = 24
-	}
-
 	return &Config{
 		Port:           getEnv("PORT", "8081"),
 		DBPath:         getEnv("DB_PATH", "data/vpn.db"),
@@ -76,7 +71,7 @@ func Load() *Config {
 		SMTPUser:            getEnv("SMTP_USER", ""),
 		SMTPPassword:        getEnv("SMTP_PASSWORD", ""),
 		SMTPFrom:            getEnv("SMTP_FROM", ""),
-		BackupIntervalHours: backupInterval,
+		AgentSigningPrivateKey: getEnv("AGENT_SIGNING_PRIVATE_KEY", ""),
 		PaymentReturnURL:    getEnv("PAYMENT_RETURN_URL", "https://frakebit.com/payment/success"),
 		AndroidDownloadURL:  getEnv("ANDROID_DOWNLOAD_URL", "https://srv.frakebit.com/download/android"),
 		WindowsDownloadURL:  getEnv("WINDOWS_DOWNLOAD_URL", "https://srv.frakebit.com/download/windows"),

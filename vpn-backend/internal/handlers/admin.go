@@ -10,7 +10,6 @@ import (
 	"sort"
 	"strings"
 	"time"
-	"vpn-backend/internal/backup"
 	"vpn-backend/internal/config"
 	"vpn-backend/internal/models"
 
@@ -27,17 +26,12 @@ func NewAdminHandler(db *gorm.DB, cfg *config.Config) *AdminHandler {
 	return &AdminHandler{db: db, cfg: cfg}
 }
 
-// POST /api/v1/admin/backup/send — ручной запуск бэкапа
+// POST /api/v1/admin/backup/send returns Gone because production backups are
+// handled by encrypted off-host restic jobs outside the API process.
 func (h *AdminHandler) TriggerBackup(c *gin.Context) {
-	if h.cfg.SMTPHost == "" {
-		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "SMTP не настроен (SMTP_HOST пустой)"})
-		return
-	}
-	if err := backup.DoBackup(h.db, h.cfg); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-	c.JSON(http.StatusOK, gin.H{"message": "Бэкап успешно отправлен на email всех администраторов"})
+	c.JSON(http.StatusGone, gin.H{
+		"error": "email database backup is disabled; use the encrypted restic VDS-to-backup-server job",
+	})
 }
 
 // GET /api/v1/admin/users
@@ -140,6 +134,23 @@ func (h *AdminHandler) GetServers(c *gin.Context) {
 			"pihole_last_sync_error": s.PiHoleLastSyncError,
 			"pihole_last_mode":       s.PiHoleLastMode,
 			"pihole_last_client_ip":  s.PiHoleLastClientIP,
+			"agent_mode":                 serverAgentMode(s),
+			"agent_url":                  s.AgentURL,
+			"agent_node_id":              s.AgentNodeID,
+			"agent_last_snapshot_hash":   s.AgentLastSnapshotHash,
+			"agent_last_snapshot_at":     s.AgentLastSnapshotAt,
+			"agent_last_snapshot_status": s.AgentLastSnapshotStatus,
+			"agent_last_version":         s.AgentLastVersion,
+			"agent_last_commit":          s.AgentLastCommit,
+			"agent_active_digest":        s.AgentActiveDigest,
+			"agent_previous_digest":      s.AgentPreviousDigest,
+			"agent_last_update_status":   s.AgentLastUpdateStatus,
+			"agent_last_update_error":    s.AgentLastUpdateError,
+			"agent_bootstrap_status":     s.AgentBootstrapStatus,
+			"agent_bootstrap_error":      s.AgentBootstrapError,
+			"agent_bootstrap_at":         s.AgentBootstrapAt,
+			"agent_management_port":      s.AgentManagementPort,
+			"agent_local_port":           s.AgentLocalPort,
 			"vless_template": gin.H{
 				"address":         template.Address,
 				"port":            template.Port,
@@ -180,6 +191,8 @@ type addServerRequest struct {
 	RootPassword string `json:"root_password"`
 	AWGContainer string `json:"awg_container"`
 	AWGInterface string `json:"awg_interface"`
+	AgentURL     string `json:"agent_url"`
+	AgentNodeID  string `json:"agent_node_id"`
 	// Обфускация AWG2
 	Jc   string `json:"jc"`
 	Jmin string `json:"jmin"`
@@ -323,6 +336,8 @@ func (h *AdminHandler) AddServer(c *gin.Context) {
 		SSHPassword:  sshPassword,
 		AWGContainer: awgContainer,
 		AWGInterface: awgIface,
+		AgentURL:     req.AgentURL,
+		AgentNodeID:  req.AgentNodeID,
 		// Pi-hole defaults
 		PiHoleMode:          req.PiHoleMode,
 		PiHoleContainerName: req.PiHoleContainerName,
@@ -433,6 +448,8 @@ func (h *AdminHandler) UpdateServer(c *gin.Context) {
 		MaxPeers    int    `json:"max_peers"`
 		SSHPassword string `json:"ssh_password"`
 		AWGPort     int    `json:"awg_port"`
+		AgentURL    *string `json:"agent_url"`
+		AgentNodeID *string `json:"agent_node_id"`
 		// VLESS template
 		VLESSAddress             string `json:"vless_address"`
 		VLESSPort                int    `json:"vless_port"`
@@ -480,6 +497,12 @@ func (h *AdminHandler) UpdateServer(c *gin.Context) {
 	if req.AWGPort > 0 {
 		updates["awg_port"] = req.AWGPort
 	}
+	if req.AgentURL != nil {
+		updates["agent_url"] = *req.AgentURL
+	}
+	if req.AgentNodeID != nil {
+		updates["agent_node_id"] = *req.AgentNodeID
+	}
 
 	if err := h.db.Model(&s).Updates(updates).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update server"})
@@ -506,6 +529,12 @@ func (h *AdminHandler) UpdateServer(c *gin.Context) {
 	}
 	if req.AWGPort > 0 {
 		s.AWGPort = req.AWGPort
+	}
+	if req.AgentURL != nil {
+		s.AgentURL = *req.AgentURL
+	}
+	if req.AgentNodeID != nil {
+		s.AgentNodeID = *req.AgentNodeID
 	}
 
 	var template models.VLESSServerTemplate

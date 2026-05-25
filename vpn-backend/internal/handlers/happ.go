@@ -197,6 +197,11 @@ func (h *HappHandler) Subscription(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to build happ subscription"})
 		return
 	}
+	routingLink, err := h.happRoutingLink(token.UserID, sub)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to build happ routing profile"})
+		return
+	}
 	if len(lines) == 0 {
 		go func() {
 			if err := h.ensureHappCredentials(token.UserID, sub); err != nil {
@@ -220,8 +225,142 @@ func (h *HappHandler) Subscription(c *gin.Context) {
 	c.Header("profile-update-interval", "24")
 	c.Header("profile-web-page-url", h.publicBaseURL(c))
 	c.Header("profile-title", happSubscriptionTitle)
+	if routingLink != "" {
+		c.Header("routing", routingLink)
+		lines = append([]string{routingLink}, lines...)
+	}
 
 	c.String(http.StatusOK, strings.Join(lines, "\n"))
+}
+
+func (h *HappHandler) happRoutingLink(userID uint, sub models.Subscription) (string, error) {
+	if !isVIPSubscription(sub) {
+		return "", nil
+	}
+	if err := ensureDefaultRoutingProfiles(h.db, userID); err != nil {
+		return "", err
+	}
+
+	var profiles []models.RoutingProfile
+	if err := h.db.Where("user_id = ?", userID).Order("sort_order asc, kind asc, id asc").Find(&profiles).Error; err != nil {
+		return "", err
+	}
+
+	routingProfile := buildHappRoutingProfile(profiles)
+	if routingProfile == nil {
+		return "", nil
+	}
+
+	payload, err := json.Marshal(routingProfile)
+	if err != nil {
+		return "", err
+	}
+	return "happ://routing/onadd/" + base64.StdEncoding.EncodeToString(payload), nil
+}
+
+func buildHappRoutingProfile(profiles []models.RoutingProfile) map[string]interface{} {
+	directSites := []string{}
+	directIP := []string{}
+	proxySites := []string{}
+	proxyIP := []string{}
+	seen := map[string]struct{}{}
+
+	hasEnabledCustomProfile := false
+	for _, profile := range profiles {
+		if profile.Enabled && profile.Kind == models.RoutingProfileCustom {
+			hasEnabledCustomProfile = true
+			break
+		}
+	}
+
+	newestUpdate := int64(0)
+	appendUnique := func(target *[]string, value string) {
+		value = strings.TrimSpace(value)
+		if value == "" {
+			return
+		}
+		key := fmt.Sprintf("%p:%s", target, value)
+		if _, exists := seen[key]; exists {
+			return
+		}
+		seen[key] = struct{}{}
+		*target = append(*target, value)
+	}
+
+	appendDomainRules := func(target *[]string, profile models.RoutingProfile) {
+		for _, domain := range decodeJSONStringArray(profile.DomainsJSON) {
+			domain = strings.TrimSpace(domain)
+			if domain == "" {
+				continue
+			}
+			appendUnique(target, "full:"+domain)
+		}
+		for _, suffix := range decodeJSONStringArray(profile.DomainSuffixesJSON) {
+			suffix = strings.TrimPrefix(strings.TrimSpace(suffix), ".")
+			if suffix == "" {
+				continue
+			}
+			appendUnique(target, "domain:"+suffix)
+		}
+	}
+
+	for _, profile := range profiles {
+		if !profile.Enabled {
+			continue
+		}
+		if profile.Kind == models.RoutingProfileSystem && hasEnabledCustomProfile {
+			continue
+		}
+		if profile.UpdatedAt.Unix() > newestUpdate {
+			newestUpdate = profile.UpdatedAt.Unix()
+		}
+
+		sites := &directSites
+		ips := &directIP
+		if profile.Action == models.RoutingProfileProxy {
+			sites = &proxySites
+			ips = &proxyIP
+		}
+		appendDomainRules(sites, profile)
+		for _, cidr := range decodeJSONStringArray(profile.CIDRsJSON) {
+			appendUnique(ips, cidr)
+		}
+	}
+
+	if len(directSites) == 0 && len(directIP) == 0 && len(proxySites) == 0 && len(proxyIP) == 0 {
+		return nil
+	}
+
+	lastUpdated := ""
+	if newestUpdate > 0 {
+		lastUpdated = fmt.Sprintf("%d", newestUpdate)
+	}
+
+	return map[string]interface{}{
+		"Name":              happSubscriptionTitle,
+		"GlobalProxy":       "true",
+		"RemoteDNSType":     "DoH",
+		"RemoteDNSDomain":   "https://cloudflare-dns.com/dns-query",
+		"RemoteDNSIP":       "1.1.1.1",
+		"DomesticDNSType":   "DoH",
+		"DomesticDNSDomain": "https://dns.google/dns-query",
+		"DomesticDNSIP":     "8.8.8.8",
+		"Geoipurl":          "https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geoip.dat",
+		"Geositeurl":        "https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geosite.dat",
+		"LastUpdated":       lastUpdated,
+		"DnsHosts": map[string]string{
+			"cloudflare-dns.com": "1.1.1.1",
+			"dns.google":         "8.8.8.8",
+		},
+		"DirectSites":    directSites,
+		"DirectIp":       directIP,
+		"ProxySites":     proxySites,
+		"ProxyIp":        proxyIP,
+		"BlockSites":     []string{},
+		"BlockIp":        []string{},
+		"DomainStrategy": "IPIfNonMatch",
+		"FakeDNS":        "false",
+	}
 }
 
 func (h *HappHandler) happVLESSLinks(userID uint, sub models.Subscription) ([]string, error) {

@@ -180,6 +180,65 @@ func TestEnsureCustomRoutingProfileFromTemplateIsIdempotent(t *testing.T) {
 	}
 }
 
+func TestEnsureCustomRoutingProfileFromTemplateReEnablesExistingCopy(t *testing.T) {
+	db := openLegacyRoutingProfileDB(t)
+
+	if err := ensureDefaultRoutingProfiles(db, 1); err != nil {
+		t.Fatalf("ensureDefaultRoutingProfiles: %v", err)
+	}
+
+	var systemProfile models.RoutingProfile
+	if err := db.Where("user_id = ? AND code = ?", 1, "media_proxy").First(&systemProfile).Error; err != nil {
+		t.Fatalf("load media_proxy system profile: %v", err)
+	}
+
+	copyProfile, created, err := ensureCustomRoutingProfileFromTemplate(db, 1, systemProfile, false)
+	if err != nil {
+		t.Fatalf("create disabled custom copy: %v", err)
+	}
+	if !created {
+		t.Fatalf("expected first copy call to create profile")
+	}
+	if copyProfile.Enabled {
+		t.Fatalf("expected initial custom copy to be disabled")
+	}
+
+	enabledCopy, created, err := ensureCustomRoutingProfileFromTemplate(db, 1, systemProfile, true)
+	if err != nil {
+		t.Fatalf("re-enable custom copy: %v", err)
+	}
+	if created {
+		t.Fatalf("expected second copy call to reuse existing profile")
+	}
+	if enabledCopy.ID != copyProfile.ID {
+		t.Fatalf("expected same profile id for repeated copy, got %d and %d", copyProfile.ID, enabledCopy.ID)
+	}
+	if !enabledCopy.Enabled {
+		t.Fatalf("expected existing custom copy to be re-enabled")
+	}
+}
+
+func TestBuildRoutingTemplateCopyIndexIgnoresDisabledCopies(t *testing.T) {
+	profiles := []models.RoutingProfile{
+		{
+			Kind:         models.RoutingProfileSystem,
+			Code:         "media_proxy",
+			TemplateCode: "",
+			Enabled:      false,
+		},
+		{
+			Kind:         models.RoutingProfileCustom,
+			TemplateCode: "media_proxy",
+			Enabled:      false,
+		},
+	}
+
+	index := buildRoutingTemplateCopyIndex(profiles)
+	if _, exists := index["media_proxy"]; exists {
+		t.Fatalf("disabled custom copy must not mark system profile as already added")
+	}
+}
+
 func TestEnsureDefaultRoutingProfilesEnablesExistingCustomCopyDuringMigration(t *testing.T) {
 	db := openLegacyRoutingProfileDB(t)
 

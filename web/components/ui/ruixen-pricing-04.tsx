@@ -107,7 +107,7 @@ function resolveButtonState({
   }
 
   if (currentCode === "vip" && plan.code === "premium") {
-    return { label: "VIP активен", disabled: true, reason: "downgrade" };
+    return { label: "VIP подключен", disabled: true, reason: "downgrade" };
   }
 
   if (currentCode === "premium" && plan.code === "vip") {
