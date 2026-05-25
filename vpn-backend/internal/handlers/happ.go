@@ -385,19 +385,27 @@ func (h *HappHandler) happVLESSLinks(userID uint, sub models.Subscription) ([]st
 			continue
 		}
 
-		var credentials []models.VLESSCredential
-		err := h.db.
-			Where("user_id = ? AND server_id = ? AND revoked_at IS NULL", userID, server.ID).
-			Limit(1).
-			Find(&credentials).Error
-		if err != nil {
-			continue
+		clientID := ""
+		if template != nil {
+			clientID = strings.TrimSpace(template.ClientID)
 		}
-		if len(credentials) == 0 {
-			continue
+
+		if clientID == "" {
+			var credentials []models.VLESSCredential
+			err := h.db.
+				Where("user_id = ? AND server_id = ? AND revoked_at IS NULL", userID, server.ID).
+				Limit(1).
+				Find(&credentials).Error
+			if err != nil {
+				continue
+			}
+			if len(credentials) == 0 {
+				continue
+			}
+			credential := credentials[0]
+			clientID = strings.TrimSpace(credential.ClientID)
 		}
-		credential := credentials[0]
-		clientID := strings.TrimSpace(credential.ClientID)
+
 		if clientID == "" {
 			continue
 		}
@@ -436,6 +444,9 @@ func (h *HappHandler) ensureHappCredentials(userID uint, sub models.Subscription
 				xrayTemplateDefaults(template, &server)
 			}
 			if !hasUsableVLESSTemplate(template) {
+				return
+			}
+			if template != nil && strings.TrimSpace(template.ClientID) != "" {
 				return
 			}
 

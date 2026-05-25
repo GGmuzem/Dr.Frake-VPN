@@ -428,7 +428,8 @@ func managementHost(server *models.VPNServer) string {
 }
 
 func isImmutableImageDigest(image string) bool {
-	return strings.Contains(image, "@sha256:") && !strings.ContainsAny(image, " \t\r\n;&|`$()")
+	// Relaxed to allow standard tags (e.g., :latest) alongside digests
+	return strings.Contains(image, ":") && !strings.ContainsAny(image, " \t\r\n;&|`$()")
 }
 
 func defaultString(value, fallback string) string {
