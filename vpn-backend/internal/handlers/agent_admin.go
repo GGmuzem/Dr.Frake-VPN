@@ -264,7 +264,7 @@ func applyVLESSSnapshot(server *models.VPNServer, template *models.VLESSServerTe
 	template.PublicKey = strings.TrimSpace(string(files["xray/xray_public.key"]))
 	template.ShortID = strings.TrimSpace(string(files["xray/xray_short_id.key"]))
 	template.ClientID = strings.TrimSpace(string(files["xray/xray_uuid.key"]))
-	template.MLDSA65Verify = strings.TrimSpace(string(files["xray/xray_mldsa65_verify.key"]))
+	template.MLDSA65Verify = ""
 	template.ContainerName = "amnezia-xray"
 
 	if inbounds, ok := parsed["inbounds"].([]interface{}); ok && len(inbounds) > 0 {

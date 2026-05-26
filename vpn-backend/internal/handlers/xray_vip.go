@@ -30,6 +30,17 @@ var xrayBasePaths = []string{
 	"/opt/fblink/xray",
 }
 
+var youtubeMediaDomainSuffixes = []string{
+	".youtube.com",
+	".youtube-nocookie.com",
+	".youtu.be",
+	".googlevideo.com",
+	".ytimg.com",
+	".ggpht.com",
+	".youtubei.googleapis.com",
+	".gvt1.com",
+}
+
 type xrayRuntimeLocation struct {
 	container  string
 	configPath string
@@ -89,6 +100,9 @@ func xrayTemplateDefaults(template *models.VLESSServerTemplate, server *models.V
 	}
 	if template.Flow == "" && template.Network != xrayNetworkGRPC && template.Network != "xhttp" {
 		template.Flow = "xtls-rprx-vision"
+	}
+	if template.Network == "xhttp" {
+		template.Flow = ""
 	}
 	if template.Security == "" {
 		template.Security = "reality"
@@ -157,9 +171,16 @@ func resolveXrayRuntimeLocation(server *models.VPNServer, container string) xray
 	}
 
 	return xrayRuntimeLocation{
-		container:  container,
 		configPath: xrayBasePaths[0] + "/server.json",
+		container:  container,
 	}
+}
+
+func xrayGrpcAuthority(template *models.VLESSServerTemplate) string {
+	if value := strings.TrimSpace(template.GrpcAuthority); value != "" {
+		return value
+	}
+	return strings.TrimSpace(template.ServerName)
 }
 
 func detectXrayConfigPath(server *models.VPNServer, container string) string {
@@ -298,6 +319,14 @@ func ensureXrayRuntimeReady(server *models.VPNServer, container, configPath stri
 
 	ensureHostTCPPortOpen(server, port)
 
+	quicBlockCmd := `
+if command -v iptables >/dev/null 2>&1; then
+  iptables -C DOCKER-USER -p udp --dport 443 -j REJECT 2>/dev/null || iptables -I DOCKER-USER 1 -p udp --dport 443 -j REJECT 2>/dev/null || true
+  iptables -C FORWARD -p udp --dport 443 -j REJECT 2>/dev/null || iptables -I FORWARD 1 -p udp --dport 443 -j REJECT 2>/dev/null || true
+  iptables -C OUTPUT -p udp --dport 443 -j REJECT 2>/dev/null || iptables -I OUTPUT 1 -p udp --dport 443 -j REJECT 2>/dev/null || true
+fi
+`
+
 	for _, candidate := range candidateXrayContainers(container) {
 		cmd := fmt.Sprintf(`docker exec %s sh -lc "
 if command -v iptables >/dev/null 2>&1; then
@@ -306,13 +335,14 @@ fi
 if command -v ip6tables >/dev/null 2>&1; then
   ip6tables -C INPUT -p tcp --dport %d -j ACCEPT 2>/dev/null || ip6tables -I INPUT 1 -p tcp --dport %d -j ACCEPT
 fi
+%s
 if ! nc -z 127.0.0.1 %d >/dev/null 2>&1; then
   killall -KILL xray 2>/dev/null || true
   nohup xray -config %s >/tmp/fblink_xray_runtime.log 2>&1 &
   sleep 1
 fi
 nc -z 127.0.0.1 %d >/dev/null 2>&1 || (cat /tmp/fblink_xray_runtime.log 2>/dev/null || true; exit 1)
-"`, candidate, port, port, port, port, port, configPath, port)
+"`, candidate, port, port, port, port, quicBlockCmd, port, configPath, port)
 		if _, err := sshExec(server, cmd); err == nil {
 			return nil
 		}
@@ -325,13 +355,14 @@ fi
 if command -v ip6tables >/dev/null 2>&1; then
   ip6tables -C INPUT -p tcp --dport %d -j ACCEPT 2>/dev/null || ip6tables -I INPUT 1 -p tcp --dport %d -j ACCEPT
 fi
+%s
 if ! nc -z 127.0.0.1 %d >/dev/null 2>&1; then
   killall -KILL xray 2>/dev/null || true
   nohup xray -config %s >/tmp/fblink_xray_runtime.log 2>&1 &
   sleep 1
 fi
 nc -z 127.0.0.1 %d >/dev/null 2>&1 || (cat /tmp/fblink_xray_runtime.log 2>/dev/null || true; exit 1)
-"`, port, port, port, port, port, configPath, port)
+"`, port, port, port, port, quicBlockCmd, port, configPath, port)
 	if _, err := sshExec(server, hostCmd); err != nil {
 		return fmt.Errorf("xray runtime on %s:%d is not ready: %w", server.Name, port, err)
 	}
@@ -825,6 +856,51 @@ func buildVIPRoutingRules(profiles []models.RoutingProfile) []map[string]interfa
 	return rules
 }
 
+func expandRoutingProfileDomains(domains []string, suffixes []string) ([]string, []string) {
+	expandedDomains := append([]string{}, domains...)
+	expandedSuffixes := append([]string{}, suffixes...)
+	if !routingProfileTargetsYouTube(domains, suffixes) {
+		return expandedDomains, expandedSuffixes
+	}
+
+	seen := map[string]struct{}{}
+	for _, suffix := range expandedSuffixes {
+		seen[strings.ToLower(strings.TrimSpace(suffix))] = struct{}{}
+	}
+	for _, suffix := range youtubeMediaDomainSuffixes {
+		key := strings.ToLower(strings.TrimSpace(suffix))
+		if _, exists := seen[key]; exists {
+			continue
+		}
+		seen[key] = struct{}{}
+		expandedSuffixes = append(expandedSuffixes, suffix)
+	}
+	return expandedDomains, expandedSuffixes
+}
+
+func routingProfileTargetsYouTube(domains []string, suffixes []string) bool {
+	matches := func(value string) bool {
+		value = strings.ToLower(strings.TrimPrefix(strings.TrimSpace(value), "."))
+		switch value {
+		case "youtube.com", "www.youtube.com", "m.youtube.com", "youtu.be", "youtube-nocookie.com":
+			return true
+		default:
+			return strings.HasSuffix(value, ".youtube.com")
+		}
+	}
+	for _, domain := range domains {
+		if matches(domain) {
+			return true
+		}
+	}
+	for _, suffix := range suffixes {
+		if matches(suffix) {
+			return true
+		}
+	}
+	return false
+}
+
 func vipDNSProxyRules(dnsConfig vipDNSConfig) []map[string]interface{} {
 	ips := make([]string, 0, 2)
 	seen := map[string]struct{}{}
@@ -856,6 +932,17 @@ func vipDNSProxyRules(dnsConfig vipDNSConfig) []map[string]interface{} {
 			"type":        "field",
 			"outboundTag": xrayProxyTag,
 			"ip":          ips,
+		},
+	}
+}
+
+func vipQUICBlockRules() []map[string]interface{} {
+	return []map[string]interface{}{
+		{
+			"type":        "field",
+			"network":     "udp",
+			"port":        "443",
+			"outboundTag": xrayBlockTag,
 		},
 	}
 }

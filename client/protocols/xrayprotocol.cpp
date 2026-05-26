@@ -36,6 +36,7 @@ namespace {
 #ifdef Q_OS_LINUX
 constexpr int kLinuxDirectBypassMark = 0x3211;
 #endif
+const QString kQuicBlockOutboundTag = QStringLiteral("quic-block");
 
 int transportOutboundIndex(const QJsonObject &xrayConfig)
 {
@@ -270,6 +271,59 @@ bool fallbackOutboundPortTo443(QJsonObject &xrayConfig, const QString &resolvedA
     return true;
 }
 
+bool isUdp443BlockRule(const QJsonObject &rule)
+{
+    if (rule.value("network").toString() != QLatin1String("udp")) {
+        return false;
+    }
+
+    const QJsonValue port = rule.value("port");
+    if (port.isString()) {
+        return port.toString() == QLatin1String("443");
+    }
+    return port.toInt() == 443;
+}
+
+void ensureQuicBlocked(QJsonObject &xrayConfig)
+{
+    QJsonObject routing = xrayConfig.value("routing").toObject();
+    QJsonArray rules = routing.value("rules").toArray();
+    for (const QJsonValue &ruleValue : rules) {
+        if (isUdp443BlockRule(ruleValue.toObject())) {
+            return;
+        }
+    }
+
+    QJsonArray outbounds = xrayConfig.value("outbounds").toArray();
+    bool hasBlockOutbound = false;
+    for (const QJsonValue &outboundValue : outbounds) {
+        const QJsonObject outbound = outboundValue.toObject();
+        if (outbound.value("tag").toString() == kQuicBlockOutboundTag) {
+            hasBlockOutbound = true;
+            break;
+        }
+    }
+    if (!hasBlockOutbound) {
+        QJsonObject blockOutbound;
+        blockOutbound.insert("tag", kQuicBlockOutboundTag);
+        blockOutbound.insert("protocol", "blackhole");
+        outbounds.append(blockOutbound);
+        xrayConfig.insert("outbounds", outbounds);
+    }
+
+    QJsonObject blockRule;
+    blockRule.insert("type", "field");
+    blockRule.insert("network", "udp");
+    blockRule.insert("port", "443");
+    blockRule.insert("outboundTag", kQuicBlockOutboundTag);
+    rules.prepend(blockRule);
+    routing.insert("rules", rules);
+    if (!routing.contains("domainStrategy")) {
+        routing.insert("domainStrategy", "IPIfNonMatch");
+    }
+    xrayConfig.insert("routing", routing);
+}
+
 quint16 firstOutboundPort(const QJsonObject &xrayConfig)
 {
     const QJsonArray outbounds = xrayConfig.value("outbounds").toArray();
@@ -338,6 +392,7 @@ void sanitizeDesktopXrayConfig(QJsonObject &xrayConfig)
         outbounds.replace(i, outbound);
     }
     xrayConfig.insert("outbounds", outbounds);
+    ensureQuicBlocked(xrayConfig);
 }
 
 void logXrayConfigSummary(const QJsonObject &xrayConfig)

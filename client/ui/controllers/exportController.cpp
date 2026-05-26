@@ -6,6 +6,7 @@
 #include <QFile>
 #include <QFileInfo>
 #include <QImage>
+#include <QJsonDocument>
 #include <QStandardPaths>
 
 #include "core/controllers/vpnConfigurationController.h"
@@ -337,6 +338,25 @@ void ExportController::generateXrayConfig(const QString &clientName)
         vlessServer.grpcMultiMode = grpcSettings.value("multiMode").toBool(false);
     }
 
+    if (vlessServer.network == "xhttp") {
+        QJsonObject xhttpSettings = streamSettings.value("xhttpSettings").toObject();
+        vlessServer.xhttpPath = xhttpSettings.value("path").toString("/video-stream");
+        vlessServer.xhttpHost = xhttpSettings.value("host").toString(vlessServer.serverName);
+        vlessServer.xhttpMode = xhttpSettings.value("mode").toString("auto");
+        vlessServer.xPaddingBytes = xhttpSettings.value("xPaddingBytes").toString("100-1000");
+
+        QString postSize = xhttpSettings.value("scMaxEachPostBytes").toVariant().toString();
+        if (postSize.isEmpty()) {
+            postSize = "1000000";
+        }
+
+        QJsonObject extra;
+        extra.insert("mode", vlessServer.xhttpMode);
+        extra.insert("scMaxEachPostBytes", postSize);
+        extra.insert("xPaddingBytes", vlessServer.xPaddingBytes);
+        vlessServer.xhttpExtra = QString::fromUtf8(QJsonDocument(extra).toJson(QJsonDocument::Compact));
+    }
+
     if (vlessServer.security == "reality") {
         QJsonObject realitySettings = streamSettings.value("realitySettings").toObject();
         vlessServer.serverName = realitySettings.value("serverName").toString();
@@ -344,7 +364,10 @@ void ExportController::generateXrayConfig(const QString &clientName)
         vlessServer.shortId = realitySettings.value("shortId").toString();
         vlessServer.fingerprint = realitySettings.value("fingerprint").toString("chrome");
         vlessServer.spiderX = realitySettings.value("spiderX").toString("/");
-        vlessServer.mldsa65Verify = realitySettings.value("mldsa65Verify").toString("");
+    }
+
+    if (vlessServer.network == "xhttp" && vlessServer.xhttpHost.isEmpty()) {
+        vlessServer.xhttpHost = vlessServer.serverName;
     }
 
     m_nativeConfigString = fblink::serialization::vless::Serialize(vlessServer, "FBLink");

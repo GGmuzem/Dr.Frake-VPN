@@ -72,9 +72,18 @@ describe("routing profile helpers", () => {
     );
 
     expect(payload.Name).toBe("FBLink VPN");
+    expect(payload.RouteOrder).toBe("block-proxy-direct");
+    expect(payload.UseChunkFiles).toBe("true");
     expect(payload.ProxySites).toEqual(["full:chatgpt.com", "domain:openai.com"]);
     expect(payload.DirectSites).toEqual(["full:gosuslugi.ru", "domain:ru"]);
-    expect(payload.DirectIp).toEqual(["10.0.0.0/8"]);
+    expect(payload.DirectIp).toEqual([
+      "10.0.0.0/8",
+      "172.16.0.0/12",
+      "192.168.0.0/16",
+      "169.254.0.0/16",
+      "224.0.0.0/4",
+      "255.255.255.255",
+    ]);
     expect(payload.ProxySites).not.toContain("full:disabled.example");
     expect(payload.LastUpdated).toBe("123");
   });

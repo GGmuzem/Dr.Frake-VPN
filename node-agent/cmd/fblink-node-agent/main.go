@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"log"
 	"net/http"
 	"os"
@@ -48,6 +49,24 @@ func main() {
 		SnapshotBuilder: snapshotBuilder,
 		UpdateManager:   updateManager,
 	})
+	if cfg.BackendURL != "" && cfg.PushPrivateKey != "" {
+		privateKey, err := agent.ParsePrivateKey(cfg.PushPrivateKey)
+		if err != nil {
+			log.Fatalf("invalid AGENT_PUSH_PRIVATE_KEY: %v", err)
+		}
+		pushWorker := agent.NewPushWorker(agent.PushConfig{
+			BackendURL:       cfg.BackendURL,
+			NodeID:           cfg.NodeID,
+			Version:          version,
+			Commit:           commit,
+			DockerBin:        cfg.DockerBin,
+			PrivateKey:       privateKey,
+			Interval:         time.Duration(cfg.PushIntervalSeconds) * time.Second,
+			SnapshotInterval: time.Duration(cfg.PushSnapshotSeconds) * time.Second,
+		}, snapshotBuilder, updateManager)
+		go pushWorker.Run(context.Background())
+		log.Printf("agent push enabled to %s", cfg.BackendURL)
+	}
 
 	httpServer := &http.Server{
 		Addr:              cfg.ListenAddr,
@@ -74,6 +93,10 @@ type config struct {
 	UpdateCommand   string
 	RollbackCommand string
 	StatePath       string
+	BackendURL      string
+	PushPrivateKey  string
+	PushIntervalSeconds int
+	PushSnapshotSeconds int
 }
 
 func loadConfig() config {
@@ -90,6 +113,10 @@ func loadConfig() config {
 		UpdateCommand:   env("AGENT_UPDATE_COMMAND", ""),
 		RollbackCommand: env("AGENT_ROLLBACK_COMMAND", ""),
 		StatePath:       env("AGENT_STATE_PATH", "/var/lib/fblink-node-agent/update-state.json"),
+		BackendURL:          env("AGENT_BACKEND_URL", ""),
+		PushPrivateKey:      env("AGENT_PUSH_PRIVATE_KEY", ""),
+		PushIntervalSeconds: envInt("AGENT_PUSH_INTERVAL_SECONDS", 60),
+		PushSnapshotSeconds: envInt("AGENT_PUSH_SNAPSHOT_SECONDS", 600),
 	}
 }
 

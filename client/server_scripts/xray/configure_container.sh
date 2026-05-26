@@ -13,19 +13,12 @@ XRAY_CLIENT_ID=$(xray uuid) && echo $XRAY_CLIENT_ID > /opt/amnezia/xray/xray_uui
 XRAY_SHORT_ID=$(openssl rand -hex 8) && echo $XRAY_SHORT_ID > /opt/amnezia/xray/xray_short_id.key
 
 KEYPAIR=$(xray x25519)
-LINE_NUM=1
-while IFS= read -r line; do
-   if [[ $LINE_NUM -gt 1 ]]
-      then
-           IFS=":" read FIST XRAY_PUBLIC_KEY <<< "$line"
-      else
-      	   LINE_NUM=$((LINE_NUM + 1))
-           IFS=":" read FIST XRAY_PRIVATE_KEY <<< "$line"
-      fi
-done <<< "$KEYPAIR"
-
-XRAY_PRIVATE_KEY=$(echo $XRAY_PRIVATE_KEY | tr -d ' ')
-XRAY_PUBLIC_KEY=$(echo $XRAY_PUBLIC_KEY | tr -d ' ')
+XRAY_PRIVATE_KEY="$(printf '%s\n' "$KEYPAIR" | awk -F': *' 'tolower($1) ~ /private/ {print $2; exit}')"
+XRAY_PUBLIC_KEY="$(printf '%s\n' "$KEYPAIR" | awk -F': *' 'tolower($1) ~ /public/ {print $2; exit}')"
+if [[ -z "$XRAY_PRIVATE_KEY" || -z "$XRAY_PUBLIC_KEY" ]]; then
+    printf 'failed to parse xray x25519 output:\n%s\n' "$KEYPAIR" >&2
+    exit 1
+fi
 
 
 echo $XRAY_PUBLIC_KEY > /opt/amnezia/xray/xray_public.key

@@ -32,6 +32,7 @@
 
 
 #include "3rd/QJsonStruct/QJsonIO.hpp"
+#include <QJsonDocument>
 #include <QUrlQuery>
 #include <QJsonDocument>
 #include "serialization.h"
@@ -263,20 +264,16 @@ QJsonObject Deserialize(const QString &str, QString *alias, QString *errMessage)
             const auto pbk = QUrl::fromPercentEncoding(query.queryItemValue("pbk").toUtf8());
             QJsonIO::SetValue(stream, pbk, { "realitySettings", "publicKey" });
         }
-        if (query.hasQueryItem("spiderX"))
+        if (query.hasQueryItem("spiderX") || query.hasQueryItem("spx"))
         {
-            const auto spiderX = QUrl::fromPercentEncoding(query.queryItemValue("spiderX").toUtf8());
+            const auto spiderXKey = query.hasQueryItem("spx") ? "spx" : "spiderX";
+            const auto spiderX = QUrl::fromPercentEncoding(query.queryItemValue(spiderXKey).toUtf8());
             QJsonIO::SetValue(stream, spiderX, { "realitySettings", "spiderX" });
         }
         if (query.hasQueryItem("sid"))
         {
             const auto sid = QUrl::fromPercentEncoding(query.queryItemValue("sid").toUtf8());
             QJsonIO::SetValue(stream, sid, { "realitySettings", "shortId" });
-        }
-        if (query.hasQueryItem("pqv"))
-        {
-            const auto pqv = QUrl::fromPercentEncoding(query.queryItemValue("pqv").toUtf8());
-            QJsonIO::SetValue(stream, pqv, { "realitySettings", "mldsa65Verify" });
         }
     }
 
@@ -343,7 +340,7 @@ const QString Serialize(const VlessServerObject &server, const QString &alias)
         query.addQueryItem("security", server.security);
     }
     
-    if (!server.flow.isEmpty() && (server.security == "xtls" || server.security == "reality")) {
+    if (!server.flow.isEmpty() && server.network != "xhttp" && (server.security == "xtls" || server.security == "reality")) {
         query.addQueryItem("flow", server.flow);
     }
     
@@ -365,11 +362,26 @@ const QString Serialize(const VlessServerObject &server, const QString &alias)
         }
         
         if (!server.spiderX.isEmpty()) {
-            query.addQueryItem("spiderX", server.spiderX);
+            query.addQueryItem("spx", server.spiderX);
         }
 
-        if (!server.mldsa65Verify.isEmpty()) {
-            query.addQueryItem("pqv", server.mldsa65Verify);
+    }
+
+    if (server.network == "xhttp") {
+        if (!server.xhttpPath.isEmpty()) {
+            query.addQueryItem("path", server.xhttpPath);
+        }
+        if (!server.xhttpHost.isEmpty()) {
+            query.addQueryItem("host", server.xhttpHost);
+        }
+        if (!server.xhttpMode.isEmpty()) {
+            query.addQueryItem("mode", server.xhttpMode);
+        }
+        if (!server.xPaddingBytes.isEmpty()) {
+            query.addQueryItem("x_padding_bytes", server.xPaddingBytes);
+        }
+        if (!server.xhttpExtra.isEmpty()) {
+            query.addQueryItem("extra", server.xhttpExtra);
         }
     }
     

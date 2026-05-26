@@ -2,6 +2,8 @@
 
 `fblink-node-agent` runs on each VPN VPS and exposes a small local management API for the main VDS. The API is intended to be reachable only through the VLESS/Reality management path or a private interface. Do not publish it directly on the internet.
 
+The agent also supports push sync to the backend: heartbeat and config snapshots are sent over HTTPS with an agent-owned Ed25519 key. Updates and rollbacks remain manual admin actions through the management path.
+
 ## API
 
 - `GET /health` returns version, commit, uptime, node id, and Docker client availability.
@@ -32,9 +34,11 @@ Headers:
 
 The agent receives only `AGENT_VERIFY_PUBLIC_KEY`, a base64 raw Ed25519 public key. The private signing key stays on the main VDS secret storage.
 
+For push sync, the direction is reversed: the agent signs requests with `AGENT_PUSH_PRIVATE_KEY`, and the backend stores the matching public key on the `VPNServer` record.
+
 ## Environment
 
-- `AGENT_ADDR`, default `127.0.0.1:9090`
+- `AGENT_ADDR`, default `127.0.0.1:9090`. For the management sidecar bootstrap, the agent listens on `0.0.0.0:19090` inside a private Docker network and is not published to the host.
 - `AGENT_NODE_ID`
 - `AGENT_VERIFY_PUBLIC_KEY`
 - `AGENT_ALLOWED_SKEW_SECONDS`, default `300`
@@ -46,5 +50,9 @@ The agent receives only `AGENT_VERIFY_PUBLIC_KEY`, a base64 raw Ed25519 public k
 - `AGENT_UPDATE_COMMAND`
 - `AGENT_ROLLBACK_COMMAND`
 - `AGENT_STATE_PATH`, default `/var/lib/fblink-node-agent/update-state.json`
+- `AGENT_BACKEND_URL`, for example `https://srv.frakebit.com/api/v1`. If empty, push sync is disabled.
+- `AGENT_PUSH_PRIVATE_KEY`, base64 Ed25519 private key generated during bootstrap.
+- `AGENT_PUSH_INTERVAL_SECONDS`, default `60`.
+- `AGENT_PUSH_SNAPSHOT_SECONDS`, default `600`; unchanged snapshots are refreshed at this interval.
 
 `AGENT_UPDATE_COMMAND` and `AGENT_ROLLBACK_COMMAND` are host-managed executables. The agent passes the verified immutable digest in `FBLINK_TARGET_IMAGE_DIGEST`; this keeps production deployment arguments outside the HTTP API and avoids generic remote shell behavior. The update command should restart the container/service and return non-zero if its healthcheck fails; the agent will then call the rollback command with the previous digest when one is recorded.

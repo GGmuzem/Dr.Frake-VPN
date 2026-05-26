@@ -42,11 +42,16 @@ func TestBuildVLESSConfigPinsVIPDNSOverProxy(t *testing.T) {
 	}
 
 	firstRule := rules[0].(map[string]interface{})
-	if firstRule["outboundTag"] != xrayProxyTag {
-		t.Fatalf("expected first rule outboundTag=%q, got %v", xrayProxyTag, firstRule["outboundTag"])
+	if firstRule["outboundTag"] != xrayBlockTag || firstRule["network"] != "udp" || firstRule["port"] != "443" {
+		t.Fatalf("expected first rule to block QUIC udp/443, got %v", firstRule)
 	}
 
-	ipRules := firstRule["ip"].([]interface{})
+	dnsRule := rules[1].(map[string]interface{})
+	if dnsRule["outboundTag"] != xrayProxyTag {
+		t.Fatalf("expected DNS rule outboundTag=%q, got %v", xrayProxyTag, dnsRule["outboundTag"])
+	}
+
+	ipRules := dnsRule["ip"].([]interface{})
 	if len(ipRules) < 2 {
 		t.Fatalf("expected vip dns proxy rule to contain both internal dns IPs, got %v", ipRules)
 	}

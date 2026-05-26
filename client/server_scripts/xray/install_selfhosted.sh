@@ -175,16 +175,21 @@ generate_keypair() {
   docker_root run --rm --entrypoint xray "$IMAGE_NAME" x25519 | tr -d '\r'
 }
 
+parse_reality_keypair() {
+  XRAY_PRIVATE_KEY="$(printf '%s\n' "$KEYPAIR" | awk -F': *' 'tolower($1) ~ /private/ {print $2; exit}')"
+  XRAY_PUBLIC_KEY="$(printf '%s\n' "$KEYPAIR" | awk -F': *' 'tolower($1) ~ /public/ {print $2; exit}')"
+  if [[ -z "$XRAY_PRIVATE_KEY" || -z "$XRAY_PUBLIC_KEY" ]]; then
+    printf 'failed to parse xray x25519 output:\n%s\n' "$KEYPAIR" >&2
+    exit 1
+  fi
+}
+
 if [[ "$FORCE_REGENERATE" -eq 1 ]] || ! run_root test -s "$CONFIG_DIR/xray_uuid.key"; then
   XRAY_CLIENT_ID="$(generate_uuid)"
   write_root_file "$CONFIG_DIR/xray_uuid.key" 600 "$XRAY_CLIENT_ID"
 else
   XRAY_CLIENT_ID="$(read_root_file "$CONFIG_DIR/xray_uuid.key" | tr -d '\r\n')"
 fi
-
-generate_mldsa65() {
-  docker_root run --rm --entrypoint xray "$IMAGE_NAME" mldsa65 | tr -d '\r'
-}
 
 XRAY_SHORT_IDS_FILE="$CONFIG_DIR/xray_short_ids.txt"
 if [[ "$FORCE_REGENERATE" -eq 1 ]] || ! run_root test -s "$XRAY_SHORT_IDS_FILE"; then
@@ -202,24 +207,18 @@ XRAY_SHORT_IDS_JSON_ARRAY="$(read_root_file "$XRAY_SHORT_IDS_FILE" | awk 'BEGIN{
 
 if [[ "$FORCE_REGENERATE" -eq 1 ]] || ! run_root test -s "$CONFIG_DIR/xray_private.key" || ! run_root test -s "$CONFIG_DIR/xray_public.key"; then
   KEYPAIR="$(generate_keypair)"
-  XRAY_PRIVATE_KEY="$(printf '%s\n' "$KEYPAIR" | awk -F': ' '/Private key:/ {print $2}')"
-  XRAY_PUBLIC_KEY="$(printf '%s\n' "$KEYPAIR" | awk -F': ' '/Public key:/ {print $2}')"
+  parse_reality_keypair
   write_root_file "$CONFIG_DIR/xray_private.key" 600 "$XRAY_PRIVATE_KEY"
   write_root_file "$CONFIG_DIR/xray_public.key" 600 "$XRAY_PUBLIC_KEY"
 else
   XRAY_PRIVATE_KEY="$(read_root_file "$CONFIG_DIR/xray_private.key" | tr -d '\r\n')"
   XRAY_PUBLIC_KEY="$(read_root_file "$CONFIG_DIR/xray_public.key" | tr -d '\r\n')"
-fi
-
-if [[ "$FORCE_REGENERATE" -eq 1 ]] || ! run_root test -s "$CONFIG_DIR/xray_mldsa65_seed.key" || ! run_root test -s "$CONFIG_DIR/xray_mldsa65_verify.key"; then
-  MLDSA65_PAIR="$(generate_mldsa65)"
-  XRAY_MLDSA65_SEED="$(printf '%s\n' "$MLDSA65_PAIR" | awk -F': ' '/Seed:/ {print $2}')"
-  XRAY_MLDSA65_VERIFY="$(printf '%s\n' "$MLDSA65_PAIR" | awk -F': ' '/Verify:/ {print $2}')"
-  write_root_file "$CONFIG_DIR/xray_mldsa65_seed.key" 600 "$XRAY_MLDSA65_SEED"
-  write_root_file "$CONFIG_DIR/xray_mldsa65_verify.key" 600 "$XRAY_MLDSA65_VERIFY"
-else
-  XRAY_MLDSA65_SEED="$(read_root_file "$CONFIG_DIR/xray_mldsa65_seed.key" | tr -d '\r\n')"
-  XRAY_MLDSA65_VERIFY="$(read_root_file "$CONFIG_DIR/xray_mldsa65_verify.key" | tr -d '\r\n')"
+  if [[ -z "$XRAY_PRIVATE_KEY" || -z "$XRAY_PUBLIC_KEY" ]]; then
+    KEYPAIR="$(generate_keypair)"
+    parse_reality_keypair
+    write_root_file "$CONFIG_DIR/xray_private.key" 600 "$XRAY_PRIVATE_KEY"
+    write_root_file "$CONFIG_DIR/xray_public.key" 600 "$XRAY_PUBLIC_KEY"
+  fi
 fi
 
 if [[ "$FORCE_REGENERATE" -eq 1 ]] || ! run_root test -s "$CONFIG_DIR/xray_tls.crt" || ! run_root test -s "$CONFIG_DIR/xray_tls.key"; then
@@ -327,13 +326,14 @@ log "Recreating container ${CONTAINER_NAME}"
 docker_root rm -f "$CONTAINER_NAME" >/dev/null 2>&1 || true
 docker_root run -d \
   --privileged \
-  --log-driver none \
   --restart always \
   --cap-add=NET_ADMIN \
   -p "${XRAY_SERVER_PORT}:${XRAY_SERVER_PORT}/tcp" \
   -v "${CONFIG_DIR}:/opt/amnezia/xray" \
   --name "$CONTAINER_NAME" \
-  "$IMAGE_NAME" >/dev/null
+  --entrypoint /bin/sh \
+  "$IMAGE_NAME" \
+  -lc 'exec xray -config /opt/amnezia/xray/server.json' >/dev/null
 
 docker_root network connect amnezia-dns-net "$CONTAINER_NAME" >/dev/null 2>&1 || true
 
@@ -360,6 +360,8 @@ sleep 3
 
 if ! docker_root exec "$CONTAINER_NAME" sh -lc "nc -z 127.0.0.1 ${XRAY_SERVER_PORT}" >/dev/null 2>&1; then
   echo "Container started, but XRay did not open port ${XRAY_SERVER_PORT}" >&2
+  docker_root ps -a --filter "name=$CONTAINER_NAME" --format 'container_status={{.Status}}' >&2
+  docker_root logs --tail 80 "$CONTAINER_NAME" 2>&1 || true
   docker_root exec "$CONTAINER_NAME" sh -lc "cat /tmp/xray.log 2>/dev/null || true" >&2
   exit 1
 fi
@@ -384,7 +386,6 @@ UUID:        ${XRAY_CLIENT_ID}
 Short ID:    ${XRAY_SHORT_ID}
 Short IDs:   ${XRAY_SHORT_IDS_JSON_ARRAY}
 Public key:  ${XRAY_PUBLIC_KEY}
-ML-DSA-65:   ${XRAY_MLDSA65_VERIFY}
 
 Quick checks:
   docker ps --format 'table {{.Names}}\t{{.Ports}}\t{{.Status}}'

@@ -12,7 +12,6 @@ on a fresh VPS in a layout that the FBLink backend can auto-discover over SSH.
   - `xray_short_id.key` (совместимость, всегда == первый элемент из `xray_short_ids.txt`)
   - `xray_short_ids.txt` (8 short IDs, по строке на ID)
   - `xray_public.key` / `xray_private.key` (Reality X25519 keypair)
-  - `xray_mldsa65_seed.key` / `xray_mldsa65_verify.key` (post-quantum ML-DSA-65 keypair)
 - recreates the docker container with `--restart always`
 - publishes the chosen TCP port
 - writes VLESS + TLS + XHTTP over `packet-up`
@@ -30,8 +29,6 @@ The backend VIP XRay auto-discovery reads these files over SSH:
 - `/opt/amnezia/xray/xray_short_ids.txt`
 - `/opt/amnezia/xray/xray_public.key`
 - `/opt/amnezia/xray/xray_private.key`
-- `/opt/amnezia/xray/xray_mldsa65_seed.key` (не разглашается)
-- `/opt/amnezia/xray/xray_mldsa65_verify.key` (отдаётся клиенту как `mldsa65Verify` / `pqv`)
 
 ## Recommended defaults
 

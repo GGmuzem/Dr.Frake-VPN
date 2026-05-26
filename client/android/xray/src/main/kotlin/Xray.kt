@@ -19,10 +19,12 @@ import com.fblink.vpn.util.Log
 import com.fblink.vpn.util.net.InetNetwork
 import com.fblink.vpn.util.net.ip
 import com.fblink.vpn.util.net.parseInetAddress
+import org.json.JSONArray
 import org.json.JSONObject
 
 private const val TAG = "Xray"
 private const val LIBXRAY_TAG = "libXray"
+private const val QUIC_BLOCK_OUTBOUND_TAG = "quic-block"
 
 class Xray : Protocol() {
 
@@ -68,6 +70,7 @@ class Xray : Protocol() {
                 forceResolvedOutboundAddress(xrayJsonConfig, ipAddress)
             }
         }
+        ensureQuicBlocked(xrayJsonConfig)
 
         val xrayJsonConfigString = xrayJsonConfig.toString()
 
@@ -173,6 +176,54 @@ class Xray : Protocol() {
             xrayConfig.put("outbounds", outbounds)
             Log.d(TAG, "Force outbound address to resolved IP: $resolvedAddress (was $currentAddress)")
             return
+        }
+    }
+
+    private fun ensureQuicBlocked(xrayConfig: JSONObject) {
+        val routing = xrayConfig.optJSONObject("routing") ?: JSONObject().also {
+            xrayConfig.put("routing", it)
+        }
+        val rules = routing.optJSONArray("rules") ?: JSONArray().also {
+            routing.put("rules", it)
+        }
+        for (i in 0 until rules.length()) {
+            val rule = rules.optJSONObject(i) ?: continue
+            if (rule.optString("network") == "udp" && rule.optString("port") == "443") {
+                return
+            }
+        }
+
+        val outbounds = xrayConfig.optJSONArray("outbounds") ?: JSONArray().also {
+            xrayConfig.put("outbounds", it)
+        }
+        var hasBlockOutbound = false
+        for (i in 0 until outbounds.length()) {
+            val outbound = outbounds.optJSONObject(i) ?: continue
+            if (outbound.optString("tag") == QUIC_BLOCK_OUTBOUND_TAG) {
+                hasBlockOutbound = true
+                break
+            }
+        }
+        if (!hasBlockOutbound) {
+            outbounds.put(JSONObject().apply {
+                put("tag", QUIC_BLOCK_OUTBOUND_TAG)
+                put("protocol", "blackhole")
+            })
+        }
+
+        val nextRules = JSONArray()
+        nextRules.put(JSONObject().apply {
+            put("type", "field")
+            put("network", "udp")
+            put("port", "443")
+            put("outboundTag", QUIC_BLOCK_OUTBOUND_TAG)
+        })
+        for (i in 0 until rules.length()) {
+            nextRules.put(rules.get(i))
+        }
+        routing.put("rules", nextRules)
+        if (!routing.has("domainStrategy")) {
+            routing.put("domainStrategy", "IPIfNonMatch")
         }
     }
 

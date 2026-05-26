@@ -1463,8 +1463,8 @@
       let payload = {};
       if (action === 'bootstrap') {
         payload = { agent_image_digest: agentDigest, xray_image_digest: xrayDigest };
-      } else if (action === 'update' || action === 'rollback') {
-        payload = { agent_image_digest: agentDigest };
+      } else if (action === 'update') {
+        payload = { image_digest: agentDigest };
       }
 
       const btn = document.getElementById(`agentBtn${action.charAt(0).toUpperCase() + action.slice(1)}`);

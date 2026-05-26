@@ -25,6 +25,7 @@ export type RoutingRuleCounts = {
 export type HappRoutingProfile = {
   Name: "FBLink VPN";
   GlobalProxy: "true";
+  RouteOrder: "block-proxy-direct";
   RemoteDNSType: "DoH";
   RemoteDNSDomain: string;
   RemoteDNSIP: string;
@@ -43,7 +44,17 @@ export type HappRoutingProfile = {
   BlockIp: string[];
   DomainStrategy: "IPIfNonMatch";
   FakeDNS: "false";
+  UseChunkFiles: "true";
 };
+
+const happDefaultDirectIpRules = [
+  "10.0.0.0/8",
+  "172.16.0.0/12",
+  "192.168.0.0/16",
+  "169.254.0.0/16",
+  "224.0.0.0/4",
+  "255.255.255.255",
+];
 
 export function normalizeRuleText(value: string): string[] {
   const seen = new Set<string>();
@@ -108,7 +119,7 @@ function appendHappRules(profile: RoutingProfile, sites: string[], ips: string[]
 
 export function buildHappRoutingProfile(profiles: RoutingProfile[], nowUnix = Math.floor(Date.now() / 1000)): HappRoutingProfile {
   const directSites: string[] = [];
-  const directIp: string[] = [];
+  const directIp: string[] = [...happDefaultDirectIpRules];
   const proxySites: string[] = [];
   const proxyIp: string[] = [];
 
@@ -125,6 +136,7 @@ export function buildHappRoutingProfile(profiles: RoutingProfile[], nowUnix = Ma
   return {
     Name: "FBLink VPN",
     GlobalProxy: "true",
+    RouteOrder: "block-proxy-direct",
     RemoteDNSType: "DoH",
     RemoteDNSDomain: "https://cloudflare-dns.com/dns-query",
     RemoteDNSIP: "1.1.1.1",
@@ -146,5 +158,6 @@ export function buildHappRoutingProfile(profiles: RoutingProfile[], nowUnix = Ma
     BlockIp: [],
     DomainStrategy: "IPIfNonMatch",
     FakeDNS: "false",
+    UseChunkFiles: "true",
   };
 }

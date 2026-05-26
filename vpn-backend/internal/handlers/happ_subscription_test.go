@@ -541,6 +541,9 @@ func TestHappSubscriptionIncludesRoutingProfileForVIP(t *testing.T) {
 	if profile["Name"] != "FBLink VPN" {
 		t.Fatalf("expected routing profile name FBLink VPN, got %v", profile["Name"])
 	}
+	if profile["RouteOrder"] != "block-proxy-direct" {
+		t.Fatalf("expected block-proxy-direct route order, got %v", profile["RouteOrder"])
+	}
 	directSites := profile["DirectSites"].([]interface{})
 	if !containsInterfaceString(directSites, "full:gosuslugi.ru") || !containsInterfaceString(directSites, "domain:ru") {
 		t.Fatalf("expected direct domains in Happ routing profile, got %v", directSites)
@@ -605,4 +608,13 @@ func TestHappSubscriptionRejectsUnknownToken(t *testing.T) {
 	if recorder.Code != http.StatusNotFound {
 		t.Fatalf("expected unknown token status 404, got %d body=%s", recorder.Code, recorder.Body.String())
 	}
+}
+
+func containsString(values []string, needle string) bool {
+	for _, value := range values {
+		if value == needle {
+			return true
+		}
+	}
+	return false
 }

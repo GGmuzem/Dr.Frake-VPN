@@ -27,7 +27,6 @@ func TestSnapshotPacksAllowlistedDockerConfigs(t *testing.T) {
 	runner.outputs[`docker exec amnezia-xray sh -lc cat /opt/amnezia/xray/xray_public.key 2>/dev/null || cat /opt/fblink/xray/xray_public.key 2>/dev/null`] = []byte("public-key\n")
 	runner.outputs[`docker exec amnezia-xray sh -lc cat /opt/amnezia/xray/xray_short_id.key 2>/dev/null || cat /opt/fblink/xray/xray_short_id.key 2>/dev/null`] = []byte("short-id\n")
 	runner.outputs[`docker exec amnezia-xray sh -lc cat /opt/amnezia/xray/xray_uuid.key 2>/dev/null || cat /opt/fblink/xray/xray_uuid.key 2>/dev/null`] = []byte("uuid\n")
-	runner.outputs[`docker exec amnezia-xray sh -lc cat /opt/amnezia/xray/xray_mldsa65_verify.key 2>/dev/null || cat /opt/fblink/xray/xray_mldsa65_verify.key 2>/dev/null`] = []byte("pq\n")
 	runner.outputs[`docker exec amnezia-awg2 sh -lc cat /opt/amnezia/awg/awg0.conf 2>/dev/null || cat /opt/fblink/awg/awg0.conf 2>/dev/null`] = []byte("[Interface]\nPrivateKey = hidden\n")
 	runner.outputs[`docker exec pihole sh -lc test -f /etc/pihole/gravity.db && echo gravity-db-present || true`] = []byte("gravity-db-present\n")
 
@@ -53,7 +52,6 @@ func TestSnapshotPacksAllowlistedDockerConfigs(t *testing.T) {
 		"xray/xray_public.key",
 		"xray/xray_short_id.key",
 		"xray/xray_uuid.key",
-		"xray/xray_mldsa65_verify.key",
 		"awg/awg0.conf",
 		"pihole/metadata.txt",
 	} {

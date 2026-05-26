@@ -1,6 +1,8 @@
 import Foundation
 import NetworkExtension
 
+private let quicBlockOutboundTag = "quic-block"
+
 enum XrayErrors: Error {
     case noXrayConfig
     case xrayConfigIsWrong
@@ -98,6 +100,7 @@ extension PacketTunnelProvider {
                 inboundsArray[0]["listen"] = address
                 jsonDict["inbounds"] = inboundsArray
             }
+            jsonDict = ensureQuicBlocked(in: jsonDict)
 
             let updatedData = try JSONSerialization.data(withJSONObject: jsonDict, options: [])
 
@@ -133,6 +136,51 @@ extension PacketTunnelProvider {
         Socks5Tunnel.quit()
         LibXrayStopXray()
         completionHandler()
+    }
+
+    private func ensureQuicBlocked(in config: [String: Any]) -> [String: Any] {
+        var updated = config
+        var routing = updated["routing"] as? [String: Any] ?? [:]
+        var rules = routing["rules"] as? [[String: Any]] ?? []
+
+        let hasUdp443Block = rules.contains { rule in
+            guard (rule["network"] as? String) == "udp" else { return false }
+            if let port = rule["port"] as? String {
+                return port == "443"
+            }
+            if let port = rule["port"] as? Int {
+                return port == 443
+            }
+            return false
+        }
+        if hasUdp443Block {
+            return updated
+        }
+
+        var outbounds = updated["outbounds"] as? [[String: Any]] ?? []
+        let hasBlockOutbound = outbounds.contains { outbound in
+            (outbound["tag"] as? String) == quicBlockOutboundTag
+        }
+        if !hasBlockOutbound {
+            outbounds.append([
+                "tag": quicBlockOutboundTag,
+                "protocol": "blackhole",
+            ])
+            updated["outbounds"] = outbounds
+        }
+
+        rules.insert([
+            "type": "field",
+            "network": "udp",
+            "port": "443",
+            "outboundTag": quicBlockOutboundTag,
+        ], at: 0)
+        routing["rules"] = rules
+        if routing["domainStrategy"] == nil {
+            routing["domainStrategy"] = "IPIfNonMatch"
+        }
+        updated["routing"] = routing
+        return updated
     }
 
     func sockCallback(fd: uintptr_t) {

@@ -11,6 +11,7 @@ const (
 	defaultSelfHostedXrayConfigDir = "/opt/amnezia/xray"
 	defaultSelfHostedXrayRelease   = "v26.3.27"
 	defaultSelfHostedXrayShortIDs  = 8
+	defaultSelfHostedXHTTPPath     = "/video-stream"
 )
 
 type selfHostedXrayBootstrapOptions struct {
@@ -230,26 +231,26 @@ head -n1 "$XRAY_SHORT_IDS_FILE" | tr -d '\r\n' > "$CONFIG_DIR/xray_short_id.key"
 XRAY_SHORT_ID="$(tr -d '\r\n' < "$CONFIG_DIR/xray_short_id.key")"
 XRAY_SHORT_IDS_JSON_ARRAY="$(awk 'BEGIN{first=1; printf "["} {gsub(/[\r\n ]/,""); if(length($0)){if(first==0) printf ","; printf "\"%%s\"", $0; first=0}} END{print "]"}' "$XRAY_SHORT_IDS_FILE")"
 
-if [ "$FORCE_REGENERATE" = "1" ] || [ ! -s "$CONFIG_DIR/xray_private.key" ] || [ ! -s "$CONFIG_DIR/xray_public.key" ]; then
+generate_reality_keypair() {
   KEYPAIR="$(docker run --rm --entrypoint xray "$IMAGE_NAME" x25519 | tr -d '\r')"
-  XRAY_PRIVATE_KEY="$(printf '%%s\n' "$KEYPAIR" | awk -F': ' '/Private key:/ {print $2}')"
-  XRAY_PUBLIC_KEY="$(printf '%%s\n' "$KEYPAIR" | awk -F': ' '/Public key:/ {print $2}')"
+  XRAY_PRIVATE_KEY="$(printf '%%s\n' "$KEYPAIR" | awk -F': *' 'tolower($1) ~ /private/ {print $2; exit}')"
+  XRAY_PUBLIC_KEY="$(printf '%%s\n' "$KEYPAIR" | awk -F': *' 'tolower($1) ~ /public/ {print $2; exit}')"
+  if [ -z "$XRAY_PRIVATE_KEY" ] || [ -z "$XRAY_PUBLIC_KEY" ]; then
+    printf 'failed to parse xray x25519 output:\n%%s\n' "$KEYPAIR" >&2
+    exit 1
+  fi
   printf '%%s' "$XRAY_PRIVATE_KEY" > "$CONFIG_DIR/xray_private.key"
   printf '%%s' "$XRAY_PUBLIC_KEY" > "$CONFIG_DIR/xray_public.key"
+}
+
+if [ "$FORCE_REGENERATE" = "1" ] || [ ! -s "$CONFIG_DIR/xray_private.key" ] || [ ! -s "$CONFIG_DIR/xray_public.key" ]; then
+  generate_reality_keypair
 else
   XRAY_PRIVATE_KEY="$(tr -d '\r\n' < "$CONFIG_DIR/xray_private.key")"
   XRAY_PUBLIC_KEY="$(tr -d '\r\n' < "$CONFIG_DIR/xray_public.key")"
-fi
-
-if [ "$FORCE_REGENERATE" = "1" ] || [ ! -s "$CONFIG_DIR/xray_mldsa65_seed.key" ] || [ ! -s "$CONFIG_DIR/xray_mldsa65_verify.key" ]; then
-  MLDSA65_PAIR="$(docker run --rm --entrypoint xray "$IMAGE_NAME" mldsa65 | tr -d '\r')"
-  XRAY_MLDSA65_SEED="$(printf '%%s\n' "$MLDSA65_PAIR" | awk -F': ' '/Seed:/ {print $2}')"
-  XRAY_MLDSA65_VERIFY="$(printf '%%s\n' "$MLDSA65_PAIR" | awk -F': ' '/Verify:/ {print $2}')"
-  printf '%%s' "$XRAY_MLDSA65_SEED" > "$CONFIG_DIR/xray_mldsa65_seed.key"
-  printf '%%s' "$XRAY_MLDSA65_VERIFY" > "$CONFIG_DIR/xray_mldsa65_verify.key"
-else
-  XRAY_MLDSA65_SEED="$(tr -d '\r\n' < "$CONFIG_DIR/xray_mldsa65_seed.key")"
-  XRAY_MLDSA65_VERIFY="$(tr -d '\r\n' < "$CONFIG_DIR/xray_mldsa65_verify.key")"
+  if [ -z "$XRAY_PRIVATE_KEY" ] || [ -z "$XRAY_PUBLIC_KEY" ]; then
+    generate_reality_keypair
+  fi
 fi
 
 XRAY_TLS_CERT_FILE="/opt/amnezia/xray/xray_tls.crt"
@@ -349,7 +350,6 @@ fi
 docker rm -f "$CONTAINER_NAME" >/dev/null 2>&1 || true
 docker run -d \
   --privileged \
-  --log-driver none \
   --restart always \
   --cap-add=NET_ADMIN \
   -p "${XRAY_SERVER_PORT}:${XRAY_SERVER_PORT}/tcp" \
@@ -387,6 +387,7 @@ done
 
 if [ "$READY" != "1" ]; then
   docker ps -a --filter "name=$CONTAINER_NAME" --format 'container_status={{.Status}}'
+  docker logs --tail 80 "$CONTAINER_NAME" 2>&1 || true
   exit 1
 fi
 
@@ -401,7 +402,7 @@ printf 'container_name=%%s\nport=%%s\nserver_name=%%s\nxhttp_path=%%s\ngrpc_serv
   "$(tr -d '\r\n' < "$CONFIG_DIR/xray_public.key")" \
   "$(tr -d '\r\n' < "$CONFIG_DIR/xray_short_id.key")" \
   "$(tr -d '\r\n' < "$CONFIG_DIR/xray_uuid.key")" \
-  "$(tr -d '\r\n' < "$CONFIG_DIR/xray_mldsa65_verify.key" 2>/dev/null)" \
+  "" \
   "$XRAY_SHORT_IDS_JSON_ARRAY"
 `, shellQuote(opts.ContainerName), shellQuote(opts.ImageName), shellQuote(opts.ConfigDir), opts.Port, shellQuote(opts.SNI), shellQuote(opts.Flow), shellQuote(opts.GrpcServiceName), shellQuote(opts.GrpcAuthority), boolJSON(opts.GrpcMultiMode), boolToInt(opts.ForceRegenerate), boolToInt(opts.RebuildImage), selfHostedXrayDockerfile, selfHostedXrayStartScript, defaultSelfHostedXrayShortIDs)
 }

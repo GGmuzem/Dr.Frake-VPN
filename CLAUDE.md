@@ -74,7 +74,6 @@ internal/
 ├── models/      # User, Server, Subscription, Payment (GORM модели)
 ├── middleware/  # JWT auth, admin role check
 ├── config/      # Конфиг из .env файла
-├── backup/      # Плановый бэкап БД на email администраторов
 └── router/      # Gin роутер — все эндпоинты
 ```
 
@@ -98,7 +97,7 @@ internal/
 
 ### Backend .env
 ```
-SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD, SMTP_FROM — для отправки бэкапов
+SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD, SMTP_FROM — для email-уведомлений
 JWT_SECRET, YOOKASSA_SHOP_ID, YOOKASSA_SECRET_KEY
 DB_PATH — путь к SQLite файлу
 ```
@@ -114,7 +113,14 @@ ISO строки из Go содержат наносекунды (`2026-03-19T..
 Qt.formatDate(new Date(FBLinkController.subscriptionEndDate.slice(0, 10)), "d MMMM yyyy")
 ```
 
-### SMTP (бэкап)
+### Backups
+Production backups are encrypted restic jobs under `ops/backup`: the VDS sends
+data and config snapshots to a backup server, and the receiver does not have
+the restic repository password. The old `/api/v1/admin/backup/send` email path
+is disabled, the legacy email backup package was removed, and it must not be
+re-enabled for production data.
+
+### SMTP
 В `smtp.SendMail` envelope sender должен быть plain email (`cfg.SMTPUser`), не display name. Display name используется только в MIME заголовке `From:`.
 
 ### Переводы
@@ -123,3 +129,17 @@ Qt.formatDate(new Date(FBLinkController.subscriptionEndDate.slice(0, 10)), "d MM
 ## Именование
 
 Проект — форк AmneziaVPN. В коде сохранены некоторые внутренние названия Amnezia (классы, namespace), но UI-строки заменены на FBLink VPN. Не переименовывать внутренние C++ классы и Qt namespace — только UI-видимые строки.
+
+## Agent skills
+
+### Issue tracker
+
+Issues and PRDs are tracked in GitHub Issues for `GGmuzem/FBLink_VPN`. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Use the standard Matt Pocock triage label vocabulary. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+This is a single-context repo: read root `CONTEXT.md` and relevant ADRs under `docs/adr/` when present. See `docs/agents/domain.md`.

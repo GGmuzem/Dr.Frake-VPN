@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"io"
 	"path"
+	"sort"
 	"strings"
 	"time"
 )
@@ -78,7 +79,6 @@ func (b *SnapshotBuilder) Pack(ctx context.Context) ([]byte, SnapshotManifest, e
 		"xray_public.key",
 		"xray_short_id.key",
 		"xray_uuid.key",
-		"xray_mldsa65_verify.key",
 	} {
 		readOptional(path.Join("xray", name), b.cfg.XrayContainer, fmt.Sprintf(xrayPrefix, name, name))
 	}
@@ -92,8 +92,14 @@ func (b *SnapshotBuilder) Pack(ctx context.Context) ([]byte, SnapshotManifest, e
 		CreatedAt: b.now().UTC(),
 		Files:     make([]SnapshotManifestFile, 0, len(files)),
 	}
+	filePaths := make([]string, 0, len(files))
+	for filePath := range files {
+		filePaths = append(filePaths, filePath)
+	}
+	sort.Strings(filePaths)
 	hash := sha256.New()
-	for filePath, content := range files {
+	for _, filePath := range filePaths {
+		content := files[filePath]
 		sum := sha256.Sum256(content)
 		manifest.Files = append(manifest.Files, SnapshotManifestFile{
 			Path:   filePath,
@@ -110,11 +116,13 @@ func (b *SnapshotBuilder) Pack(ctx context.Context) ([]byte, SnapshotManifest, e
 		return nil, manifest, err
 	}
 	files["manifest.json"] = manifestBytes
+	filePaths = append(filePaths, "manifest.json")
 
 	var buf bytes.Buffer
 	gz := gzip.NewWriter(&buf)
 	tw := tar.NewWriter(gz)
-	for filePath, content := range files {
+	for _, filePath := range filePaths {
+		content := files[filePath]
 		if err := addTarFile(tw, filePath, content); err != nil {
 			return nil, manifest, err
 		}
