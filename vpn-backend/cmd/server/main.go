@@ -3,7 +3,6 @@ package main
 import (
 	"log"
 	"time"
-	"vpn-backend/internal/backup"
 	"vpn-backend/internal/config"
 	"vpn-backend/internal/database"
 	"vpn-backend/internal/handlers"
@@ -34,12 +33,12 @@ func main() {
 	safeGo("seed-test-user", func() {
 		email := "test_billing@frakebit.com"
 		password := "password123"
-		
+
 		var user models.User
 		if err := db.Where("email = ?", email).First(&user).Error; err == nil {
 			// User exists. Delete old subscription.
 			db.Unscoped().Where("user_id = ?", user.ID).Delete(&models.Subscription{})
-			
+
 			// Optional: reset password just in case
 			hash, _ := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 			db.Model(&user).Update("password_hash", string(hash))
@@ -67,7 +66,6 @@ func main() {
 	// ---------------------------
 
 	safeGo("sync-servers", func() { handlers.SyncAllServers(db) })
-	safeGo("backup-scheduler", func() { backup.RunScheduler(db, cfg) })
 	safeGo("renewal-scheduler", func() {
 		handlers.RunAutoRenewalScheduler(db, cfg.YooKassaShopID, cfg.YooKassaKey)
 	})

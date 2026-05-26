@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"vpn-backend/internal/models"
@@ -54,6 +55,9 @@ func generateMissingConfigs(db *gorm.DB) {
 		for _, sub := range subscriptions {
 			// Skip VIP servers for non-VIP users
 			if server.VIPOnly && !isVIPSubscription(sub) {
+				continue
+			}
+			if template != nil && strings.TrimSpace(template.ClientID) != "" {
 				continue
 			}
 

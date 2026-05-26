@@ -10,7 +10,7 @@ RUN GOOS=linux go build -o server ./cmd/server
 
 # Run stage
 FROM alpine:latest
-RUN apk add --no-cache ca-certificates sqlite
+RUN apk add --no-cache ca-certificates sqlite docker-cli
 
 WORKDIR /app
 COPY --from=builder /app/server .

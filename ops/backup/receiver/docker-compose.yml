@@ -1,0 +1,19 @@
+services:
+  rest-server:
+    image: restic/rest-server:0.13.0
+    container_name: fblink-restic-receiver
+    restart: unless-stopped
+    command:
+      - --append-only
+      - --private-repos
+      - --htpasswd-file
+      - /auth.htpasswd
+      - --path
+      - /data
+      - --listen
+      - :8000
+    volumes:
+      - ./data:/data
+      - ./auth.htpasswd:/auth.htpasswd:ro
+    ports:
+      - "127.0.0.1:8000:8000"

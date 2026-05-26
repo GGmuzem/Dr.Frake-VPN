@@ -78,6 +78,8 @@ func New(db *gorm.DB, cfg *config.Config) *gin.Engine {
 		api.GET("/client/latest-version", handlers.GetLatestClientVersion(cfg))
 		api.GET("/web/config", webConfigH.Get)
 		api.GET("/happ/sub/:token", happH.Subscription)
+		api.POST("/node-agent/heartbeat", adminH.AgentPushHeartbeat)
+		api.POST("/node-agent/snapshot", adminH.AgentPushSnapshot)
 
 		// TV approve confirmation page, also exposed under /tv at the
 		// root for the original device-flow URL. Mounted under the API
@@ -133,6 +135,11 @@ func New(db *gorm.DB, cfg *config.Config) *gin.Engine {
 			adminGrp.POST("/servers/pihole-sync", adminH.PiHoleSync)
 			adminGrp.PUT("/servers/:id", adminH.UpdateServer)
 			adminGrp.POST("/servers/:id/toggle", adminH.ToggleServer)
+			adminGrp.POST("/servers/:id/agent/bootstrap", adminH.AgentBootstrap)
+			adminGrp.POST("/servers/:id/agent/snapshot", adminH.AgentSnapshot)
+			adminGrp.POST("/servers/:id/agent/update", adminH.AgentUpdate)
+			adminGrp.POST("/servers/:id/agent/rollback", adminH.AgentRollback)
+			adminGrp.GET("/servers/:id/agent/status", adminH.AgentStatus)
 			adminGrp.DELETE("/servers/:id", adminH.DeleteServer)
 			adminGrp.GET("/payments", adminH.GetPayments)
 			adminGrp.POST("/payments/:id/approve", adminH.ApprovePayment)

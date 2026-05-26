@@ -126,6 +126,28 @@ type VPNServer struct {
 	AWGContainer string `gorm:"default:'amnezia-awg2'"`
 	AWGInterface string `gorm:"default:'awg0'"`
 
+	// Node agent management over the VLESS/Reality management path.
+	AgentURL                string `gorm:"default:''"`
+	AgentNodeID             string `gorm:"default:''"`
+	AgentLastSnapshotHash   string `gorm:"default:''"`
+	AgentLastSnapshotAt     *time.Time
+	AgentLastSnapshotStatus string `gorm:"default:''"`
+	AgentLastVersion        string `gorm:"default:''"`
+	AgentLastCommit         string `gorm:"default:''"`
+	AgentActiveDigest       string `gorm:"default:''"`
+	AgentPreviousDigest     string `gorm:"default:''"`
+	AgentLastUpdateStatus   string `gorm:"default:''"`
+	AgentLastUpdateError    string `gorm:"default:''"`
+	AgentBootstrapStatus    string `gorm:"default:''"`
+	AgentBootstrapError     string `gorm:"default:''"`
+	AgentBootstrapAt        *time.Time
+	AgentManagementPort     int    `gorm:"default:0"`
+	AgentLocalPort          int    `gorm:"default:0"`
+	AgentManagementUUID     string `gorm:"default:''"`
+	AgentManagementShortID  string `gorm:"default:''"`
+	AgentManagementPublicKey string `gorm:"default:''"`
+	AgentPushPublicKey      string `gorm:"default:''"`
+
 	// Pi-hole AdBlock
 	PiHoleMode          string `gorm:"default:'auto'"` // auto | host | docker | disabled
 	PiHoleContainerName string `gorm:"default:''"`     // override docker container name

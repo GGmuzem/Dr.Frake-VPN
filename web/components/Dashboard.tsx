@@ -274,6 +274,9 @@ export function Dashboard() {
             <a href="#downloads">
               <Download size={17} /> Скачать
             </a>
+            <a href="/dashboard/vip">
+              <Crown size={17} /> VIP
+            </a>
             <button onClick={logout}>
               <LogOut size={17} /> Выйти
             </button>

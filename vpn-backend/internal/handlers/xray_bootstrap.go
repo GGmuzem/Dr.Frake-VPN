@@ -260,7 +260,9 @@ docker run -d \
   -p "${XRAY_SERVER_PORT}:${XRAY_SERVER_PORT}/tcp" \
   -v "${CONFIG_DIR}:/opt/amnezia/xray" \
   --name "$CONTAINER_NAME" \
-  "$IMAGE_NAME" >/dev/null
+  --entrypoint /bin/sh \
+  "$IMAGE_NAME" \
+  -lc 'exec xray -config /opt/amnezia/xray/server.json' >/dev/null
 
 docker network connect amnezia-dns-net "$CONTAINER_NAME" >/dev/null 2>&1 || true
 

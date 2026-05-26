@@ -33,6 +33,7 @@ func openHappSubscriptionDB(t *testing.T) *gorm.DB {
 		&models.VLESSServerTemplate{},
 		&models.VLESSCredential{},
 		&models.HappSubscriptionToken{},
+		&models.RoutingProfile{},
 	); err != nil {
 		t.Fatalf("migrate: %v", err)
 	}
@@ -436,6 +437,67 @@ func TestHappSubscriptionAllowsVIPOnlyServersForVIP(t *testing.T) {
 	body := recorder.Body.String()
 	if !strings.Contains(body, normalServer.Host) || !strings.Contains(body, vipServer.Host) {
 		t.Fatalf("expected VIP Happ subscription to include normal and VIP-only servers, got %s", body)
+	}
+}
+
+func TestHappSubscriptionIncludesRoutingProfileForVIP(t *testing.T) {
+	db := openHappSubscriptionDB(t)
+	cfg := &config.Config{PublicBaseURL: "https://srv.frakebit.com"}
+	seedHappUser(t, db, 1, models.PlanVIP, time.Now().Add(24*time.Hour))
+	server := seedHappServer(t, db, "Normal", false)
+	seedHappCredential(t, db, 1, server.ID, "66666666-6666-4666-8666-666666666666")
+	if err := db.Create(&models.RoutingProfile{
+		UserID:             1,
+		Name:               "RU direct",
+		Kind:               models.RoutingProfileCustom,
+		Action:             models.RoutingProfileDirect,
+		Enabled:            true,
+		DomainsJSON:        `["gosuslugi.ru"]`,
+		DomainSuffixesJSON: `[".ru"]`,
+		CIDRsJSON:          `["10.0.0.0/8"]`,
+	}).Error; err != nil {
+		t.Fatalf("create routing profile: %v", err)
+	}
+	token := issueHappTokenForTest(t, db, cfg, 1)
+
+	handler := NewHappHandler(db, cfg)
+	recorder := httptest.NewRecorder()
+	context, _ := gin.CreateTestContext(recorder)
+	context.Request = httptest.NewRequest(http.MethodGet, "/api/v1/happ/sub/"+token, nil)
+	context.Params = gin.Params{{Key: "token", Value: token}}
+
+	handler.Subscription(context)
+
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d body=%s", recorder.Code, recorder.Body.String())
+	}
+	routingLink := recorder.Header().Get("routing")
+	if !strings.HasPrefix(routingLink, "happ://routing/onadd/") {
+		t.Fatalf("expected Happ routing header, got %q", routingLink)
+	}
+	if !strings.Contains(recorder.Body.String(), routingLink) {
+		t.Fatalf("expected subscription body to include Happ routing link, got %s", recorder.Body.String())
+	}
+
+	payload := strings.TrimPrefix(routingLink, "happ://routing/onadd/")
+	decoded, err := base64.StdEncoding.DecodeString(payload)
+	if err != nil {
+		t.Fatalf("decode routing payload: %v", err)
+	}
+	var profile map[string]interface{}
+	if err := json.Unmarshal(decoded, &profile); err != nil {
+		t.Fatalf("decode routing profile json: %v", err)
+	}
+	if profile["Name"] != "FBLink VPN" {
+		t.Fatalf("expected routing profile name FBLink VPN, got %v", profile["Name"])
+	}
+	directSites := profile["DirectSites"].([]interface{})
+	if !containsInterfaceString(directSites, "full:gosuslugi.ru") || !containsInterfaceString(directSites, "domain:ru") {
+		t.Fatalf("expected direct domains in Happ routing profile, got %v", directSites)
+	}
+	directIP := profile["DirectIp"].([]interface{})
+	if !containsInterfaceString(directIP, "10.0.0.0/8") {
+		t.Fatalf("expected direct CIDR in Happ routing profile, got %v", directIP)
 	}
 }
 

@@ -341,7 +341,7 @@
             <div class="hero-subtitle">Единый дашборд по росту аудитории, статусам подписок, выручке и загрузке регионов.</div>
             <div class="btn-row">
               <button class="btn btn-primary" onclick="refreshAll()">Обновить всё</button>
-              <button class="btn btn-secondary" onclick="triggerBackup()">Отправить бэкап</button>
+              <button class="btn btn-secondary" disabled title="Бэкап выполняется внешним зашифрованным restic-заданием">Бэкап: restic</button>
             </div>
           </div>
           <div class="panel glass period-card">
@@ -452,6 +452,26 @@
           </tr></thead>
           <tbody id="piholeSyncBody"><tr><td colspan="7" class="empty">Нет данных</td></tr></tbody>
         </table>
+      </div>
+    </div>
+  </div>
+
+  <div id="agentModalWrap" class="modal-overlay">
+    <div class="modal glass" style="max-width:760px">
+      <h3 id="agentModalTitle">Управление Node Agent</h3>
+      <div id="agentCurrentStatus" style="margin-bottom:16px;padding:12px;background:var(--card-bg);border-radius:var(--radius);font-size:14px;">
+        <!-- Status injected here -->
+      </div>
+      <div class="form-grid">
+        <div class="field" style="grid-column:1 / -1"><label>Agent Image Digest (sha256)</label><input id="agentImageDigest" type="text" placeholder="ghcr.io/frakebit/fblink-node-agent@sha256:..." value="ghcr.io/frakebit/fblink-node-agent:latest"></div>
+        <div class="field" style="grid-column:1 / -1"><label>Xray Image Digest (sha256)</label><input id="xrayImageDigest" type="text" placeholder="amneziavpn/amnezia-xray@sha256:..." value="amneziavpn/amnezia-xray:latest"></div>
+      </div>
+      <div class="btn-row" style="margin-top:14px">
+        <button id="agentBtnSnapshot" class="btn btn-secondary" onclick="runAgentAction('snapshot')">Запросить конфиги</button>
+        <button id="agentBtnBootstrap" class="btn btn-primary" onclick="runAgentAction('bootstrap')">Установить (Bootstrap)</button>
+        <button id="agentBtnUpdate" class="btn btn-success" onclick="runAgentAction('update')">Обновить (Update)</button>
+        <button id="agentBtnRollback" class="btn btn-danger" onclick="runAgentAction('rollback')">Откатить (Rollback)</button>
+        <button class="btn btn-secondary" onclick="closeAgentModal()">Закрыть</button>
       </div>
     </div>
   </div>
@@ -847,8 +867,9 @@
           <td>${server.pi_hole_dns_ip ? badge('🛡 ' + server.pi_hole_dns_ip, 'ok') : badge('—', 'warn')}</td>
           <td>${badge(server.active ? 'Активен' : 'Отключён', server.active ? 'ok' : 'warn')}</td>
           <td><div class="table-actions">
-            <button class="btn btn-secondary" onclick='openEditServerModal(${JSON.stringify(server).replace(/'/g, "&apos;")})'>Редактировать</button>
-            <button class="btn btn-secondary" onclick="toggleServer(${server.id})">${server.active ? 'Выключить' : 'Включить'}</button>
+            <button class="btn btn-secondary" onclick='openEditServerModal(${JSON.stringify(server).replace(/'/g, "&apos;")})'>Ред.</button>
+            <button class="btn btn-secondary" onclick='openAgentModal(${JSON.stringify(server).replace(/'/g, "&apos;")})'>Агент</button>
+            <button class="btn btn-secondary" onclick="toggleServer(${server.id})">${server.active ? 'Выкл.' : 'Вкл.'}</button>
             <button class="btn btn-danger" onclick="deleteServer(${server.id})">Удалить</button>
           </div></td>
         </tr>
@@ -1208,12 +1229,6 @@
       renderPayments();
     }
 
-    async function triggerBackup() {
-      const res = await api('/api/v1/admin/backup/send', { method: 'POST' });
-      const data = await res.json().catch(() => ({}));
-      alert(data.message || data.error || 'Операция выполнена');
-    }
-
     async function exportCSV(entity) {
       const res = await api(`/api/v1/admin/export/${entity}`);
       if (!res.ok) {
@@ -1401,6 +1416,79 @@
       if (!confirm('Удалить сервер и все связанные ключи?')) return;
       await api(`/api/v1/admin/servers/${id}`, { method: 'DELETE' });
       refreshAll();
+    }
+
+    let activeAgentServerId = null;
+
+    function openAgentModal(server) {
+      activeAgentServerId = server.id;
+      document.getElementById('agentModalTitle').textContent = `Управление агентом: ${server.name}`;
+      
+      let statusHtml = `
+        <div style="display:grid;grid-template-columns:auto 1fr;gap:8px 16px;">
+          <b style="color:var(--muted)">Snapshot:</b> <span>${server.agent_last_snapshot_status ? badge(server.agent_last_snapshot_status, server.agent_last_snapshot_status === 'ok' || server.agent_last_snapshot_status === 'push_ok' ? 'ok' : 'warn') : 'вЂ”'} ${server.agent_last_snapshot_at ? fmtDate(server.agent_last_snapshot_at) : ''}</span>
+          <b style="color:var(--muted)">Snapshot Hash:</b> <span style="word-break:break-all;font-family:monospace;font-size:12px">${escapeHtml(server.agent_last_snapshot_hash || 'вЂ”')}</span>
+          <b style="color:var(--muted)">Bootstrap:</b> <span>${server.agent_bootstrap_status ? badge(server.agent_bootstrap_status, server.agent_bootstrap_status === 'ok' ? 'ok' : 'bad') : '—'} ${server.agent_bootstrap_at ? fmtDate(server.agent_bootstrap_at) : ''}</span>
+          ${server.agent_bootstrap_error ? `<b style="color:var(--bad)">Ошибка:</b> <span style="color:var(--bad);word-break:break-all">${escapeHtml(server.agent_bootstrap_error)}</span>` : ''}
+          <b style="color:var(--muted)">Active Digest:</b> <span style="word-break:break-all;font-family:monospace;font-size:12px">${escapeHtml(server.agent_active_digest || '—')}</span>
+          <b style="color:var(--muted)">Prev Digest:</b> <span style="word-break:break-all;font-family:monospace;font-size:12px">${escapeHtml(server.agent_previous_digest || '—')}</span>
+          <b style="color:var(--muted)">URL:</b> <span>${escapeHtml(server.agent_url || '—')}</span>
+        </div>
+      `;
+      document.getElementById('agentCurrentStatus').innerHTML = statusHtml;
+      
+      document.getElementById('agentImageDigest').value = 'ghcr.io/frakebit/fblink-node-agent:latest';
+      document.getElementById('xrayImageDigest').value = 'amneziavpn/amnezia-xray:latest';
+      
+      document.getElementById('agentModalWrap').style.display = 'grid';
+    }
+
+    function closeAgentModal() {
+      document.getElementById('agentModalWrap').style.display = 'none';
+      activeAgentServerId = null;
+    }
+
+    async function runAgentAction(action) {
+      if (!activeAgentServerId) return;
+      if (!confirm(`Вы уверены, что хотите запустить ${action} на сервере?`)) return;
+
+      const agentDigest = document.getElementById('agentImageDigest').value.trim();
+      const xrayDigest = document.getElementById('xrayImageDigest').value.trim();
+      
+      let payload = {};
+      if (action === 'bootstrap') {
+        payload = { agent_image_digest: agentDigest, xray_image_digest: xrayDigest };
+      } else if (action === 'update') {
+        payload = { image_digest: agentDigest };
+      }
+
+      const btn = document.getElementById(`agentBtn${action.charAt(0).toUpperCase() + action.slice(1)}`);
+      if (btn) {
+        btn.disabled = true;
+        btn.classList.add('is-loading');
+      }
+
+      try {
+        const res = await api(`/api/v1/admin/servers/${activeAgentServerId}/agent/${action}`, {
+          method: 'POST',
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json().catch(() => ({}));
+        
+        if (!res.ok) {
+          alert(`Ошибка ${action}:\n${data.error || 'Неизвестная ошибка'}\n${data.result?.remote_output || ''}`);
+        } else {
+          alert(`Успешно (${action}):\n${data.message || ''}`);
+        }
+        
+        closeAgentModal();
+        refreshAll();
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.classList.remove('is-loading');
+        }
+      }
     }
 
     async function refreshAll() {

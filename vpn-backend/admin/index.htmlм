@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dr.Frake VPN — Admin Panel</title>
+<style>
+  :root {
+    --bg: #0E0E11;
+    --surface: #1C1D21;
+    --surface2: #26272D;
+    --accent: #5B4DFF;
+    --accent-hover: #7065FF;
+    --danger: #E53935;
+    --success: #43A047;
+    --text: #E8E8F0;
+    --muted: #8B8C9E;
+    --border: #2E2F38;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Inter', system-ui, sans-serif; min-height: 100vh; }
+
+  /* Login screen */
+  #loginScreen {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    min-height: 100vh; padding: 24px;
+  }
+  #loginScreen h1 { font-size: 28px; font-weight: 700; margin-bottom: 8px; }
+  #loginScreen p { color: var(--muted); margin-bottom: 32px; }
+  .login-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+    padding: 32px; width: 100%; max-width: 400px;
+  }
+  .field { margin-bottom: 16px; }
+  .field label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+  .field input {
+    width: 100%; background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 10px; padding: 12px 16px; color: var(--text); font-size: 15px; outline: none;
+    transition: border-color 0.2s;
+  }
+  .field input:focus { border-color: var(--accent); }
+
+  /* Buttons */
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 12px 20px; border-radius: 10px; font-size: 14px; font-weight: 600;
+    cursor: pointer; border: none; transition: all 0.15s; text-decoration: none;
+  }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { background: var(--accent-hover); }
+  .btn-danger { background: transparent; color: var(--danger); border: 1px solid var(--danger); }
+  .btn-danger:hover { background: rgba(229,57,53,0.1); }
+  .btn-full { width: 100%; }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* Main layout */
+  #app { display: none; flex-direction: row; min-height: 100vh; }
+  .sidebar {
+    width: 240px; min-height: 100vh; background: var(--surface);
+    border-right: 1px solid var(--border); padding: 24px 16px; flex-shrink: 0;
+  }
+  .sidebar .logo { font-size: 18px; font-weight: 700; margin-bottom: 32px; padding: 0 8px; }
+  .sidebar .logo span { color: var(--accent); }
+  .nav-item {
+    display: flex; align-items: center; gap: 12px; padding: 10px 12px;
+    border-radius: 8px; cursor: pointer; color: var(--muted); font-size: 14px;
+    transition: all 0.15s; margin-bottom: 4px;
+  }
+  .nav-item:hover { background: var(--surface2); color: var(--text); }
+  .nav-item.active { background: rgba(91,77,255,0.15); color: var(--accent); }
+  .content { flex: 1; padding: 32px; overflow-y: auto; }
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* Stats cards */
+  .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 32px; }
+  .stat-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px;
+  }
+  .stat-card .label { font-size: 13px; color: var(--muted); margin-bottom: 8px; }
+  .stat-card .value { font-size: 32px; font-weight: 700; }
+  .stat-card .value.accent { color: var(--accent); }
+
+  /* Tables */
+  .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+  .section-header h2 { font-size: 18px; font-weight: 600; }
+  table { width: 100%; border-collapse: collapse; background: var(--surface); border-radius: 12px; overflow: hidden; }
+  th { text-align: left; padding: 12px 16px; font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid var(--border); }
+  td { padding: 14px 16px; font-size: 14px; border-bottom: 1px solid rgba(46,47,56,0.5); }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(255,255,255,0.02); }
+
+  .badge {
+    display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 20px;
+    font-size: 12px; font-weight: 600;
+  }
+  .badge-success { background: rgba(67,160,71,0.15); color: var(--success); }
+  .badge-danger { background: rgba(229,57,53,0.15); color: var(--danger); }
+  .badge-info { background: rgba(91,77,255,0.15); color: var(--accent); }
+
+  .error-msg { background: rgba(229,57,53,0.1); border: 1px solid rgba(229,57,53,0.3); color: #FF6B6B; padding: 12px 16px; border-radius: 8px; margin-bottom: 16px; display: none; }
+  .empty-state { text-align: center; padding: 48px; color: var(--muted); }
+  
+  @media (max-width: 640px) {
+    .sidebar { display: none; }
+    .content { padding: 16px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Login Screen -->
+<div id="loginScreen">
+  <h1>⚡ Dr.Frake VPN</h1>
+  <p>Admin Panel</p>
+  <div class="login-card">
+    <div id="loginError" class="error-msg"></div>
+    <div class="field">
+      <label>Email</label>
+      <input type="email" id="loginEmail" placeholder="admin@drfrake.vpn" autocomplete="username">
+    </div>
+    <div class="field">
+      <label>Password</label>
+      <input type="password" id="loginPassword" placeholder="••••••••" autocomplete="current-password">
+    </div>
+    <button class="btn btn-primary btn-full" onclick="doLogin()" style="margin-top:8px">Sign in</button>
+  </div>
+</div>
+
+<!-- Main App -->
+<div id="app">
+  <aside class="sidebar">
+    <div class="logo">Dr.Frake <span>VPN</span></div>
+    <div class="nav-item active" onclick="showPage('dashboard')">📊 Dashboard</div>
+    <div class="nav-item" onclick="showPage('users')">👥 Users</div>
+    <div class="nav-item" onclick="showPage('servers')">🖥️ Servers</div>
+    <div class="nav-item" onclick="showPage('payments')">💳 Payments</div>
+    <div style="flex:1"></div>
+    <div class="nav-item" onclick="logout()" style="margin-top:auto">🚪 Logout</div>
+  </aside>
+
+  <main class="content">
+    <!-- Dashboard -->
+    <div id="page-dashboard" class="page active">
+      <h1 style="font-size:24px;font-weight:700;margin-bottom:24px">Dashboard</h1>
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="label">Total Users</div>
+          <div class="value accent" id="stat-users">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="label">Active Subscriptions</div>
+          <div class="value" id="stat-subs">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="label">Active VPN Keys</div>
+          <div class="value" id="stat-keys">—</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Users -->
+    <div id="page-users" class="page">
+      <div class="section-header">
+        <h2>Users</h2>
+        <button class="btn btn-primary" onclick="loadUsers()">↻ Refresh</button>
+      </div>
+      <table>
+        <thead>
+          <tr><th>ID</th><th>Email</th><th>Role</th><th>Plan</th><th>Status</th><th>Registered</th></tr>
+        </thead>
+        <tbody id="users-tbody">
+          <tr><td colspan="6" class="empty-state">Loading...</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Servers -->
+    <div id="page-servers" class="page">
+      <div class="section-header">
+        <h2>VPN Servers</h2>
+        <button class="btn btn-primary" onclick="loadServers()">↻ Refresh</button>
+      </div>
+      <table>
+        <thead>
+          <tr><th>ID</th><th>Name</th><th>Host</th><th>Endpoint</th><th>Active Peers</th><th>Status</th></tr>
+        </thead>
+        <tbody id="servers-tbody">
+          <tr><td colspan="6" class="empty-state">Loading...</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Payments -->
+    <div id="page-payments" class="page">
+      <div class="section-header">
+        <h2>Payments</h2>
+        <button class="btn btn-primary" onclick="loadPayments()">↻ Refresh</button>
+      </div>
+      <table>
+        <thead>
+          <tr><th>ID</th><th>User</th><th>Amount</th><th>Plan</th><th>Status</th><th>Date</th></tr>
+        </thead>
+        <tbody id="payments-tbody">
+          <tr><td colspan="6" class="empty-state">Loading...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+</div>
+
+<script>
+const API = '';  // same origin or set to 'https://yourvpn.app'
+let token = localStorage.getItem('drfrake_admin_token') || '';
+
+function api(path, opts = {}) {
+  return fetch(API + path, {
+    ...opts,
+    headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json', ...(opts.headers || {}) }
+  });
+}
+
+async function doLogin() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  const errEl = document.getElementById('loginError');
+  errEl.style.display = 'none';
+
+  const res = await fetch(API + '/api/v1/auth/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password })
+  });
+  const data = await res.json();
+  if (!res.ok) { errEl.textContent = data.error || 'Login failed'; errEl.style.display = 'block'; return; }
+  if (data.role !== 'admin') { errEl.textContent = 'Access denied: admin only'; errEl.style.display = 'block'; return; }
+
+  token = data.access_token;
+  localStorage.setItem('drfrake_admin_token', token);
+  showApp();
+}
+
+function logout() {
+  localStorage.removeItem('drfrake_admin_token');
+  token = '';
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('loginScreen').style.display = 'flex';
+}
+
+function showApp() {
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('app').style.display = 'flex';
+  loadStats();
+}
+
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  event.currentTarget.classList.add('active');
+  if (name === 'users') loadUsers();
+  if (name === 'servers') loadServers();
+  if (name === 'payments') loadPayments();
+}
+
+async function loadStats() {
+  const res = await api('/api/v1/admin/stats');
+  if (!res.ok) return;
+  const d = await res.json();
+  document.getElementById('stat-users').textContent = d.total_users;
+  document.getElementById('stat-subs').textContent = d.active_subscriptions;
+  document.getElementById('stat-keys').textContent = d.active_vpn_keys;
+}
+
+async function loadUsers() {
+  const tbody = document.getElementById('users-tbody');
+  tbody.innerHTML = '<tr><td colspan="6" class="empty-state">Loading...</td></tr>';
+  const res = await api('/api/v1/admin/users');
+  if (!res.ok) return;
+  const d = await res.json();
+  if (!d.users.length) { tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No users</td></tr>'; return; }
+  tbody.innerHTML = d.users.map(u => `
+    <tr>
+      <td>${u.id}</td>
+      <td>${u.email}</td>
+      <td><span class="badge ${u.role === 'admin' ? 'badge-info' : 'badge-success'}">${u.role}</span></td>
+      <td>${u.subscription?.plan || '—'}</td>
+      <td><span class="badge ${u.subscription?.status === 'active' ? 'badge-success' : 'badge-danger'}">${u.subscription?.status || 'none'}</span></td>
+      <td>${new Date(u.created_at).toLocaleDateString('ru')}</td>
+    </tr>`).join('');
+}
+
+async function loadServers() {
+  const tbody = document.getElementById('servers-tbody');
+  tbody.innerHTML = '<tr><td colspan="6" class="empty-state">Loading...</td></tr>';
+  const res = await api('/api/v1/admin/servers');
+  if (!res.ok) return;
+  const d = await res.json();
+  if (!d.servers.length) { tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No servers</td></tr>'; return; }
+  tbody.innerHTML = d.servers.map(s => `
+    <tr>
+      <td>${s.id}</td>
+      <td>${s.name}</td>
+      <td>${s.host}</td>
+      <td>${s.endpoint || s.host}</td>
+      <td>${s.active_keys || 0} / ${s.max_peers}</td>
+      <td><span class="badge ${s.active ? 'badge-success' : 'badge-danger'}">${s.active ? 'Online' : 'Inactive'}</span></td>
+    </tr>`).join('');
+}
+
+async function loadPayments() {
+  const tbody = document.getElementById('payments-tbody');
+  tbody.innerHTML = '<tr><td colspan="6" class="empty-state">Loading...</td></tr>';
+  const res = await api('/api/v1/admin/payments');
+  if (!res.ok) return;
+  const d = await res.json();
+  if (!d.payments.length) { tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No payments</td></tr>'; return; }
+  tbody.innerHTML = d.payments.map(p => `
+    <tr>
+      <td>${p.id}</td>
+      <td>${p.user_email}</td>
+      <td>${p.amount} ₽</td>
+      <td>${p.plan}</td>
+      <td><span class="badge ${p.status === 'succeeded' ? 'badge-success' : p.status === 'pending' ? 'badge-info' : 'badge-danger'}">${p.status}</span></td>
+      <td>${new Date(p.created_at).toLocaleDateString('ru')}</td>
+    </tr>`).join('');
+}
+
+// Auto-login if token exists
+if (token) {
+  api('/api/v1/admin/stats').then(r => {
+    if (r.ok) showApp();
+    else { localStorage.removeItem('drfrake_admin_token'); token = ''; }
+  });
+}
+
+document.getElementById('loginPassword').addEventListener('keydown', e => {
+  if (e.key === 'Enter') doLogin();
+});
+</script>
+</body>
+</html>

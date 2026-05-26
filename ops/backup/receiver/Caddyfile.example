@@ -1,0 +1,7 @@
+backup.example.com {
+	@vds remote_ip 203.0.113.10
+	handle @vds {
+		reverse_proxy 127.0.0.1:8000
+	}
+	respond "forbidden" 403
+}

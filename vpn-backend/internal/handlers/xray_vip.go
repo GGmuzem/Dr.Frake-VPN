@@ -135,18 +135,47 @@ func detectXrayConfigPath(server *models.VPNServer, container string) string {
 }
 
 func readXrayFile(server *models.VPNServer, container, path string) (string, error) {
+	var errorsSeen []string
 	for _, candidate := range candidateXrayContainers(container) {
 		cmd := fmt.Sprintf(`docker exec %s cat %s`, candidate, path)
 		out, err := sshExec(server, cmd)
 		if err == nil {
 			return strings.TrimSpace(out), nil
 		}
+		if strings.TrimSpace(out) != "" {
+			errorsSeen = append(errorsSeen, fmt.Sprintf("%s docker exec: %s", candidate, strings.TrimSpace(out)))
+		} else {
+			errorsSeen = append(errorsSeen, fmt.Sprintf("%s docker exec: %v", candidate, err))
+		}
 	}
 
 	hostCmd := fmt.Sprintf(`cat %s`, path)
 	out, hostErr := sshExec(server, hostCmd)
 	if hostErr != nil {
-		return "", fmt.Errorf("failed to read %s via docker or host", path)
+		if strings.TrimSpace(out) != "" {
+			errorsSeen = append(errorsSeen, fmt.Sprintf("host path: %s", strings.TrimSpace(out)))
+		} else {
+			errorsSeen = append(errorsSeen, fmt.Sprintf("host path: %v", hostErr))
+		}
+		for _, candidate := range candidateXrayContainers(container) {
+			mountCmd := fmt.Sprintf(`docker inspect -f '{{range .Mounts}}{{if eq .Destination "/opt/amnezia/xray"}}{{.Source}}{{end}}{{end}}' %s`, candidate)
+			mountSource, mountErr := sshExec(server, mountCmd)
+			mountSource = strings.TrimSpace(mountSource)
+			if mountErr != nil || mountSource == "" {
+				continue
+			}
+			mountedConfigPath := strings.TrimRight(mountSource, "/") + "/server.json"
+			mountedOut, mountedErr := sshExec(server, fmt.Sprintf(`cat %s`, shellQuote(mountedConfigPath)))
+			if mountedErr == nil {
+				return strings.TrimSpace(mountedOut), nil
+			}
+			if strings.TrimSpace(mountedOut) != "" {
+				errorsSeen = append(errorsSeen, fmt.Sprintf("%s mount source %s: %s", candidate, mountedConfigPath, strings.TrimSpace(mountedOut)))
+			} else {
+				errorsSeen = append(errorsSeen, fmt.Sprintf("%s mount source %s: %v", candidate, mountedConfigPath, mountedErr))
+			}
+		}
+		return "", fmt.Errorf("failed to read %s via docker, host, or docker mount source: %s", path, strings.Join(errorsSeen, "; "))
 	}
 	return strings.TrimSpace(out), nil
 }
