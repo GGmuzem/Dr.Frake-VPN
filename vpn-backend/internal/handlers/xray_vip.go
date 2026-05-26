@@ -14,10 +14,12 @@ import (
 )
 
 const (
-	defaultXrayContainer = "amnezia-xray"
-	legacyXrayContainer  = "fblink-xray"
-	xrayProxyTag         = "proxy"
-	xrayDirectTag        = "direct"
+	defaultXrayContainer       = "amnezia-xray"
+	legacyXrayContainer        = "fblink-xray"
+	xrayProxyTag               = "proxy"
+	xrayDirectTag              = "direct"
+	defaultXrayGrpcServiceName = "api.v1.VideoDownload"
+	xrayNetworkGRPC            = "grpc"
 	// Keep /me/config fast: avoid frequent SSH/template refresh on user requests.
 	// Template refresh remains automatic, but much less aggressive.
 	vlessTemplateRefreshInterval = 24 * time.Hour
@@ -71,11 +73,22 @@ func xrayTemplateDefaults(template *models.VLESSServerTemplate, server *models.V
 	if template.Fingerprint == "" {
 		template.Fingerprint = "chrome"
 	}
-	if template.Flow == "" {
-		template.Flow = "xtls-rprx-vision"
-	}
 	if template.Network == "" {
-		template.Network = "tcp"
+		template.Network = "xhttp"
+	}
+	if template.Network == "xhttp" {
+		template.Flow = ""
+		path := strings.TrimSpace(template.GrpcServiceName)
+		if path == "" {
+			path = "/assets/7d91f0e4"
+		}
+		if !strings.HasPrefix(path, "/") {
+			path = "/" + path
+		}
+		template.GrpcServiceName = path
+	}
+	if template.Flow == "" && template.Network != xrayNetworkGRPC && template.Network != "xhttp" {
+		template.Flow = "xtls-rprx-vision"
 	}
 	if template.Security == "" {
 		template.Security = "reality"
@@ -83,9 +96,28 @@ func xrayTemplateDefaults(template *models.VLESSServerTemplate, server *models.V
 	if template.SpiderX == "" {
 		template.SpiderX = "/"
 	}
+	if template.GrpcServiceName == "" {
+		template.GrpcServiceName = defaultXrayGrpcServiceName
+	}
+	if template.HysteriaPort <= 0 {
+		template.HysteriaPort = 443
+	}
+	if strings.TrimSpace(template.HysteriaSNI) == "" {
+		template.HysteriaSNI = strings.TrimSpace(template.ServerName)
+	}
+	if strings.TrimSpace(template.HysteriaMasqueradeURL) == "" {
+		template.HysteriaMasqueradeURL = defaultSelfHostedHysteriaMasqueradeURL
+	}
 	if template.ContainerName == "" {
 		template.ContainerName = defaultXrayContainer
 	}
+}
+
+func xrayGrpcAuthority(template *models.VLESSServerTemplate) string {
+	if value := strings.TrimSpace(template.GrpcAuthority); value != "" {
+		return value
+	}
+	return strings.TrimSpace(template.ServerName)
 }
 
 func hasUsableVLESSTemplate(template *models.VLESSServerTemplate) bool {
@@ -350,16 +382,18 @@ func fetchVLESSTemplateFromServer(server *models.VPNServer, existing *models.VLE
 			}
 			return server.Host
 		}()),
-		Port:          443,
-		PublicKey:     strings.TrimSpace(publicKey),
-		ShortID:       strings.TrimSpace(shortID),
-		Fingerprint:   "chrome",
-		Flow:          "xtls-rprx-vision",
-		Network:       "tcp",
-		Security:      "reality",
-		SpiderX:       "/",
-		MLDSA65Verify: strings.TrimSpace(mldsa65Verify),
-		ContainerName: container,
+		Port:            443,
+		PublicKey:       strings.TrimSpace(publicKey),
+		ShortID:         strings.TrimSpace(shortID),
+		Fingerprint:     "chrome",
+		Flow:            "xtls-rprx-vision",
+		Network:         "tcp",
+		Security:        "reality",
+		SpiderX:         "/",
+		MLDSA65Verify:   strings.TrimSpace(mldsa65Verify),
+		GrpcServiceName: defaultXrayGrpcServiceName,
+		GrpcMultiMode:   true,
+		ContainerName:   container,
 	}
 
 	if existing != nil {
@@ -377,7 +411,16 @@ func fetchVLESSTemplateFromServer(server *models.VPNServer, existing *models.VLE
 	}
 
 	if inbounds, ok := parsed["inbounds"].([]interface{}); ok && len(inbounds) > 0 {
-		if inbound, ok := inbounds[0].(map[string]interface{}); ok {
+		for _, rawInbound := range inbounds {
+			inbound, ok := rawInbound.(map[string]interface{})
+			if !ok {
+				continue
+			}
+			protocol, _ := inbound["protocol"].(string)
+			if protocol != "vless" {
+				continue
+			}
+
 			if port, ok := inbound["port"].(float64); ok && port > 0 {
 				template.Port = int(port)
 			}
@@ -387,6 +430,27 @@ func fetchVLESSTemplateFromServer(server *models.VPNServer, existing *models.VLE
 				}
 				if security, ok := streamSettings["security"].(string); ok && security != "" {
 					template.Security = security
+				}
+				if grpcSettings, ok := streamSettings["grpcSettings"].(map[string]interface{}); ok {
+					if serviceName, ok := grpcSettings["serviceName"].(string); ok && strings.TrimSpace(serviceName) != "" {
+						template.GrpcServiceName = strings.TrimSpace(serviceName)
+					}
+					if authority, ok := grpcSettings["authority"].(string); ok {
+						template.GrpcAuthority = strings.TrimSpace(authority)
+					}
+					if multiMode, ok := grpcSettings["multiMode"].(bool); ok {
+						template.GrpcMultiMode = multiMode
+					}
+				}
+				if xhttpSettings, ok := streamSettings["xhttpSettings"].(map[string]interface{}); ok {
+					if path, ok := xhttpSettings["path"].(string); ok && strings.TrimSpace(path) != "" {
+						template.GrpcServiceName = strings.TrimSpace(path)
+					}
+				}
+				if tlsSettings, ok := streamSettings["tlsSettings"].(map[string]interface{}); ok {
+					if serverName, ok := tlsSettings["serverName"].(string); ok && strings.TrimSpace(serverName) != "" {
+						template.ServerName = strings.TrimSpace(serverName)
+					}
 				}
 				if realitySettings, ok := streamSettings["realitySettings"].(map[string]interface{}); ok {
 					if serverNames, ok := realitySettings["serverNames"].([]interface{}); ok && len(serverNames) > 0 {
@@ -411,11 +475,13 @@ func fetchVLESSTemplateFromServer(server *models.VPNServer, existing *models.VLE
 							}
 						}
 					}
+					template.MLDSA65Verify = ""
 					if verify, ok := realitySettings["mldsa65Verify"].(string); ok && strings.TrimSpace(verify) != "" {
 						template.MLDSA65Verify = strings.TrimSpace(verify)
 					}
 				}
 			}
+			break
 		}
 	}
 
@@ -553,48 +619,62 @@ func addXrayClient(server *models.VPNServer, template *models.VLESSServerTemplat
 	if !ok || len(inbounds) == 0 {
 		return fmt.Errorf("xray server config missing inbounds")
 	}
-	inbound, ok := inbounds[0].(map[string]interface{})
-	if !ok {
-		return fmt.Errorf("invalid xray inbound format")
-	}
-	settings, ok := inbound["settings"].(map[string]interface{})
-	if !ok {
-		return fmt.Errorf("xray inbound missing settings")
-	}
-	clients, _ := settings["clients"].([]interface{})
-	clients, changed := sanitizeInboundVLESSClients(clients)
-	for _, item := range clients {
-		if client, ok := item.(map[string]interface{}); ok && client["id"] == clientID {
-			if changed {
-				settings["clients"] = clients
-				inbound["settings"] = settings
-				inbounds[0] = inbound
-				parsed["inbounds"] = inbounds
 
-				updatedJSON, _ := json.Marshal(parsed)
-				if err := writeXrayFile(server, container, configPath, string(updatedJSON)); err != nil {
-					return err
-				}
-				return ensureXrayRuntimeReady(server, container, configPath, template.Port)
+	anyChanged := false
+	for i := 0; i < len(inbounds); i++ {
+		inbound, ok := inbounds[i].(map[string]interface{})
+		if !ok {
+			continue
+		}
+		protocol, _ := inbound["protocol"].(string)
+		if protocol != "vless" {
+			continue
+		}
+		settings, ok := inbound["settings"].(map[string]interface{})
+		if !ok {
+			continue
+		}
+		clients, _ := settings["clients"].([]interface{})
+		clients, changed := sanitizeInboundVLESSClients(clients)
+
+		alreadyExists := false
+		for _, item := range clients {
+			if client, ok := item.(map[string]interface{}); ok && client["id"] == clientID {
+				alreadyExists = true
+				break
 			}
-			return nil
+		}
+
+		if !alreadyExists {
+			clientConfig := map[string]interface{}{
+				"id": clientID,
+			}
+			streamSettings, _ := inbound["streamSettings"].(map[string]interface{})
+			netw, _ := streamSettings["network"].(string)
+			if i == 0 && netw != "xhttp" && template.Network != "xhttp" && strings.TrimSpace(template.Flow) != "" {
+				clientConfig["flow"] = template.Flow
+			}
+			clients = append(clients, clientConfig)
+			changed = true
+		}
+
+		if changed {
+			settings["clients"] = clients
+			inbound["settings"] = settings
+			inbounds[i] = inbound
+			anyChanged = true
 		}
 	}
 
-	clients = append(clients, map[string]interface{}{
-		"id":   clientID,
-		"flow": template.Flow,
-	})
-	settings["clients"] = clients
-	inbound["settings"] = settings
-	inbounds[0] = inbound
-	parsed["inbounds"] = inbounds
-
-	updatedJSON, _ := json.Marshal(parsed)
-	if err := writeXrayFile(server, container, configPath, string(updatedJSON)); err != nil {
-		return err
+	if anyChanged {
+		parsed["inbounds"] = inbounds
+		updatedJSON, _ := json.Marshal(parsed)
+		if err := writeXrayFile(server, container, configPath, string(updatedJSON)); err != nil {
+			return err
+		}
+		return ensureXrayRuntimeReady(server, container, configPath, template.Port)
 	}
-	return ensureXrayRuntimeReady(server, container, configPath, template.Port)
+	return nil
 }
 
 func removeXrayClient(server *models.VPNServer, template *models.VLESSServerTemplate, clientID string) error {
@@ -621,33 +701,50 @@ func removeXrayClient(server *models.VPNServer, template *models.VLESSServerTemp
 	if !ok || len(inbounds) == 0 {
 		return fmt.Errorf("xray server config missing inbounds")
 	}
-	inbound, ok := inbounds[0].(map[string]interface{})
-	if !ok {
-		return fmt.Errorf("invalid xray inbound format")
-	}
-	settings, ok := inbound["settings"].(map[string]interface{})
-	if !ok {
-		return fmt.Errorf("xray inbound missing settings")
-	}
-	clients, _ := settings["clients"].([]interface{})
-	clients, _ = sanitizeInboundVLESSClients(clients)
-	filtered := make([]interface{}, 0, len(clients))
-	for _, item := range clients {
-		client, ok := item.(map[string]interface{})
-		if !ok || client["id"] != clientID {
-			filtered = append(filtered, item)
+
+	anyChanged := false
+	for i := 0; i < len(inbounds); i++ {
+		inbound, ok := inbounds[i].(map[string]interface{})
+		if !ok {
+			continue
+		}
+		protocol, _ := inbound["protocol"].(string)
+		if protocol != "vless" {
+			continue
+		}
+		settings, ok := inbound["settings"].(map[string]interface{})
+		if !ok {
+			continue
+		}
+		clients, _ := settings["clients"].([]interface{})
+		clients, _ = sanitizeInboundVLESSClients(clients)
+		filtered := make([]interface{}, 0, len(clients))
+		inboundChanged := false
+		for _, item := range clients {
+			client, ok := item.(map[string]interface{})
+			if ok && client["id"] == clientID {
+				inboundChanged = true
+			} else {
+				filtered = append(filtered, item)
+			}
+		}
+		if inboundChanged {
+			settings["clients"] = filtered
+			inbound["settings"] = settings
+			inbounds[i] = inbound
+			anyChanged = true
 		}
 	}
-	settings["clients"] = filtered
-	inbound["settings"] = settings
-	inbounds[0] = inbound
-	parsed["inbounds"] = inbounds
 
-	updatedJSON, _ := json.Marshal(parsed)
-	if err := writeXrayFile(server, container, configPath, string(updatedJSON)); err != nil {
-		return err
+	if anyChanged {
+		parsed["inbounds"] = inbounds
+		updatedJSON, _ := json.Marshal(parsed)
+		if err := writeXrayFile(server, container, configPath, string(updatedJSON)); err != nil {
+			return err
+		}
+		return ensureXrayRuntimeReady(server, container, configPath, template.Port)
 	}
-	return ensureXrayRuntimeReady(server, container, configPath, template.Port)
+	return nil
 }
 
 func buildVIPRoutingRules(profiles []models.RoutingProfile) []map[string]interface{} {
@@ -777,6 +874,59 @@ func buildVLESSConfig(clientID string, server *models.VPNServer, template *model
 		realitySettings["mldsa65Verify"] = template.MLDSA65Verify
 	}
 
+	streamSettings := map[string]interface{}{
+		"network":  template.Network,
+		"security": template.Security,
+		"sockopt": map[string]interface{}{
+			"tcpFastOpen":          true,
+			"tcpKeepAliveIdle":     45,
+			"tcpKeepAliveInterval": 45,
+		},
+	}
+	if template.Network == "xhttp" {
+		path := strings.TrimSpace(template.GrpcServiceName)
+		if path == "" {
+			path = "/assets/7d91f0e4"
+		}
+		if !strings.HasPrefix(path, "/") {
+			path = "/" + path
+		}
+		streamSettings["xhttpSettings"] = map[string]interface{}{
+			"path":               path,
+			"host":               template.ServerName,
+			"mode":               "auto",
+			"xPaddingBytes":      "100-1000",
+			"scMaxEachPostBytes": 1000000,
+		}
+		if template.Security == "reality" {
+			streamSettings["realitySettings"] = realitySettings
+		} else {
+			streamSettings["tlsSettings"] = map[string]interface{}{
+				"serverName":  template.ServerName,
+				"fingerprint": template.Fingerprint,
+				"alpn":        []string{"h3"},
+			}
+		}
+	} else if template.Network == xrayNetworkGRPC {
+		streamSettings["realitySettings"] = realitySettings
+		streamSettings["grpcSettings"] = map[string]interface{}{
+			"serviceName": template.GrpcServiceName,
+			"authority":   xrayGrpcAuthority(template),
+			"multiMode":   template.GrpcMultiMode,
+		}
+	} else {
+		streamSettings["realitySettings"] = realitySettings
+		streamSettings["tcpSettings"] = map[string]interface{}{
+			"header": map[string]interface{}{
+				"type": "none",
+			},
+		}
+	}
+
+	flowValue := template.Flow
+	if template.Network == "xhttp" {
+		flowValue = ""
+	}
 	primaryOutbound := map[string]interface{}{
 		"protocol": "vless",
 		"settings": map[string]interface{}{
@@ -787,28 +937,14 @@ func buildVLESSConfig(clientID string, server *models.VPNServer, template *model
 					"users": []interface{}{
 						map[string]interface{}{
 							"id":         clientID,
-							"flow":       template.Flow,
+							"flow":       flowValue,
 							"encryption": "none",
 						},
 					},
 				},
 			},
 		},
-		"streamSettings": map[string]interface{}{
-			"network":  template.Network,
-			"security": template.Security,
-			"sockopt": map[string]interface{}{
-				"tcpFastOpen":          true,
-				"tcpKeepAliveIdle":     45,
-				"tcpKeepAliveInterval": 45,
-			},
-			"tcpSettings": map[string]interface{}{
-				"header": map[string]interface{}{
-					"type": "none",
-				},
-			},
-			"realitySettings": realitySettings,
-		},
+		"streamSettings": streamSettings,
 	}
 
 	xrayConfig := map[string]interface{}{

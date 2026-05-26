@@ -128,6 +128,23 @@ func seedHappCredential(t *testing.T, db *gorm.DB, userID uint, serverID uint, c
 	}
 }
 
+func enableHappHysteria(t *testing.T, db *gorm.DB, serverID uint, password string) {
+	t.Helper()
+
+	if err := db.Model(&models.VLESSServerTemplate{}).
+		Where("server_id = ?", serverID).
+		Updates(map[string]interface{}{
+			"hysteria_enabled":       true,
+			"hysteria_port":          443,
+			"hysteria_password":      password,
+			"hysteria_sni":           "hy.example.com",
+			"hysteria_insecure":      true,
+			"hysteria_obfs_password": "obfs-secret",
+		}).Error; err != nil {
+		t.Fatalf("enable hysteria template: %v", err)
+	}
+}
+
 func storeHappTokenForTest(t *testing.T, db *gorm.DB, userID uint, token string) {
 	t.Helper()
 
@@ -437,6 +454,39 @@ func TestHappSubscriptionAllowsVIPOnlyServersForVIP(t *testing.T) {
 	body := recorder.Body.String()
 	if !strings.Contains(body, normalServer.Host) || !strings.Contains(body, vipServer.Host) {
 		t.Fatalf("expected VIP Happ subscription to include normal and VIP-only servers, got %s", body)
+	}
+}
+
+func TestHappSubscriptionUsesHysteria2AsPrimaryForVIP(t *testing.T) {
+	db := openHappSubscriptionDB(t)
+	cfg := &config.Config{PublicBaseURL: "https://srv.frakebit.com"}
+	seedHappUser(t, db, 1, models.PlanVIP, time.Now().Add(24*time.Hour))
+	server := seedHappServer(t, db, "VIP", true)
+	enableHappHysteria(t, db, server.ID, "hy-password")
+	token := issueHappTokenForTest(t, db, cfg, 1)
+
+	handler := NewHappHandler(db, cfg)
+	recorder := httptest.NewRecorder()
+	context, _ := gin.CreateTestContext(recorder)
+	context.Params = gin.Params{{Key: "token", Value: token}}
+	context.Request = httptest.NewRequest(http.MethodGet, "/api/v1/happ/sub/"+token, nil)
+	handler.Subscription(context)
+
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected subscription status 200, got %d body=%s", recorder.Code, recorder.Body.String())
+	}
+	body := recorder.Body.String()
+	if !strings.Contains(body, "hy2://hy-password@vip.example.com:443/") {
+		t.Fatalf("expected VIP Happ subscription to include Hysteria2 URI, got %s", body)
+	}
+	if !strings.Contains(body, "sni=hy.example.com") ||
+		!strings.Contains(body, "insecure=1") ||
+		!strings.Contains(body, "obfs=salamander") ||
+		!strings.Contains(body, "obfs-password=obfs-secret") {
+		t.Fatalf("expected Hysteria2 URI to include TLS and obfs params, got %s", body)
+	}
+	if strings.Contains(body, "vless://") {
+		t.Fatalf("VIP Happ subscription must not fallback to VLESS when Hysteria2 is enabled, got %s", body)
 	}
 }
 

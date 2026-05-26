@@ -33,6 +33,7 @@
 
 #include "3rd/QJsonStruct/QJsonIO.hpp"
 #include <QUrlQuery>
+#include <QJsonDocument>
 #include "serialization.h"
 
 namespace fblink::serialization::vless
@@ -184,6 +185,36 @@ QJsonObject Deserialize(const QString &str, QString *alias, QString *errMessage)
             QJsonIO::SetValue(stream, multiMode, { "grpcSettings", "multiMode" });
         }
     }
+    else if (type == "xhttp")
+    {
+        const auto hasPath = query.hasQueryItem("path");
+        const auto path = hasPath ? QUrl::fromPercentEncoding(query.queryItemValue("path").toUtf8()) : "/";
+        QJsonIO::SetValue(stream, path, { "xhttpSettings", "path" });
+
+        const auto hasMode = query.hasQueryItem("mode");
+        const auto mode = hasMode ? QUrl::fromPercentEncoding(query.queryItemValue("mode").toUtf8()) : "packet-up";
+        QJsonIO::SetValue(stream, mode, { "xhttpSettings", "mode" });
+
+        if (query.hasQueryItem("x_padding_bytes")) {
+            const auto xPaddingBytes = QUrl::fromPercentEncoding(query.queryItemValue("x_padding_bytes").toUtf8());
+            QJsonIO::SetValue(stream, xPaddingBytes, { "xhttpSettings", "xPaddingBytes" });
+        }
+
+        if (query.hasQueryItem("extra")) {
+            const auto extraRaw = QUrl::fromPercentEncoding(query.queryItemValue("extra").toUtf8());
+            QJsonDocument extraDoc = QJsonDocument::fromJson(extraRaw.toUtf8());
+            if (extraDoc.isObject()) {
+                QJsonObject extraObj = extraDoc.object();
+                for (auto it = extraObj.begin(); it != extraObj.end(); ++it) {
+                    if (it.value().isString()) {
+                        QJsonIO::SetValue(stream, it.value().toString(), { "xhttpSettings", it.key() });
+                    } else if (it.value().isDouble()) {
+                        QJsonIO::SetValue(stream, it.value().toDouble(), { "xhttpSettings", it.key() });
+                    }
+                }
+            }
+        }
+    }
 
     // tls-wise settings
     const auto hasSecurity = query.hasQueryItem("security");
@@ -273,6 +304,35 @@ const QString Serialize(const VlessServerObject &server, const QString &alias)
 
     if (!server.network.isEmpty() && server.network != "tcp") {
         query.addQueryItem("type", server.network);
+    }
+
+    if (server.network == "grpc") {
+        if (!server.grpcServiceName.isEmpty()) {
+            query.addQueryItem("serviceName", server.grpcServiceName);
+        }
+        if (!server.grpcAuthority.isEmpty()) {
+            query.addQueryItem("authority", server.grpcAuthority);
+        }
+        if (server.grpcMultiMode) {
+            query.addQueryItem("mode", "multi");
+        }
+    }
+
+    if (server.network == "xhttp") {
+        const auto path = !server.xhttpPath.isEmpty() ? server.xhttpPath : server.grpcServiceName;
+        if (!path.isEmpty()) {
+            query.addQueryItem("path", path);
+        }
+        query.addQueryItem("mode", server.xhttpMode.isEmpty() ? "packet-up" : server.xhttpMode);
+        if (!server.xPaddingBytes.isEmpty()) {
+            query.addQueryItem("x_padding_bytes", server.xPaddingBytes);
+        }
+        if (!server.xhttpExtra.isEmpty()) {
+            query.addQueryItem("extra", server.xhttpExtra);
+        }
+        if (!server.alpn.isEmpty()) {
+            query.addQueryItem("alpn", server.alpn);
+        }
     }
     
     if (!server.encryption.isEmpty()) {

@@ -1,5 +1,7 @@
 # Build stage
-FROM golang:1.22-alpine AS builder
+ARG GO_BASE_IMAGE=golang:1.22-alpine
+ARG RUNTIME_BASE_IMAGE=alpine:latest
+FROM ${GO_BASE_IMAGE} AS builder
 
 WORKDIR /app
 COPY go.mod go.sum ./
@@ -9,7 +11,7 @@ COPY . .
 RUN GOOS=linux go build -o server ./cmd/server
 
 # Run stage
-FROM alpine:latest
+FROM ${RUNTIME_BASE_IMAGE}
 RUN apk add --no-cache ca-certificates sqlite docker-cli
 
 WORKDIR /app

@@ -1,0 +1,33 @@
+{
+  "protocol": "vless",
+  "settings": {
+    "vnext": [
+      {
+        "address": "$XRAY_CDN_ORIGIN_OR_IP",
+        "port": 443,
+        "users": [
+          {
+            "id": "$XRAY_CLIENT_ID",
+            "encryption": "none"
+          }
+        ]
+      }
+    ]
+  },
+  "streamSettings": {
+    "network": "xhttp",
+    "security": "tls",
+    "xhttpSettings": {
+      "path": "$XRAY_XHTTP_PATH",
+      "mode": "packet-up"
+    },
+    "tlsSettings": {
+      "serverName": "$XRAY_SITE_NAME",
+      "fingerprint": "chrome",
+      "alpn": [
+        "h3"
+      ]
+    }
+  },
+  "tag": "proxy"
+}

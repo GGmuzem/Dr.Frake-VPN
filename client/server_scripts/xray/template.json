@@ -24,7 +24,6 @@
                         "users": [
                             {
                                 "id": "$XRAY_CLIENT_ID",
-                                "flow": "xtls-rprx-vision",
                                 "encryption": "none"
                             }
                         ]
@@ -32,24 +31,23 @@
                 ]
             },
             "streamSettings": {
-                "network": "tcp",
-                "security": "reality",
+                "network": "xhttp",
+                "security": "tls",
                 "sockopt": {
                     "tcpFastOpen": true,
                     "tcpKeepAliveIdle": 45,
                     "tcpKeepAliveInterval": 45
                 },
-                "tcpSettings": {
-                    "header": {
-                        "type": "none"
-                    }
+                "xhttpSettings": {
+                    "path": "$XRAY_XHTTP_PATH",
+                    "mode": "packet-up"
                 },
-                "realitySettings": {
-                    "fingerprint": "chrome",
+                "tlsSettings": {
                     "serverName": "$XRAY_SITE_NAME",
-                    "publicKey": "$XRAY_PUBLIC_KEY",
-                    "shortId": "$XRAY_SHORT_ID",
-                    "spiderX": "/"
+                    "fingerprint": "chrome",
+                    "alpn": [
+                        "h3"
+                    ]
                 }
             }
         }

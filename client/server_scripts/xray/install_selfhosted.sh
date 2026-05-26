@@ -7,8 +7,9 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CONTAINER_NAME="${CONTAINER_NAME:-amnezia-xray}"
 IMAGE_NAME="${IMAGE_NAME:-amnezia-xray}"
 CONFIG_DIR="${CONFIG_DIR:-/opt/amnezia/xray}"
-XRAY_SERVER_PORT="${XRAY_SERVER_PORT:-8443}"
-XRAY_SITE_NAME="${XRAY_SITE_NAME:-www.icloud.com}"
+XRAY_SERVER_PORT="${XRAY_SERVER_PORT:-443}"
+XRAY_SITE_NAME="${XRAY_SITE_NAME:-}"
+XRAY_XHTTP_PATH="${XRAY_XHTTP_PATH:-/assets/7d91f0e4}"
 XRAY_RELEASE="${XRAY_RELEASE:-v25.8.3}"
 XRAY_SHORT_IDS_COUNT="${XRAY_SHORT_IDS_COUNT:-8}"
 PUBLIC_HOST="${PUBLIC_HOST:-}"
@@ -20,8 +21,9 @@ usage() {
 Usage: $(basename "$0") [options]
 
 Options:
-  --port <port>            Public/server port for VLESS Reality (default: ${XRAY_SERVER_PORT})
-  --sni <host>             Reality SNI / dest host (default: ${XRAY_SITE_NAME})
+  --port <port>            Public/server port for VLESS XHTTP/TLS (default: ${XRAY_SERVER_PORT})
+  --sni <host>             Required TLS SNI / origin host
+  --xhttp-path <path>      XHTTP path (default: ${XRAY_XHTTP_PATH})
   --container <name>       Docker container name (default: ${CONTAINER_NAME})
   --image <name>           Docker image tag (default: ${IMAGE_NAME})
   --config-dir <path>      Host directory for server.json and keys (default: ${CONFIG_DIR})
@@ -40,6 +42,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --sni)
       XRAY_SITE_NAME="$2"
+      shift 2
+      ;;
+    --xhttp-path)
+      XRAY_XHTTP_PATH="$2"
       shift 2
       ;;
     --container)
@@ -81,6 +87,13 @@ done
 if ! [[ "$XRAY_SERVER_PORT" =~ ^[0-9]+$ ]]; then
   echo "XRAY_SERVER_PORT must be numeric" >&2
   exit 1
+fi
+if [[ -z "$XRAY_SITE_NAME" ]]; then
+  echo "--sni is required for self-hosted XRay bootstrap" >&2
+  exit 1
+fi
+if [[ "$XRAY_XHTTP_PATH" != /* ]]; then
+  XRAY_XHTTP_PATH="/${XRAY_XHTTP_PATH}"
 fi
 
 if [[ "${EUID:-$(id -u)}" -eq 0 ]]; then
@@ -209,6 +222,19 @@ else
   XRAY_MLDSA65_VERIFY="$(read_root_file "$CONFIG_DIR/xray_mldsa65_verify.key" | tr -d '\r\n')"
 fi
 
+if [[ "$FORCE_REGENERATE" -eq 1 ]] || ! run_root test -s "$CONFIG_DIR/xray_tls.crt" || ! run_root test -s "$CONFIG_DIR/xray_tls.key"; then
+  tmp_cert="$(mktemp)"
+  tmp_key="$(mktemp)"
+  openssl req -x509 -newkey rsa:2048 -nodes \
+    -keyout "$tmp_key" \
+    -out "$tmp_cert" \
+    -subj "/CN=${XRAY_SITE_NAME}" \
+    -days 3650 >/dev/null 2>&1
+  run_root install -m 600 "$tmp_key" "$CONFIG_DIR/xray_tls.key"
+  run_root install -m 644 "$tmp_cert" "$CONFIG_DIR/xray_tls.crt"
+  rm -f "$tmp_cert" "$tmp_key"
+fi
+
 SERVER_JSON="$(cat <<EOF
 {
   "log": {
@@ -222,40 +248,70 @@ SERVER_JSON="$(cat <<EOF
       "settings": {
         "clients": [
           {
-            "id": "${XRAY_CLIENT_ID}",
-            "flow": "xtls-rprx-vision"
+            "id": "${XRAY_CLIENT_ID}"
           }
         ],
         "decryption": "none"
       },
       "streamSettings": {
-        "network": "tcp",
-        "security": "reality",
-        "tcpSettings": {
-          "acceptProxyProtocol": false,
-          "header": {
-            "type": "none"
-          }
+        "network": "xhttp",
+        "security": "tls",
+        "xhttpSettings": {
+          "path": "${XRAY_XHTTP_PATH}",
+          "mode": "packet-up"
         },
-        "realitySettings": {
-          "show": false,
-          "xver": 0,
-          "dest": "${XRAY_SITE_NAME}:443",
-          "serverNames": [
-            "${XRAY_SITE_NAME}"
+        "tlsSettings": {
+          "serverName": "${XRAY_SITE_NAME}",
+          "alpn": [
+            "h2",
+            "http/1.1"
           ],
-          "privateKey": "${XRAY_PRIVATE_KEY}",
-          "mldsa65Seed": "${XRAY_MLDSA65_SEED}",
-          "shortIds": ${XRAY_SHORT_IDS_JSON_ARRAY}
+          "certificates": [
+            {
+              "certificateFile": "/opt/amnezia/xray/xray_tls.crt",
+              "keyFile": "/opt/amnezia/xray/xray_tls.key"
+            }
+          ]
         }
+      },
+      "sniffing": {
+        "enabled": true,
+        "destOverride": [
+          "http",
+          "tls",
+          "quic"
+        ]
       }
     }
   ],
   "outbounds": [
     {
+      "tag": "direct",
       "protocol": "freedom"
+    },
+    {
+      "tag": "block",
+      "protocol": "blackhole"
     }
-  ]
+  ],
+  "routing": {
+    "rules": [
+      {
+        "type": "field",
+        "ip": [
+          "geoip:private"
+        ],
+        "outboundTag": "block"
+      },
+      {
+        "type": "field",
+        "protocol": [
+          "bittorrent"
+        ],
+        "outboundTag": "block"
+      }
+    ]
+  }
 }
 EOF
 )"
@@ -321,6 +377,8 @@ Image:       ${IMAGE_NAME}
 Config dir:  ${CONFIG_DIR}
 Port:        ${XRAY_SERVER_PORT}
 SNI:         ${XRAY_SITE_NAME}
+Transport:   VLESS + TLS + XHTTP packet-up
+XHTTP path:  ${XRAY_XHTTP_PATH}
 Address:     ${PUBLIC_HOST:-<set your server IP or hostname>}
 UUID:        ${XRAY_CLIENT_ID}
 Short ID:    ${XRAY_SHORT_ID}
@@ -342,6 +400,8 @@ Notes:
       ${CONFIG_DIR}/xray_short_ids.txt
       ${CONFIG_DIR}/xray_public.key
       ${CONFIG_DIR}/xray_private.key
+      ${CONFIG_DIR}/xray_tls.crt
+      ${CONFIG_DIR}/xray_tls.key
       ${CONFIG_DIR}/xray_mldsa65_seed.key
       ${CONFIG_DIR}/xray_mldsa65_verify.key
 EOF

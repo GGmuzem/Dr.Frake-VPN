@@ -384,24 +384,27 @@ func (h *HappHandler) happVLESSLinks(userID uint, sub models.Subscription) ([]st
 		if !hasUsableVLESSTemplate(template) {
 			continue
 		}
-
-		clientID := ""
-		if template != nil {
-			clientID = strings.TrimSpace(template.ClientID)
+		if isVIP && hasUsableHysteriaTemplate(template) {
+			link := buildHappHysteria2URI(server, template)
+			if link != "" {
+				links = append(links, link)
+			}
+			continue
+		}
+		if isVIP && template != nil && template.HysteriaEnabled {
+			continue
 		}
 
-		if clientID == "" {
-			var credentials []models.VLESSCredential
-			err := h.db.
-				Where("user_id = ? AND server_id = ? AND revoked_at IS NULL", userID, server.ID).
-				Limit(1).
-				Find(&credentials).Error
-			if err != nil {
-				continue
-			}
-			if len(credentials) == 0 {
-				continue
-			}
+		clientID := ""
+		var credentials []models.VLESSCredential
+		err := h.db.
+			Where("user_id = ? AND server_id = ? AND revoked_at IS NULL", userID, server.ID).
+			Limit(1).
+			Find(&credentials).Error
+		if err != nil {
+			continue
+		}
+		if len(credentials) > 0 {
 			credential := credentials[0]
 			clientID = strings.TrimSpace(credential.ClientID)
 		}
@@ -446,7 +449,7 @@ func (h *HappHandler) ensureHappCredentials(userID uint, sub models.Subscription
 			if !hasUsableVLESSTemplate(template) {
 				return
 			}
-			if template != nil && strings.TrimSpace(template.ClientID) != "" {
+			if isVIP && hasUsableHysteriaTemplate(template) {
 				return
 			}
 
@@ -468,6 +471,71 @@ func (h *HappHandler) ensureHappCredentials(userID uint, sub models.Subscription
 	}
 
 	return nil
+}
+
+func hasUsableHysteriaTemplate(template *models.VLESSServerTemplate) bool {
+	if template == nil || !template.HysteriaEnabled {
+		return false
+	}
+	return strings.TrimSpace(template.HysteriaPassword) != "" && template.HysteriaPort > 0
+}
+
+func buildHappHysteria2URI(server *models.VPNServer, template *models.VLESSServerTemplate) string {
+	if server == nil || template == nil {
+		return ""
+	}
+	xrayTemplateDefaults(template, server)
+	if !hasUsableHysteriaTemplate(template) {
+		return ""
+	}
+
+	address := strings.TrimSpace(template.Address)
+	if address == "" {
+		address = strings.TrimSpace(server.Endpoint)
+	}
+	if address == "" {
+		address = strings.TrimSpace(server.Host)
+	}
+	if address == "" {
+		return ""
+	}
+
+	params := url.Values{}
+	if sni := strings.TrimSpace(template.HysteriaSNI); sni != "" {
+		params.Set("sni", sni)
+	}
+	if template.HysteriaInsecure {
+		params.Set("insecure", "1")
+	}
+	if obfsPassword := strings.TrimSpace(template.HysteriaObfsPassword); obfsPassword != "" {
+		params.Set("obfs", "salamander")
+		params.Set("obfs-password", obfsPassword)
+	}
+
+	name := strings.TrimSpace(server.Region)
+	if name == "" {
+		name = strings.TrimSpace(server.Name)
+	}
+	if name == "" {
+		name = address
+	}
+	prefix := "FBLink VIP"
+	if flag := countryCodeToEmoji(server.CountryCode); flag != "" {
+		prefix = flag + " FBLink VIP"
+	}
+	fragment := url.PathEscape(prefix + " - " + name)
+	query := params.Encode()
+	if query != "" {
+		query = "?" + query
+	}
+
+	return fmt.Sprintf("hy2://%s@%s:%d/%s#%s",
+		url.PathEscape(strings.TrimSpace(template.HysteriaPassword)),
+		address,
+		template.HysteriaPort,
+		query,
+		fragment,
+	)
 }
 
 func buildHappVLESSURI(clientID string, server *models.VPNServer, template *models.VLESSServerTemplate) string {
@@ -494,13 +562,33 @@ func buildHappVLESSURI(clientID string, server *models.VPNServer, template *mode
 	params.Set("type", template.Network)
 	params.Set("sni", template.ServerName)
 	params.Set("fp", template.Fingerprint)
-	params.Set("pbk", template.PublicKey)
-	params.Set("sid", template.ShortID)
-	params.Set("spx", template.SpiderX)
-	if strings.TrimSpace(template.Flow) != "" {
-		params.Set("flow", template.Flow)
+	if template.Security == "reality" {
+		params.Set("pbk", template.PublicKey)
+		params.Set("sid", template.ShortID)
+		params.Set("spx", template.SpiderX)
 	}
-	if strings.TrimSpace(template.MLDSA65Verify) != "" {
+	if template.Network == "xhttp" {
+		path := strings.TrimSpace(template.GrpcServiceName)
+		if path == "" {
+			path = "/assets/7d91f0e4"
+		}
+		if !strings.HasPrefix(path, "/") {
+			path = "/" + path
+		}
+		params.Set("path", path)
+		params.Set("host", template.ServerName)
+		params.Set("mode", "auto")
+		params.Set("x_padding_bytes", "100-1000")
+		params.Set("extra", `{"mode":"auto","scMaxEachPostBytes":"1000000","xPaddingBytes":"100-1000"}`)
+		if template.Security == "tls" {
+			params.Set("alpn", "h3")
+		}
+	} else {
+		if strings.TrimSpace(template.Flow) != "" {
+			params.Set("flow", template.Flow)
+		}
+	}
+	if template.Security == "reality" && strings.TrimSpace(template.MLDSA65Verify) != "" {
 		params.Set("pqv", template.MLDSA65Verify)
 	}
 

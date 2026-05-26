@@ -27,12 +27,12 @@ type User struct {
 type PlanType string
 
 const (
-	PlanFree     PlanType = "free"
-	PlanTrial    PlanType = "trial"
-	PlanBasic    PlanType = "basic"
-	PlanBasic3M  PlanType = "basic_3m"
-	PlanVIP      PlanType = "vip"
-	PlanVIP3M    PlanType = "vip_3m"
+	PlanFree    PlanType = "free"
+	PlanTrial   PlanType = "trial"
+	PlanBasic   PlanType = "basic"
+	PlanBasic3M PlanType = "basic_3m"
+	PlanVIP     PlanType = "vip"
+	PlanVIP3M   PlanType = "vip_3m"
 )
 
 type SubscriptionStatus string
@@ -65,8 +65,8 @@ const (
 
 type TVLogin struct {
 	gorm.Model
-	DeviceCodeHash string        `gorm:"uniqueIndex;not null"`
-	UserCodeHash   string        `gorm:"index;not null"`
+	DeviceCodeHash string `gorm:"uniqueIndex;not null"`
+	UserCodeHash   string `gorm:"index;not null"`
 	UserID         *uint
 	Status         TVLoginStatus `gorm:"default:pending;not null"`
 	ExpiresAt      time.Time     `gorm:"not null"`
@@ -127,26 +127,26 @@ type VPNServer struct {
 	AWGInterface string `gorm:"default:'awg0'"`
 
 	// Node agent management over the VLESS/Reality management path.
-	AgentURL                string `gorm:"default:''"`
-	AgentNodeID             string `gorm:"default:''"`
-	AgentLastSnapshotHash   string `gorm:"default:''"`
-	AgentLastSnapshotAt     *time.Time
-	AgentLastSnapshotStatus string `gorm:"default:''"`
-	AgentLastVersion        string `gorm:"default:''"`
-	AgentLastCommit         string `gorm:"default:''"`
-	AgentActiveDigest       string `gorm:"default:''"`
-	AgentPreviousDigest     string `gorm:"default:''"`
-	AgentLastUpdateStatus   string `gorm:"default:''"`
-	AgentLastUpdateError    string `gorm:"default:''"`
-	AgentBootstrapStatus    string `gorm:"default:''"`
-	AgentBootstrapError     string `gorm:"default:''"`
-	AgentBootstrapAt        *time.Time
-	AgentManagementPort     int    `gorm:"default:0"`
-	AgentLocalPort          int    `gorm:"default:0"`
-	AgentManagementUUID     string `gorm:"default:''"`
-	AgentManagementShortID  string `gorm:"default:''"`
+	AgentURL                 string `gorm:"default:''"`
+	AgentNodeID              string `gorm:"default:''"`
+	AgentLastSnapshotHash    string `gorm:"default:''"`
+	AgentLastSnapshotAt      *time.Time
+	AgentLastSnapshotStatus  string `gorm:"default:''"`
+	AgentLastVersion         string `gorm:"default:''"`
+	AgentLastCommit          string `gorm:"default:''"`
+	AgentActiveDigest        string `gorm:"default:''"`
+	AgentPreviousDigest      string `gorm:"default:''"`
+	AgentLastUpdateStatus    string `gorm:"default:''"`
+	AgentLastUpdateError     string `gorm:"default:''"`
+	AgentBootstrapStatus     string `gorm:"default:''"`
+	AgentBootstrapError      string `gorm:"default:''"`
+	AgentBootstrapAt         *time.Time
+	AgentManagementPort      int    `gorm:"default:0"`
+	AgentLocalPort           int    `gorm:"default:0"`
+	AgentManagementUUID      string `gorm:"default:''"`
+	AgentManagementShortID   string `gorm:"default:''"`
 	AgentManagementPublicKey string `gorm:"default:''"`
-	AgentPushPublicKey      string `gorm:"default:''"`
+	AgentPushPublicKey       string `gorm:"default:''"`
 
 	// Pi-hole AdBlock
 	PiHoleMode          string `gorm:"default:'auto'"` // auto | host | docker | disabled
@@ -180,21 +180,31 @@ type VPNKey struct {
 
 type VLESSServerTemplate struct {
 	gorm.Model
-	ServerID      uint   `gorm:"uniqueIndex;not null"`
-	ClientID      string `gorm:"default:''"`
-	Address       string `gorm:"not null"`
-	Port          int    `gorm:"default:443"`
-	ServerName    string `gorm:"not null"`
-	PublicKey     string `gorm:"not null"`
-	ShortID       string `gorm:"not null"`
-	ShortIDsJSON  string `gorm:"default:''"` // JSON-кодированный массив всех shortIds сервера
-	Fingerprint   string `gorm:"default:'chrome'"`
-	Flow          string `gorm:"default:'xtls-rprx-vision'"`
-	Network       string `gorm:"default:'tcp'"`
-	Security      string `gorm:"default:'reality'"`
-	SpiderX       string `gorm:"default:'/'"`
-	MLDSA65Verify string `gorm:"default:''"` // post-quantum Reality public verify-key для клиента
-	ContainerName string `gorm:"default:'amnezia-xray'"`
+	ServerID              uint   `gorm:"uniqueIndex;not null"`
+	ClientID              string `gorm:"default:''"`
+	Address               string `gorm:"not null"`
+	Port                  int    `gorm:"default:443"`
+	ServerName            string `gorm:"not null"`
+	PublicKey             string `gorm:"not null"`
+	ShortID               string `gorm:"not null"`
+	ShortIDsJSON          string `gorm:"default:''"` // JSON-кодированный массив всех shortIds сервера
+	Fingerprint           string `gorm:"default:'chrome'"`
+	Flow                  string `gorm:"default:'xtls-rprx-vision'"`
+	Network               string `gorm:"default:'tcp'"`
+	Security              string `gorm:"default:'reality'"`
+	SpiderX               string `gorm:"default:'/'"`
+	MLDSA65Verify         string `gorm:"default:''"` // post-quantum Reality public verify-key для клиента
+	GrpcServiceName       string `gorm:"default:'api.v1.VideoDownload'"`
+	GrpcAuthority         string `gorm:"default:''"`
+	GrpcMultiMode         bool   `gorm:"default:true"`
+	HysteriaEnabled       bool   `gorm:"default:false"`
+	HysteriaPort          int    `gorm:"default:443"`
+	HysteriaPassword      string `gorm:"default:''"`
+	HysteriaSNI           string `gorm:"default:''"`
+	HysteriaInsecure      bool   `gorm:"default:true"`
+	HysteriaObfsPassword  string `gorm:"default:''"`
+	HysteriaMasqueradeURL string `gorm:"default:'https://www.microsoft.com'"`
+	ContainerName         string `gorm:"default:'amnezia-xray'"`
 }
 
 type VLESSCredential struct {
@@ -210,10 +220,10 @@ type VLESSCredential struct {
 
 type HappSubscriptionToken struct {
 	gorm.Model
-	UserID     uint       `gorm:"not null;index"`
-	TokenHash  string     `gorm:"uniqueIndex;not null"`
-	Label      string     `gorm:"default:'iOS Happ'"`
-	RevokedAt *time.Time
+	UserID     uint   `gorm:"not null;index"`
+	TokenHash  string `gorm:"uniqueIndex;not null"`
+	Label      string `gorm:"default:'iOS Happ'"`
+	RevokedAt  *time.Time
 	LastUsedAt *time.Time
 
 	User User
@@ -270,7 +280,7 @@ type Payment struct {
 	Currency       string        `gorm:"default:RUB"`
 	Status         PaymentStatus `gorm:"default:pending"`
 	Plan           PlanType      `gorm:"not null"`
-	ConfirmURL     string // URL для оплаты (от ЮKassa)
+	ConfirmURL     string        // URL для оплаты (от ЮKassa)
 	ConfirmedAt    *time.Time
 	PromoCodeID    *uint
 

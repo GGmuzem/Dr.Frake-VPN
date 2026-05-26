@@ -410,15 +410,12 @@
         <div class="field"><label>AWG порт</label><input id="serverAwgPort" type="number" placeholder="51820"></div>
         <div class="field"><label>SSH пароль</label><input id="serverPassword" type="password" placeholder="••••••••"></div>
         <div class="field"><label>VLESS address</label><input id="serverVlessAddress" type="text" placeholder="vpn.example.com или 1.2.3.4"></div>
-        <div class="field"><label>VLESS port</label><input id="serverVlessPort" type="number" placeholder="8443"></div>
+        <div class="field"><label>VLESS port</label><input id="serverVlessPort" type="number" placeholder="443"></div>
         <div class="field"><label>VLESS server_name / SNI</label><input id="serverVlessServerName" type="text" placeholder="www.icloud.com"></div>
         <div class="field"><label>VLESS public_key</label><input id="serverVlessPublicKey" type="text" placeholder="REALITY public key"></div>
         <div class="field"><label>VLESS short_id</label><input id="serverVlessShortId" type="text" placeholder="0123456789abcdef"></div>
         <div class="field"><label>VLESS fingerprint</label><input id="serverVlessFingerprint" type="text" placeholder="chrome"></div>
-        <div class="field"><label>VLESS flow</label><input id="serverVlessFlow" type="text" placeholder="xtls-rprx-vision"></div>
-        <div class="field"><label>VLESS network</label><input id="serverVlessNetwork" type="text" placeholder="tcp"></div>
-        <div class="field"><label>VLESS security</label><input id="serverVlessSecurity" type="text" placeholder="reality"></div>
-        <div class="field"><label>VLESS spider_x</label><input id="serverVlessSpiderX" type="text" placeholder="/"></div>
+        <div class="field"><label>XHTTP Path</label><input id="serverVlessGrpcServiceName" type="text" placeholder="/assets/7d91f0e4"></div>
         <div class="field"><label>VLESS container</label><input id="serverVlessContainerName" type="text" placeholder="amnezia-xray"></div>
         <div class="field"><label style="display:flex;align-items:center;gap:10px;margin-top:25px"><input id="serverVipOnly" type="checkbox" style="width:auto"> VIP only</label></div>
         <div class="field" style="grid-column:1 / -1">
@@ -1297,14 +1294,10 @@
       document.getElementById('serverSaveButton').dataset.defaultText = 'Добавить сервер';
       document.getElementById('serverSaveButton').disabled = false;
       document.getElementById('serverSaveButton').classList.remove('is-loading');
-      ['serverName','serverRegion','serverCountryCode','serverHost','serverEndpoint','serverMaxPeers','serverAwgPort','serverPassword','serverVlessAddress','serverVlessPort','serverVlessServerName','serverVlessPublicKey','serverVlessShortId','serverVlessFingerprint','serverVlessFlow','serverVlessNetwork','serverVlessSecurity','serverVlessSpiderX','serverVlessContainerName'].forEach(id => document.getElementById(id).value = '');
-      document.getElementById('serverVlessPort').value = '8443';
-      document.getElementById('serverVlessServerName').value = 'www.icloud.com';
+      ['serverName','serverRegion','serverCountryCode','serverHost','serverEndpoint','serverMaxPeers','serverAwgPort','serverPassword','serverVlessAddress','serverVlessPort','serverVlessServerName','serverVlessPublicKey','serverVlessShortId','serverVlessFingerprint','serverVlessGrpcServiceName','serverVlessContainerName'].forEach(id => document.getElementById(id).value = '');
+      document.getElementById('serverVlessPort').value = '443';
       document.getElementById('serverVlessFingerprint').value = 'chrome';
-      document.getElementById('serverVlessFlow').value = 'xtls-rprx-vision';
-      document.getElementById('serverVlessNetwork').value = 'tcp';
-      document.getElementById('serverVlessSecurity').value = 'reality';
-      document.getElementById('serverVlessSpiderX').value = '/';
+      document.getElementById('serverVlessGrpcServiceName').value = '/assets/7d91f0e4';
       document.getElementById('serverVlessContainerName').value = 'amnezia-xray';
       document.getElementById('serverVipOnly').checked = false;
       document.getElementById('serverBootstrapSelfHostedXray').checked = true;
@@ -1334,10 +1327,7 @@
       document.getElementById('serverVlessPublicKey').value = template.public_key || '';
       document.getElementById('serverVlessShortId').value = template.short_id || '';
       document.getElementById('serverVlessFingerprint').value = template.fingerprint || '';
-      document.getElementById('serverVlessFlow').value = template.flow || '';
-      document.getElementById('serverVlessNetwork').value = template.network || '';
-      document.getElementById('serverVlessSecurity').value = template.security || '';
-      document.getElementById('serverVlessSpiderX').value = template.spider_x || '';
+      document.getElementById('serverVlessGrpcServiceName').value = template.grpc_service_name || '/assets/7d91f0e4';
       document.getElementById('serverVlessContainerName').value = template.container_name || '';
       document.getElementById('serverVipOnly').checked = !!server.is_vip_only;
       document.getElementById('serverBootstrapSelfHostedXray').checked = false;
@@ -1377,14 +1367,29 @@
         vless_public_key: document.getElementById('serverVlessPublicKey').value.trim(),
         vless_short_id: document.getElementById('serverVlessShortId').value.trim(),
         vless_fingerprint: document.getElementById('serverVlessFingerprint').value.trim(),
-        vless_flow: document.getElementById('serverVlessFlow').value.trim(),
-        vless_network: document.getElementById('serverVlessNetwork').value.trim(),
-        vless_security: document.getElementById('serverVlessSecurity').value.trim(),
-        vless_spider_x: document.getElementById('serverVlessSpiderX').value.trim(),
+        vless_flow: "",
+        vless_network: "xhttp",
+        vless_security: "reality",
+        vless_spider_x: "/",
+        vless_grpc_service_name: document.getElementById('serverVlessGrpcServiceName').value.trim(),
+        vless_grpc_authority: "",
+        vless_grpc_multi_mode: true,
+        hysteria_enabled: false,
+        hysteria_port: 0,
+        hysteria_password: "",
+        hysteria_sni: "",
+        hysteria_insecure: false,
+        hysteria_obfs_password: "",
+        hysteria_masquerade_url: "",
         vless_container_name: document.getElementById('serverVlessContainerName').value.trim(),
         bootstrap_selfhosted_xray: bootstrapSelfHostedXray,
-        bootstrap_force_regenerate: document.getElementById('serverBootstrapForceRegenerate').checked
+        bootstrap_force_regenerate: document.getElementById('serverBootstrapForceRegenerate').checked,
+        bootstrap_hysteria2: false,
+        bootstrap_hysteria2_force: false
       };
+      if (bootstrapSelfHostedXray && !payload.vless_server_name) {
+        return alert('Для self-hosted XRay bootstrap укажи VLESS server_name / SNI.');
+      }
       if (bootstrapSelfHostedXray && !payload.ssh_password.trim() && !editingServerId) {
         return alert('Для авторазвёртывания self-hosted XRay нужен SSH пароль.');
       }

@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 	"testing"
 	"vpn-backend/internal/models"
 )
@@ -211,6 +212,79 @@ func TestBuildVLESSConfigUsesSystemProfilesFallbackWhenNoCustomEnabled(t *testin
 	}
 }
 
+func TestBuildVLESSConfigUsesGrpcTransportSettings(t *testing.T) {
+	server := &models.VPNServer{Name: "Test", Region: "AMS", CountryCode: "NL"}
+	template := &models.VLESSServerTemplate{
+		Address:         "138.124.101.69",
+		Port:            8443,
+		ServerName:      "example.com",
+		PublicKey:       "pub",
+		ShortID:         "short",
+		Fingerprint:     "chrome",
+		Flow:            "",
+		Network:         "grpc",
+		Security:        "reality",
+		GrpcServiceName: "api.v1.VideoDownload",
+		GrpcAuthority:   "grpc.example.com",
+		GrpcMultiMode:   true,
+	}
+
+	config := buildVLESSConfig("client-id", server, template, nil, vipDNSConfig{Primary: vipDNSCleanIP})
+	xrayConfig := config["containers"].([]interface{})[0].(map[string]interface{})["xray"].(map[string]interface{})["last_config"].(string)
+	parsed := parseConfigJSON(t, xrayConfig)
+	outbound := parsed["outbounds"].([]interface{})[0].(map[string]interface{})
+	streamSettings := outbound["streamSettings"].(map[string]interface{})
+
+	if streamSettings["network"] != "grpc" {
+		t.Fatalf("expected grpc network, got %v", streamSettings["network"])
+	}
+	if _, ok := streamSettings["tcpSettings"]; ok {
+		t.Fatalf("grpc streamSettings must not include tcpSettings: %v", streamSettings)
+	}
+
+	grpcSettings := streamSettings["grpcSettings"].(map[string]interface{})
+	if grpcSettings["serviceName"] != "api.v1.VideoDownload" {
+		t.Fatalf("unexpected grpc serviceName: %v", grpcSettings["serviceName"])
+	}
+	if grpcSettings["authority"] != "grpc.example.com" {
+		t.Fatalf("unexpected grpc authority: %v", grpcSettings["authority"])
+	}
+	if grpcSettings["multiMode"] != true {
+		t.Fatalf("expected grpc multiMode=true, got %v", grpcSettings["multiMode"])
+	}
+}
+
+func TestBuildVLESSConfigKeepsTCPTransportSettings(t *testing.T) {
+	server := &models.VPNServer{Name: "Test", Region: "AMS", CountryCode: "NL"}
+	template := &models.VLESSServerTemplate{
+		Address:     "138.124.101.69",
+		Port:        8443,
+		ServerName:  "example.com",
+		PublicKey:   "pub",
+		ShortID:     "short",
+		Fingerprint: "chrome",
+		Flow:        "xtls-rprx-vision",
+		Network:     "tcp",
+		Security:    "reality",
+	}
+
+	config := buildVLESSConfig("client-id", server, template, nil, vipDNSConfig{Primary: vipDNSCleanIP})
+	xrayConfig := config["containers"].([]interface{})[0].(map[string]interface{})["xray"].(map[string]interface{})["last_config"].(string)
+	parsed := parseConfigJSON(t, xrayConfig)
+	outbound := parsed["outbounds"].([]interface{})[0].(map[string]interface{})
+	streamSettings := outbound["streamSettings"].(map[string]interface{})
+
+	if streamSettings["network"] != "tcp" {
+		t.Fatalf("expected tcp network, got %v", streamSettings["network"])
+	}
+	if _, ok := streamSettings["tcpSettings"]; !ok {
+		t.Fatalf("tcp streamSettings must include tcpSettings: %v", streamSettings)
+	}
+	if _, ok := streamSettings["grpcSettings"]; ok {
+		t.Fatalf("tcp streamSettings must not include grpcSettings: %v", streamSettings)
+	}
+}
+
 func parseConfigJSON(t *testing.T, raw string) map[string]interface{} {
 	t.Helper()
 
@@ -229,3 +303,141 @@ func containsInterfaceString(values []interface{}, needle string) bool {
 	}
 	return false
 }
+
+func TestBuildVLESSConfigUsesXhttpTransportSettings(t *testing.T) {
+	server := &models.VPNServer{Name: "Test", Region: "AMS", CountryCode: "NL"}
+	template := &models.VLESSServerTemplate{
+		Address:         "138.124.101.69",
+		Port:            8443,
+		ServerName:      "example.com",
+		PublicKey:       "pub",
+		ShortID:         "short",
+		Fingerprint:     "chrome",
+		Flow:            "xtls-rprx-vision",
+		Network:         "xhttp",
+		Security:        "tls",
+		GrpcServiceName: "/assets/7d91f0e4",
+	}
+
+	config := buildVLESSConfig("client-id", server, template, nil, vipDNSConfig{Primary: vipDNSCleanIP})
+	xrayConfig := config["containers"].([]interface{})[0].(map[string]interface{})["xray"].(map[string]interface{})["last_config"].(string)
+	parsed := parseConfigJSON(t, xrayConfig)
+	outbound := parsed["outbounds"].([]interface{})[0].(map[string]interface{})
+	streamSettings := outbound["streamSettings"].(map[string]interface{})
+
+	if streamSettings["network"] != "xhttp" {
+		t.Fatalf("expected xhttp network, got %v", streamSettings["network"])
+	}
+	if _, ok := streamSettings["tcpSettings"]; ok {
+		t.Fatalf("xhttp streamSettings must not include tcpSettings")
+	}
+	if _, ok := streamSettings["grpcSettings"]; ok {
+		t.Fatalf("xhttp streamSettings must not include grpcSettings")
+	}
+	if _, ok := streamSettings["realitySettings"]; ok {
+		t.Fatalf("xhttp tls streamSettings must not include realitySettings")
+	}
+
+	xhttpSettings := streamSettings["xhttpSettings"].(map[string]interface{})
+	if xhttpSettings["path"] != "/assets/7d91f0e4" {
+		t.Fatalf("unexpected xhttp path: %v", xhttpSettings["path"])
+	}
+	if xhttpSettings["mode"] != "auto" {
+		t.Fatalf("expected xhttp mode=auto, got %v", xhttpSettings["mode"])
+	}
+	tlsSettings := streamSettings["tlsSettings"].(map[string]interface{})
+	if tlsSettings["serverName"] != "example.com" {
+		t.Fatalf("unexpected tls serverName: %v", tlsSettings["serverName"])
+	}
+	if !containsInterfaceString(tlsSettings["alpn"].([]interface{}), "h3") {
+		t.Fatalf("expected client tlsSettings alpn to include h3, got %v", tlsSettings["alpn"])
+	}
+
+	// Verify no flow in user credentials
+	user := outbound["settings"].(map[string]interface{})["vnext"].([]interface{})[0].(map[string]interface{})["users"].([]interface{})[0].(map[string]interface{})
+	if flow, ok := user["flow"]; ok && flow != "" {
+		t.Fatalf("expected empty flow for xhttp, got %v", flow)
+	}
+
+	// Verify buildHappVLESSURI yields correct URI with path and without flow
+	uri := buildHappVLESSURI("client-id", server, template)
+	if !strings.Contains(uri, "type=xhttp") {
+		t.Fatalf("expected type=xhttp in URI, got %s", uri)
+	}
+	if !strings.Contains(uri, "path=%2Fassets%2F7d91f0e4") {
+		t.Fatalf("expected path=/assets/7d91f0e4 in URI, got %s", uri)
+	}
+	if !strings.Contains(uri, "mode=auto") {
+		t.Fatalf("expected mode=auto in URI, got %s", uri)
+	}
+	if !strings.Contains(uri, "alpn=h3") {
+		t.Fatalf("expected alpn=h3 in URI, got %s", uri)
+	}
+	if strings.Contains(uri, "pbk=") || strings.Contains(uri, "sid=") {
+		t.Fatalf("expected no REALITY params in XHTTP TLS URI, got %s", uri)
+	}
+	if strings.Contains(uri, "flow=") {
+		t.Fatalf("expected no flow in VLESS URI for xhttp, got %s", uri)
+	}
+}
+
+func TestBuildVLESSConfigUsesXhttpRealitySettings(t *testing.T) {
+	server := &models.VPNServer{Name: "Test", Region: "AMS", CountryCode: "NL"}
+	template := &models.VLESSServerTemplate{
+		Address:         "138.124.101.69",
+		Port:            8443,
+		ServerName:      "example.com",
+		PublicKey:       "pubkey123",
+		ShortID:         "sid123",
+		Fingerprint:     "chrome",
+		Network:         "xhttp",
+		Security:        "reality",
+		GrpcServiceName: "/assets/7d91f0e4",
+	}
+
+	config := buildVLESSConfig("client-id", server, template, nil, vipDNSConfig{Primary: vipDNSCleanIP})
+	xrayConfig := config["containers"].([]interface{})[0].(map[string]interface{})["xray"].(map[string]interface{})["last_config"].(string)
+	parsed := parseConfigJSON(t, xrayConfig)
+	outbound := parsed["outbounds"].([]interface{})[0].(map[string]interface{})
+	streamSettings := outbound["streamSettings"].(map[string]interface{})
+
+	if streamSettings["network"] != "xhttp" {
+		t.Fatalf("expected xhttp network, got %v", streamSettings["network"])
+	}
+	if streamSettings["security"] != "reality" {
+		t.Fatalf("expected reality security, got %v", streamSettings["security"])
+	}
+	if _, ok := streamSettings["tlsSettings"]; ok {
+		t.Fatalf("xhttp reality streamSettings must not include tlsSettings")
+	}
+	realitySettings := streamSettings["realitySettings"].(map[string]interface{})
+	if realitySettings["publicKey"] != "pubkey123" {
+		t.Fatalf("unexpected reality publicKey: %v", realitySettings["publicKey"])
+	}
+	if realitySettings["shortId"] != "sid123" {
+		t.Fatalf("unexpected reality shortId: %v", realitySettings["shortId"])
+	}
+
+	xhttpSettings := streamSettings["xhttpSettings"].(map[string]interface{})
+	if xhttpSettings["path"] != "/assets/7d91f0e4" {
+		t.Fatalf("unexpected xhttp path: %v", xhttpSettings["path"])
+	}
+	if xhttpSettings["mode"] != "auto" {
+		t.Fatalf("expected xhttp mode=auto, got %v", xhttpSettings["mode"])
+	}
+
+	uri := buildHappVLESSURI("client-id", server, template)
+	if !strings.Contains(uri, "security=reality") {
+		t.Fatalf("expected security=reality in URI, got %s", uri)
+	}
+	if !strings.Contains(uri, "pbk=pubkey123") {
+		t.Fatalf("expected pbk=pubkey123 in URI, got %s", uri)
+	}
+	if !strings.Contains(uri, "sid=sid123") {
+		t.Fatalf("expected sid=sid123 in URI, got %s", uri)
+	}
+	if !strings.Contains(uri, "type=xhttp") {
+		t.Fatalf("expected type=xhttp in URI, got %s", uri)
+	}
+}
+

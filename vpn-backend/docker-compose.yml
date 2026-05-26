@@ -2,7 +2,11 @@ version: '3.9'
 
 services:
   backend:
-    build: .
+    build:
+      context: .
+      args:
+        GO_BASE_IMAGE: ${GO_BASE_IMAGE:-dockerhub.timeweb.cloud/library/golang:1.22-alpine}
+        RUNTIME_BASE_IMAGE: ${RUNTIME_BASE_IMAGE:-dockerhub.timeweb.cloud/library/alpine:latest}
     container_name: vpn-backend
     restart: always
     ports:
@@ -19,6 +23,8 @@ services:
   web:
     build:
       context: ../web
+      args:
+        NODE_BASE_IMAGE: ${NODE_BASE_IMAGE:-dockerhub.timeweb.cloud/library/node:22-alpine}
     container_name: fblink-web
     restart: always
     environment:

@@ -15,6 +15,8 @@ on a fresh VPS in a layout that the FBLink backend can auto-discover over SSH.
   - `xray_mldsa65_seed.key` / `xray_mldsa65_verify.key` (post-quantum ML-DSA-65 keypair)
 - recreates the docker container with `--restart always`
 - publishes the chosen TCP port
+- writes VLESS + TLS + XHTTP over `packet-up`
+- enables inbound sniffing and blocks private IP / BitTorrent server-side
 - opens the local host firewall when possible
 - prints the final connection parameters and verification commands
 
@@ -35,8 +37,14 @@ The backend VIP XRay auto-discovery reads these files over SSH:
 
 - container: `amnezia-xray`
 - config dir: `/opt/amnezia/xray`
-- port: `8443`
-- SNI: `www.icloud.com`
+- port: `443`
+- XHTTP path: `/assets/7d91f0e4`
+- XHTTP mode: `packet-up`
+- TLS: generated self-signed origin certificate for CDN/origin tests
+- uTLS fingerprint: `chrome`
+
+SNI is required and intentionally has no default. Choose a real host that fits
+your deployment target.
 
 ## Quick start on a new VPS
 
@@ -44,15 +52,16 @@ Copy the `xray` folder to the server and run:
 
 ```bash
 chmod +x ./install_selfhosted.sh
-./install_selfhosted.sh --port 8443 --sni www.icloud.com
+./install_selfhosted.sh --port 443 --sni example.com
 ```
 
 If you want a fixed public address in the printed summary:
 
 ```bash
 ./install_selfhosted.sh \
-  --port 8443 \
-  --sni www.icloud.com \
+  --port 443 \
+  --sni example.com \
+  --xhttp-path /assets/7d91f0e4 \
   --public-host 138.124.101.69
 ```
 
@@ -62,18 +71,18 @@ On the VPS:
 
 ```bash
 docker ps --format 'table {{.Names}}\t{{.Ports}}\t{{.Status}}'
-docker exec amnezia-xray sh -lc 'nc -z 127.0.0.1 8443 && echo XRay is listening'
+docker exec amnezia-xray sh -lc 'nc -z 127.0.0.1 443 && echo XRay is listening'
 ```
 
 From Windows:
 
 ```powershell
-Test-NetConnection <server-ip> -Port 8443
+Test-NetConnection <server-ip> -Port 443
 ```
 
 Expected:
 
-- `docker ps` shows `0.0.0.0:8443->8443/tcp`
+- `docker ps` shows `0.0.0.0:443->443/tcp`
 - `nc -z` succeeds inside the container
 - `TcpTestSucceeded : True` from Windows
 
@@ -83,6 +92,7 @@ Expected:
 - Re-running the script keeps existing UUID/keys by default.
 - Use `--force-regenerate` only when you intentionally want to rotate credentials.
 - Use `--rebuild-image` when you want to rebuild the docker image from the current repo files.
+- Keep AmneziaWG as fallback while testing this XHTTP profile.
 
 ## Backend integration
 

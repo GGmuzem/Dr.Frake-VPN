@@ -7,10 +7,9 @@ import (
 )
 
 const (
-	defaultSelfHostedXrayPort      = 8443
-	defaultSelfHostedXraySNI       = "www.icloud.com"
+	defaultSelfHostedXrayPort      = 443
 	defaultSelfHostedXrayConfigDir = "/opt/amnezia/xray"
-	defaultSelfHostedXrayRelease   = "v25.8.3"
+	defaultSelfHostedXrayRelease   = "v26.3.27"
 	defaultSelfHostedXrayShortIDs  = 8
 )
 
@@ -20,6 +19,11 @@ type selfHostedXrayBootstrapOptions struct {
 	ConfigDir       string
 	Port            int
 	SNI             string
+	Network         string
+	Flow            string
+	GrpcServiceName string
+	GrpcAuthority   string
+	GrpcMultiMode   bool
 	RebuildImage    bool
 	ForceRegenerate bool
 }
@@ -33,8 +37,6 @@ type xrayBootstrapResult struct {
 const selfHostedXrayDockerfile = `FROM alpine:3.15
 LABEL maintainer="AmneziaVPN"
 
-ARG XRAY_RELEASE="v25.8.3"
-
 RUN apk add --no-cache curl unzip bash openssl netcat-openbsd dumb-init rng-tools xz
 RUN apk --update upgrade --no-cache
 
@@ -44,9 +46,10 @@ RUN chmod a+x /opt/amnezia/start.sh
 
 RUN mkdir -p /opt/amnezia/xray
 
-RUN curl -L https://github.com/XTLS/Xray-core/releases/download/${XRAY_RELEASE}/Xray-linux-64.zip > /root/xray.zip;\
-  unzip /root/xray.zip -d /usr/bin/;\
-  chmod a+x /usr/bin/xray;
+RUN curl -fsSL "https://github.com/XTLS/Xray-core/releases/download/v26.3.27/Xray-linux-64.zip" -o /root/xray.zip && \
+  unzip /root/xray.zip -d /usr/bin/ && \
+  chmod a+x /usr/bin/xray && \
+  rm -f /root/xray.zip
 
 # Tune network
 RUN echo -e " \n\
@@ -128,6 +131,55 @@ func shellQuote(value string) string {
 	return "'" + strings.ReplaceAll(value, "'", `'"'"'`) + "'"
 }
 
+func selfHostedXrayClientFlowLine(opts selfHostedXrayBootstrapOptions) string {
+	if strings.TrimSpace(opts.Flow) == "" || opts.Network == "xhttp" {
+		return `"id": "${XRAY_CLIENT_ID}"`
+	}
+	return `"id": "${XRAY_CLIENT_ID}",
+            "flow": "${XRAY_CLIENT_FLOW}"`
+}
+
+func selfHostedXrayTransportSettings(opts selfHostedXrayBootstrapOptions) string {
+	if opts.Network == "xhttp" {
+		return `"network": "xhttp",
+        "security": "reality",
+        "xhttpSettings": {
+          "path": "${XRAY_GRPC_SERVICE_NAME}",
+          "host": "${XRAY_SITE_NAME}",
+          "mode": "auto",
+          "xPaddingBytes": "100-1000",
+          "scMaxEachPostBytes": 1000000
+        },
+        "realitySettings": {
+          "show": false,
+          "dest": "${XRAY_SITE_NAME}:443",
+          "xver": 0,
+          "serverNames": [
+            "${XRAY_SITE_NAME}"
+          ],
+          "privateKey": "${XRAY_PRIVATE_KEY}",
+          "shortIds": ${XRAY_SHORT_IDS_JSON_ARRAY}
+        }`
+	}
+	if opts.Network == xrayNetworkGRPC {
+		return `"network": "grpc",
+        "security": "reality",
+        "grpcSettings": {
+          "serviceName": "${XRAY_GRPC_SERVICE_NAME}",
+          "authority": "${XRAY_GRPC_AUTHORITY}",
+          "multiMode": ${XRAY_GRPC_MULTI_MODE}
+        }`
+	}
+	return `"network": "tcp",
+        "security": "reality",
+        "tcpSettings": {
+          "acceptProxyProtocol": false,
+          "header": {
+            "type": "none"
+          }
+        }`
+}
+
 func buildSelfHostedXrayBootstrapCommand(server *models.VPNServer, template *models.VLESSServerTemplate, opts selfHostedXrayBootstrapOptions) string {
 	return fmt.Sprintf(`set -eu
 CONTAINER_NAME=%s
@@ -135,7 +187,10 @@ IMAGE_NAME=%s
 CONFIG_DIR=%s
 XRAY_SERVER_PORT=%d
 XRAY_SITE_NAME=%s
-XRAY_RELEASE=%s
+XRAY_CLIENT_FLOW=%s
+XRAY_GRPC_SERVICE_NAME=%s
+XRAY_GRPC_AUTHORITY=%s
+XRAY_GRPC_MULTI_MODE=%s
 FORCE_REGENERATE=%d
 REBUILD_IMAGE=%d
 BOOTSTRAP_DIR='/opt/amnezia/xray-bootstrap'
@@ -153,7 +208,7 @@ FBLINK_START
 chmod +x "$BOOTSTRAP_DIR/start.sh"
 
 if [ "$REBUILD_IMAGE" = "1" ] || ! docker image inspect "$IMAGE_NAME" >/dev/null 2>&1; then
-  docker build --pull --build-arg "XRAY_RELEASE=$XRAY_RELEASE" -t "$IMAGE_NAME" "$BOOTSTRAP_DIR"
+  docker build --pull -t "$IMAGE_NAME" "$BOOTSTRAP_DIR"
 fi
 
 if [ "$FORCE_REGENERATE" = "1" ] || [ ! -s "$CONFIG_DIR/xray_uuid.key" ]; then
@@ -197,6 +252,16 @@ else
   XRAY_MLDSA65_VERIFY="$(tr -d '\r\n' < "$CONFIG_DIR/xray_mldsa65_verify.key")"
 fi
 
+XRAY_TLS_CERT_FILE="/opt/amnezia/xray/xray_tls.crt"
+XRAY_TLS_KEY_FILE="/opt/amnezia/xray/xray_tls.key"
+if [ "$FORCE_REGENERATE" = "1" ] || [ ! -s "$CONFIG_DIR/xray_tls.crt" ] || [ ! -s "$CONFIG_DIR/xray_tls.key" ]; then
+  openssl req -x509 -newkey rsa:2048 -nodes \
+    -keyout "$CONFIG_DIR/xray_tls.key" \
+    -out "$CONFIG_DIR/xray_tls.crt" \
+    -subj "/CN=${XRAY_SITE_NAME}" \
+    -days 3650 >/dev/null 2>&1
+fi
+
 cat > "$CONFIG_DIR/server.json" <<EOF
 {
   "log": {
@@ -210,40 +275,70 @@ cat > "$CONFIG_DIR/server.json" <<EOF
       "settings": {
         "clients": [
           {
-            "id": "${XRAY_CLIENT_ID}",
-            "flow": "xtls-rprx-vision"
+            "id": "${XRAY_CLIENT_ID}"
           }
         ],
         "decryption": "none"
       },
       "streamSettings": {
-        "network": "tcp",
+        "network": "xhttp",
         "security": "reality",
-        "tcpSettings": {
-          "acceptProxyProtocol": false,
-          "header": {
-            "type": "none"
-          }
+        "xhttpSettings": {
+          "path": "${XRAY_GRPC_SERVICE_NAME}",
+          "host": "${XRAY_SITE_NAME}",
+          "mode": "auto",
+          "xPaddingBytes": "100-1000",
+          "scMaxEachPostBytes": 1000000
         },
         "realitySettings": {
           "show": false,
-          "xver": 0,
           "dest": "${XRAY_SITE_NAME}:443",
+          "xver": 0,
           "serverNames": [
             "${XRAY_SITE_NAME}"
           ],
           "privateKey": "${XRAY_PRIVATE_KEY}",
-          "mldsa65Seed": "${XRAY_MLDSA65_SEED}",
           "shortIds": ${XRAY_SHORT_IDS_JSON_ARRAY}
         }
+      },
+      "sniffing": {
+        "enabled": true,
+        "destOverride": [
+          "http",
+          "tls",
+          "quic"
+        ]
       }
     }
   ],
   "outbounds": [
     {
+      "tag": "direct",
       "protocol": "freedom"
+    },
+    {
+      "tag": "block",
+      "protocol": "blackhole"
     }
-  ]
+  ],
+  "routing": {
+    "rules": [
+      {
+        "type": "field",
+        "ip": [
+          "geoip:private"
+        ],
+        "outboundTag": "block"
+      },
+      {
+        "type": "field",
+        "protocol": [
+          "bittorrent"
+        ],
+        "outboundTag": "block"
+      }
+    ]
+  }
 }
 EOF
 
@@ -295,16 +390,20 @@ if [ "$READY" != "1" ]; then
   exit 1
 fi
 
-printf 'container_name=%%s\nport=%%s\nserver_name=%%s\npublic_key=%%s\nshort_id=%%s\nuuid=%%s\nmldsa65_verify=%%s\nshort_ids_json=%%s\n' \
+printf 'container_name=%%s\nport=%%s\nserver_name=%%s\nxhttp_path=%%s\ngrpc_service_name=%%s\ngrpc_authority=%%s\ngrpc_multi_mode=%%s\npublic_key=%%s\nshort_id=%%s\nuuid=%%s\nmldsa65_verify=%%s\nshort_ids_json=%%s\n' \
   "$CONTAINER_NAME" \
   "$XRAY_SERVER_PORT" \
   "$XRAY_SITE_NAME" \
+  "$XRAY_GRPC_SERVICE_NAME" \
+  "$XRAY_GRPC_SERVICE_NAME" \
+  "$XRAY_GRPC_AUTHORITY" \
+  "$XRAY_GRPC_MULTI_MODE" \
   "$(tr -d '\r\n' < "$CONFIG_DIR/xray_public.key")" \
   "$(tr -d '\r\n' < "$CONFIG_DIR/xray_short_id.key")" \
   "$(tr -d '\r\n' < "$CONFIG_DIR/xray_uuid.key")" \
   "$(tr -d '\r\n' < "$CONFIG_DIR/xray_mldsa65_verify.key" 2>/dev/null)" \
   "$XRAY_SHORT_IDS_JSON_ARRAY"
-`, shellQuote(opts.ContainerName), shellQuote(opts.ImageName), shellQuote(opts.ConfigDir), opts.Port, shellQuote(opts.SNI), shellQuote(defaultSelfHostedXrayRelease), boolToInt(opts.ForceRegenerate), boolToInt(opts.RebuildImage), selfHostedXrayDockerfile, selfHostedXrayStartScript, defaultSelfHostedXrayShortIDs)
+`, shellQuote(opts.ContainerName), shellQuote(opts.ImageName), shellQuote(opts.ConfigDir), opts.Port, shellQuote(opts.SNI), shellQuote(opts.Flow), shellQuote(opts.GrpcServiceName), shellQuote(opts.GrpcAuthority), boolJSON(opts.GrpcMultiMode), boolToInt(opts.ForceRegenerate), boolToInt(opts.RebuildImage), selfHostedXrayDockerfile, selfHostedXrayStartScript, defaultSelfHostedXrayShortIDs)
 }
 
 func boolToInt(value bool) int {
@@ -314,13 +413,23 @@ func boolToInt(value bool) int {
 	return 0
 }
 
+func boolJSON(value bool) string {
+	if value {
+		return "true"
+	}
+	return "false"
+}
+
 func defaultSelfHostedXrayBootstrapOptions(server *models.VPNServer, template *models.VLESSServerTemplate) selfHostedXrayBootstrapOptions {
 	opts := selfHostedXrayBootstrapOptions{
-		ContainerName: defaultXrayContainer,
-		ImageName:     defaultXrayContainer,
-		ConfigDir:     defaultSelfHostedXrayConfigDir,
-		Port:          defaultSelfHostedXrayPort,
-		SNI:           defaultSelfHostedXraySNI,
+		ContainerName:   defaultXrayContainer,
+		ImageName:       defaultXrayContainer,
+		ConfigDir:       defaultSelfHostedXrayConfigDir,
+		Port:            defaultSelfHostedXrayPort,
+		Network:         "xhttp",
+		Flow:            "",
+		GrpcServiceName: "/assets/7d91f0e4",
+		GrpcMultiMode:   true,
 	}
 
 	if template != nil {
@@ -331,13 +440,32 @@ func defaultSelfHostedXrayBootstrapOptions(server *models.VPNServer, template *m
 		if template.Port > 0 {
 			opts.Port = template.Port
 		}
+		if value := strings.TrimSpace(template.Network); value != "" {
+			opts.Network = value
+		}
+		if value := strings.TrimSpace(template.Flow); value != "" {
+			opts.Flow = value
+		}
 		if value := strings.TrimSpace(template.ServerName); value != "" {
 			opts.SNI = value
 		}
+		if value := strings.TrimSpace(template.GrpcServiceName); value != "" {
+			opts.GrpcServiceName = value
+		}
+		if value := strings.TrimSpace(template.GrpcAuthority); value != "" {
+			opts.GrpcAuthority = value
+		}
+		opts.GrpcMultiMode = template.GrpcMultiMode
+	}
+	if strings.TrimSpace(opts.GrpcAuthority) == "" {
+		opts.GrpcAuthority = opts.SNI
 	}
 
-	if server != nil && strings.TrimSpace(server.Host) == "" {
-		opts.Port = defaultSelfHostedXrayPort
+	if opts.Network == "xhttp" {
+		opts.Flow = ""
+		if !strings.HasPrefix(opts.GrpcServiceName, "/") {
+			opts.GrpcServiceName = "/" + opts.GrpcServiceName
+		}
 	}
 
 	return opts
@@ -363,6 +491,13 @@ func mergeFetchedBootstrapTemplate(fetched, requested *models.VLESSServerTemplat
 	if value := strings.TrimSpace(requested.ContainerName); value != "" {
 		fetched.ContainerName = value
 	}
+	if value := strings.TrimSpace(requested.GrpcServiceName); value != "" {
+		fetched.GrpcServiceName = value
+	}
+	if value := strings.TrimSpace(requested.GrpcAuthority); value != "" {
+		fetched.GrpcAuthority = value
+	}
+	fetched.GrpcMultiMode = requested.GrpcMultiMode
 	return fetched
 }
 
@@ -372,6 +507,15 @@ func bootstrapSelfHostedXray(server *models.VPNServer, template *models.VLESSSer
 	}
 	if strings.TrimSpace(server.SSHPassword) == "" {
 		return nil, "", fmt.Errorf("ssh password is required for self-hosted XRay bootstrap")
+	}
+	if strings.TrimSpace(opts.SNI) == "" {
+		return nil, "", fmt.Errorf("vless_server_name is required for self-hosted XRay bootstrap")
+	}
+	if strings.TrimSpace(opts.GrpcServiceName) == "" {
+		opts.GrpcServiceName = defaultXrayGrpcServiceName
+	}
+	if strings.TrimSpace(opts.GrpcAuthority) == "" {
+		opts.GrpcAuthority = opts.SNI
 	}
 
 	output, err := sshExec(server, buildSelfHostedXrayBootstrapCommand(server, template, opts))

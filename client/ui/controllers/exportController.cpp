@@ -316,6 +316,26 @@ void ExportController::generateXrayConfig(const QString &clientName)
 
     vlessServer.network = streamSettings.value("network").toString("tcp");
     vlessServer.security = streamSettings.value("security").toString("reality");
+    if (vlessServer.network == "xhttp") {
+        QJsonObject xhttpSettings = streamSettings.value("xhttpSettings").toObject();
+        vlessServer.xhttpPath = xhttpSettings.value("path").toString();
+        vlessServer.xhttpMode = xhttpSettings.value("mode").toString("packet-up");
+        QJsonObject tlsSettings = streamSettings.value("tlsSettings").toObject();
+        QJsonArray alpn = tlsSettings.value("alpn").toArray();
+        if (!alpn.isEmpty()) {
+            QStringList values;
+            for (const auto &item : alpn) {
+                values.append(item.toString());
+            }
+            vlessServer.alpn = values.join(",");
+        }
+    }
+    if (vlessServer.network == "grpc") {
+        QJsonObject grpcSettings = streamSettings.value("grpcSettings").toObject();
+        vlessServer.grpcServiceName = grpcSettings.value("serviceName").toString();
+        vlessServer.grpcAuthority = grpcSettings.value("authority").toString();
+        vlessServer.grpcMultiMode = grpcSettings.value("multiMode").toBool(false);
+    }
 
     if (vlessServer.security == "reality") {
         QJsonObject realitySettings = streamSettings.value("realitySettings").toObject();

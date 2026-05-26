@@ -113,27 +113,27 @@ func (h *AdminHandler) GetServers(c *gin.Context) {
 		peersCount := peersCountMap[s.ID]
 		activeVLESS := vlessCountMap[s.ID]
 		result = append(result, gin.H{
-			"id":                     s.ID,
-			"name":                   s.Name,
-			"host":                   s.Host,
-			"endpoint":               s.Endpoint,
-			"region":                 s.Region,
-			"country_code":           s.CountryCode,
-			"active":                 s.Active,
-			"is_vip_only":            s.VIPOnly,
-			"max_peers":              s.MaxPeers,
-			"active_keys":            peersCount,
-			"active_vless":           activeVLESS,
-			"awg_port":               s.AWGPort,
-			"pihole_mode":            s.PiHoleMode,
-			"pihole_container_name":  s.PiHoleContainerName,
-			"pihole_group_name":      s.PiHoleGroupName,
-			"pihole_enabled":         s.PiHoleEnabled,
-			"pihole_dns_ip":          s.PiHoleDNSIP,
-			"pihole_last_sync_at":    s.PiHoleLastSyncAt,
-			"pihole_last_sync_error": s.PiHoleLastSyncError,
-			"pihole_last_mode":       s.PiHoleLastMode,
-			"pihole_last_client_ip":  s.PiHoleLastClientIP,
+			"id":                         s.ID,
+			"name":                       s.Name,
+			"host":                       s.Host,
+			"endpoint":                   s.Endpoint,
+			"region":                     s.Region,
+			"country_code":               s.CountryCode,
+			"active":                     s.Active,
+			"is_vip_only":                s.VIPOnly,
+			"max_peers":                  s.MaxPeers,
+			"active_keys":                peersCount,
+			"active_vless":               activeVLESS,
+			"awg_port":                   s.AWGPort,
+			"pihole_mode":                s.PiHoleMode,
+			"pihole_container_name":      s.PiHoleContainerName,
+			"pihole_group_name":          s.PiHoleGroupName,
+			"pihole_enabled":             s.PiHoleEnabled,
+			"pihole_dns_ip":              s.PiHoleDNSIP,
+			"pihole_last_sync_at":        s.PiHoleLastSyncAt,
+			"pihole_last_sync_error":     s.PiHoleLastSyncError,
+			"pihole_last_mode":           s.PiHoleLastMode,
+			"pihole_last_client_ip":      s.PiHoleLastClientIP,
 			"agent_mode":                 serverAgentMode(s),
 			"agent_url":                  s.AgentURL,
 			"agent_node_id":              s.AgentNodeID,
@@ -153,19 +153,29 @@ func (h *AdminHandler) GetServers(c *gin.Context) {
 			"agent_local_port":           s.AgentLocalPort,
 			"agent_push_public_key":      s.AgentPushPublicKey,
 			"vless_template": gin.H{
-				"address":         template.Address,
-				"port":            template.Port,
-				"server_name":     template.ServerName,
-				"public_key":      template.PublicKey,
-				"short_id":        template.ShortID,
-				"short_ids_json":  template.ShortIDsJSON,
-				"fingerprint":     template.Fingerprint,
-				"flow":            template.Flow,
-				"network":         template.Network,
-				"security":        template.Security,
-				"spider_x":        template.SpiderX,
-				"mldsa65_verify":  template.MLDSA65Verify,
-				"container_name":  template.ContainerName,
+				"address":                 template.Address,
+				"port":                    template.Port,
+				"server_name":             template.ServerName,
+				"public_key":              template.PublicKey,
+				"short_id":                template.ShortID,
+				"short_ids_json":          template.ShortIDsJSON,
+				"fingerprint":             template.Fingerprint,
+				"flow":                    template.Flow,
+				"network":                 template.Network,
+				"security":                template.Security,
+				"spider_x":                template.SpiderX,
+				"mldsa65_verify":          template.MLDSA65Verify,
+				"grpc_service_name":       template.GrpcServiceName,
+				"grpc_authority":          template.GrpcAuthority,
+				"grpc_multi_mode":         template.GrpcMultiMode,
+				"hysteria_enabled":        template.HysteriaEnabled,
+				"hysteria_port":           template.HysteriaPort,
+				"hysteria_password":       template.HysteriaPassword,
+				"hysteria_sni":            template.HysteriaSNI,
+				"hysteria_insecure":       template.HysteriaInsecure,
+				"hysteria_obfs_password":  template.HysteriaObfsPassword,
+				"hysteria_masquerade_url": template.HysteriaMasqueradeURL,
+				"container_name":          template.ContainerName,
 			},
 		})
 	}
@@ -212,20 +222,32 @@ type addServerRequest struct {
 	I4   string `json:"i4"`
 	I5   string `json:"i5"`
 	// VLESS template
-	VLESSAddress       string `json:"vless_address"`
-	VLESSPort          int    `json:"vless_port"`
-	VLESSServerName    string `json:"vless_server_name"`
-	VLESSPublicKey     string `json:"vless_public_key"`
-	VLESSShortID       string `json:"vless_short_id"`
-	VLESSFingerprint   string `json:"vless_fingerprint"`
-	VLESSFlow          string `json:"vless_flow"`
-	VLESSNetwork       string `json:"vless_network"`
-	VLESSSecurity      string `json:"vless_security"`
-	VLESSSpiderX       string `json:"vless_spider_x"`
-	VLESSContainerName string `json:"vless_container_name"`
+	VLESSAddress          string `json:"vless_address"`
+	VLESSPort             int    `json:"vless_port"`
+	VLESSServerName       string `json:"vless_server_name"`
+	VLESSPublicKey        string `json:"vless_public_key"`
+	VLESSShortID          string `json:"vless_short_id"`
+	VLESSFingerprint      string `json:"vless_fingerprint"`
+	VLESSFlow             string `json:"vless_flow"`
+	VLESSNetwork          string `json:"vless_network"`
+	VLESSSecurity         string `json:"vless_security"`
+	VLESSSpiderX          string `json:"vless_spider_x"`
+	VLESSGrpcServiceName  string `json:"vless_grpc_service_name"`
+	VLESSGrpcAuthority    string `json:"vless_grpc_authority"`
+	VLESSGrpcMultiMode    *bool  `json:"vless_grpc_multi_mode"`
+	HysteriaEnabled       *bool  `json:"hysteria_enabled"`
+	HysteriaPort          int    `json:"hysteria_port"`
+	HysteriaPassword      string `json:"hysteria_password"`
+	HysteriaSNI           string `json:"hysteria_sni"`
+	HysteriaInsecure      *bool  `json:"hysteria_insecure"`
+	HysteriaObfsPassword  string `json:"hysteria_obfs_password"`
+	HysteriaMasqueradeURL string `json:"hysteria_masquerade_url"`
+	VLESSContainerName    string `json:"vless_container_name"`
 	// Bootstrap self-hosted XRay
 	BootstrapSelfHostedXray  bool `json:"bootstrap_selfhosted_xray"`
 	BootstrapForceRegenerate bool `json:"bootstrap_force_regenerate"`
+	BootstrapHysteria2       bool `json:"bootstrap_hysteria2"`
+	BootstrapHysteria2Force  bool `json:"bootstrap_hysteria2_force"`
 	// Pi-hole bootstrap
 	BootstrapPiHole      bool   `json:"bootstrap_pihole"`
 	BootstrapPiHoleForce bool   `json:"bootstrap_pihole_force"`
@@ -276,6 +298,18 @@ func (h *AdminHandler) AddServer(c *gin.Context) {
 	}
 	if req.BootstrapSelfHostedXray && sshPassword == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "ssh_password is required for self-hosted XRay bootstrap"})
+		return
+	}
+	if req.BootstrapSelfHostedXray && strings.TrimSpace(req.VLESSServerName) == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "vless_server_name is required for self-hosted XRay bootstrap"})
+		return
+	}
+	if req.BootstrapHysteria2 && sshPassword == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "ssh_password is required for self-hosted Hysteria2 bootstrap"})
+		return
+	}
+	if req.BootstrapHysteria2 && strings.TrimSpace(req.HysteriaSNI) == "" && strings.TrimSpace(req.VLESSServerName) == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "hysteria_sni or vless_server_name is required for self-hosted Hysteria2 bootstrap"})
 		return
 	}
 	awgContainer := req.AWGContainer
@@ -347,17 +381,47 @@ func (h *AdminHandler) AddServer(c *gin.Context) {
 	}
 
 	template := models.VLESSServerTemplate{
-		Address:       req.VLESSAddress,
-		Port:          req.VLESSPort,
-		ServerName:    req.VLESSServerName,
-		PublicKey:     req.VLESSPublicKey,
-		ShortID:       req.VLESSShortID,
-		Fingerprint:   req.VLESSFingerprint,
-		Flow:          req.VLESSFlow,
-		Network:       req.VLESSNetwork,
-		Security:      req.VLESSSecurity,
-		SpiderX:       req.VLESSSpiderX,
-		ContainerName: req.VLESSContainerName,
+		Address:               req.VLESSAddress,
+		Port:                  req.VLESSPort,
+		ServerName:            req.VLESSServerName,
+		PublicKey:             req.VLESSPublicKey,
+		ShortID:               req.VLESSShortID,
+		Fingerprint:           req.VLESSFingerprint,
+		Flow:                  req.VLESSFlow,
+		Network:               req.VLESSNetwork,
+		Security:              req.VLESSSecurity,
+		SpiderX:               req.VLESSSpiderX,
+		GrpcServiceName:       req.VLESSGrpcServiceName,
+		GrpcAuthority:         req.VLESSGrpcAuthority,
+		GrpcMultiMode:         true,
+		HysteriaPort:          req.HysteriaPort,
+		HysteriaPassword:      req.HysteriaPassword,
+		HysteriaSNI:           req.HysteriaSNI,
+		HysteriaInsecure:      true,
+		HysteriaObfsPassword:  req.HysteriaObfsPassword,
+		HysteriaMasqueradeURL: req.HysteriaMasqueradeURL,
+		ContainerName:         req.VLESSContainerName,
+	}
+	if req.VLESSGrpcMultiMode != nil {
+		template.GrpcMultiMode = *req.VLESSGrpcMultiMode
+	}
+	if req.HysteriaEnabled != nil {
+		template.HysteriaEnabled = *req.HysteriaEnabled
+	}
+	if req.HysteriaInsecure != nil {
+		template.HysteriaInsecure = *req.HysteriaInsecure
+	}
+	if req.BootstrapSelfHostedXray {
+		template.Network = "xhttp"
+		template.Security = "reality"
+		template.Flow = ""
+		template.SpiderX = "/"
+		if strings.TrimSpace(template.GrpcServiceName) == "" || !strings.HasPrefix(template.GrpcServiceName, "/") {
+			template.GrpcServiceName = "/assets/7d91f0e4"
+		}
+		if strings.TrimSpace(template.GrpcAuthority) == "" {
+			template.GrpcAuthority = template.ServerName
+		}
 	}
 
 	if server.PublicKey == "" {
@@ -387,12 +451,25 @@ func (h *AdminHandler) AddServer(c *gin.Context) {
 		bootstrap.Ran = true
 		options := defaultSelfHostedXrayBootstrapOptions(&server, &template)
 		options.ForceRegenerate = req.BootstrapForceRegenerate
+		options.RebuildImage = req.BootstrapForceRegenerate
 
 		if bootstrappedTemplate, _, err := bootstrapSelfHostedXray(&server, &template, options); err != nil {
 			bootstrap.Error = err.Error()
 		} else if bootstrappedTemplate != nil {
 			template = *bootstrappedTemplate
 			bootstrap.Message = fmt.Sprintf("Self-hosted XRay deployed: %s:%d (%s)", template.Address, template.Port, template.ContainerName)
+		}
+	}
+	hysteriaBootstrap := hysteriaBootstrapResult{}
+	if req.BootstrapHysteria2 {
+		hysteriaBootstrap.Ran = true
+		options := defaultSelfHostedHysteriaOptions(&server, &template)
+		options.ForceRegenerate = req.BootstrapHysteria2Force || req.BootstrapForceRegenerate
+		if bootstrappedTemplate, _, err := bootstrapSelfHostedHysteria(&server, &template, options); err != nil {
+			hysteriaBootstrap.Error = err.Error()
+		} else if bootstrappedTemplate != nil {
+			template = *bootstrappedTemplate
+			hysteriaBootstrap.Message = fmt.Sprintf("Self-hosted Hysteria2 deployed: %s:%d/udp", template.Address, template.HysteriaPort)
 		}
 	}
 
@@ -402,7 +479,7 @@ func (h *AdminHandler) AddServer(c *gin.Context) {
 		}
 	}
 	xrayTemplateDefaults(&template, &server)
-	if template.PublicKey != "" && template.ShortID != "" && template.ServerName != "" {
+	if (template.PublicKey != "" && template.ShortID != "" && template.ServerName != "") || template.HysteriaEnabled {
 		template.ServerID = server.ID
 		if err := h.db.Create(&template).Error; err != nil {
 			fmt.Printf("[WARN] Failed to save VLESS template for server %s: %v\n", server.Name, err)
@@ -424,10 +501,11 @@ func (h *AdminHandler) AddServer(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, gin.H{
-		"message":          "server added",
-		"server_id":        server.ID,
-		"bootstrap":        bootstrap,
-		"pihole_bootstrap": piholeBootstrap,
+		"message":            "server added",
+		"server_id":          server.ID,
+		"bootstrap":          bootstrap,
+		"hysteria_bootstrap": hysteriaBootstrap,
+		"pihole_bootstrap":   piholeBootstrap,
 	})
 }
 
@@ -441,14 +519,14 @@ func (h *AdminHandler) UpdateServer(c *gin.Context) {
 	}
 
 	var req struct {
-		Name        string `json:"name"`
-		Region      string `json:"region"`
-		CountryCode string `json:"country_code"`
-		VIPOnly     *bool  `json:"is_vip_only"`
-		Endpoint    string `json:"endpoint"`
-		MaxPeers    int    `json:"max_peers"`
-		SSHPassword string `json:"ssh_password"`
-		AWGPort     int    `json:"awg_port"`
+		Name        string  `json:"name"`
+		Region      string  `json:"region"`
+		CountryCode string  `json:"country_code"`
+		VIPOnly     *bool   `json:"is_vip_only"`
+		Endpoint    string  `json:"endpoint"`
+		MaxPeers    int     `json:"max_peers"`
+		SSHPassword string  `json:"ssh_password"`
+		AWGPort     int     `json:"awg_port"`
 		AgentURL    *string `json:"agent_url"`
 		AgentNodeID *string `json:"agent_node_id"`
 		// VLESS template
@@ -462,9 +540,21 @@ func (h *AdminHandler) UpdateServer(c *gin.Context) {
 		VLESSNetwork             string `json:"vless_network"`
 		VLESSSecurity            string `json:"vless_security"`
 		VLESSSpiderX             string `json:"vless_spider_x"`
+		VLESSGrpcServiceName     string `json:"vless_grpc_service_name"`
+		VLESSGrpcAuthority       string `json:"vless_grpc_authority"`
+		VLESSGrpcMultiMode       *bool  `json:"vless_grpc_multi_mode"`
+		HysteriaEnabled          *bool  `json:"hysteria_enabled"`
+		HysteriaPort             int    `json:"hysteria_port"`
+		HysteriaPassword         string `json:"hysteria_password"`
+		HysteriaSNI              string `json:"hysteria_sni"`
+		HysteriaInsecure         *bool  `json:"hysteria_insecure"`
+		HysteriaObfsPassword     string `json:"hysteria_obfs_password"`
+		HysteriaMasqueradeURL    string `json:"hysteria_masquerade_url"`
 		VLESSContainerName       string `json:"vless_container_name"`
 		BootstrapSelfHostedXray  bool   `json:"bootstrap_selfhosted_xray"`
 		BootstrapForceRegenerate bool   `json:"bootstrap_force_regenerate"`
+		BootstrapHysteria2       bool   `json:"bootstrap_hysteria2"`
+		BootstrapHysteria2Force  bool   `json:"bootstrap_hysteria2_force"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -472,6 +562,18 @@ func (h *AdminHandler) UpdateServer(c *gin.Context) {
 	}
 	if req.BootstrapSelfHostedXray && req.SSHPassword == "" && s.SSHPassword == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "ssh_password is required for self-hosted XRay bootstrap"})
+		return
+	}
+	if req.BootstrapSelfHostedXray && strings.TrimSpace(req.VLESSServerName) == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "vless_server_name is required for self-hosted XRay bootstrap"})
+		return
+	}
+	if req.BootstrapHysteria2 && req.SSHPassword == "" && s.SSHPassword == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "ssh_password is required for self-hosted Hysteria2 bootstrap"})
+		return
+	}
+	if req.BootstrapHysteria2 && strings.TrimSpace(req.HysteriaSNI) == "" && strings.TrimSpace(req.VLESSServerName) == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "hysteria_sni or vless_server_name is required for self-hosted Hysteria2 bootstrap"})
 		return
 	}
 
@@ -570,8 +672,65 @@ func (h *AdminHandler) UpdateServer(c *gin.Context) {
 	if req.VLESSSpiderX != "" {
 		template.SpiderX = req.VLESSSpiderX
 	}
+	if req.VLESSGrpcServiceName != "" {
+		template.GrpcServiceName = req.VLESSGrpcServiceName
+	}
+	if req.VLESSGrpcAuthority != "" {
+		template.GrpcAuthority = req.VLESSGrpcAuthority
+	}
+	if req.VLESSGrpcMultiMode != nil {
+		template.GrpcMultiMode = *req.VLESSGrpcMultiMode
+	}
+	if req.HysteriaEnabled != nil {
+		template.HysteriaEnabled = *req.HysteriaEnabled
+	}
+	if req.HysteriaPort > 0 {
+		template.HysteriaPort = req.HysteriaPort
+	}
+	if req.HysteriaPassword != "" {
+		template.HysteriaPassword = req.HysteriaPassword
+	}
+	if req.HysteriaSNI != "" {
+		template.HysteriaSNI = req.HysteriaSNI
+	}
+	if req.HysteriaInsecure != nil {
+		template.HysteriaInsecure = *req.HysteriaInsecure
+	}
+	if req.HysteriaObfsPassword != "" {
+		template.HysteriaObfsPassword = req.HysteriaObfsPassword
+	}
+	if req.HysteriaMasqueradeURL != "" {
+		template.HysteriaMasqueradeURL = req.HysteriaMasqueradeURL
+	}
 	if req.VLESSContainerName != "" {
 		template.ContainerName = req.VLESSContainerName
+	}
+	if req.BootstrapSelfHostedXray {
+		template.Network = "xhttp"
+		template.Security = "reality"
+		template.Flow = ""
+		template.SpiderX = "/"
+		if strings.TrimSpace(template.GrpcServiceName) == "" || !strings.HasPrefix(template.GrpcServiceName, "/") {
+			template.GrpcServiceName = "/assets/7d91f0e4"
+		}
+		if strings.TrimSpace(template.GrpcAuthority) == "" {
+			template.GrpcAuthority = template.ServerName
+		}
+		if req.VLESSGrpcMultiMode == nil {
+			template.GrpcMultiMode = true
+		}
+	}
+	hysteriaBootstrap := hysteriaBootstrapResult{}
+	if req.BootstrapHysteria2 {
+		hysteriaBootstrap.Ran = true
+		options := defaultSelfHostedHysteriaOptions(&s, &template)
+		options.ForceRegenerate = req.BootstrapHysteria2Force || req.BootstrapForceRegenerate
+		if bootstrappedTemplate, _, err := bootstrapSelfHostedHysteria(&s, &template, options); err != nil {
+			hysteriaBootstrap.Error = err.Error()
+		} else if bootstrappedTemplate != nil {
+			template = *bootstrappedTemplate
+			hysteriaBootstrap.Message = fmt.Sprintf("Self-hosted Hysteria2 deployed: %s:%d/udp", template.Address, template.HysteriaPort)
+		}
 	}
 	xrayTemplateDefaults(&template, &s)
 
@@ -580,6 +739,7 @@ func (h *AdminHandler) UpdateServer(c *gin.Context) {
 		bootstrap.Ran = true
 		options := defaultSelfHostedXrayBootstrapOptions(&s, &template)
 		options.ForceRegenerate = req.BootstrapForceRegenerate
+		options.RebuildImage = req.BootstrapForceRegenerate
 
 		if bootstrappedTemplate, _, err := bootstrapSelfHostedXray(&s, &template, options); err != nil {
 			bootstrap.Error = err.Error()
@@ -595,15 +755,16 @@ func (h *AdminHandler) UpdateServer(c *gin.Context) {
 		}
 	}
 	xrayTemplateDefaults(&template, &s)
-	if template.PublicKey != "" && template.ShortID != "" && template.ServerName != "" {
+	if (template.PublicKey != "" && template.ShortID != "" && template.ServerName != "") || template.HysteriaEnabled {
 		if err := h.db.Save(&template).Error; err != nil {
 			fmt.Printf("[WARN] Failed to save VLESS template for server %s: %v\n", s.Name, err)
 		}
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"message":   "server updated",
-		"bootstrap": bootstrap,
+		"message":            "server updated",
+		"bootstrap":          bootstrap,
+		"hysteria_bootstrap": hysteriaBootstrap,
 	})
 }
 
@@ -809,12 +970,12 @@ func (h *AdminHandler) GetStats(c *gin.Context) {
 	var subscriptions []models.Subscription
 	h.db.Find(&subscriptions)
 	planBreakdown := map[string]int{
-		string(models.PlanFree):     0,
-		string(models.PlanTrial):    0,
-		string(models.PlanBasic):    0,
-		string(models.PlanBasic3M):  0,
-		string(models.PlanVIP):      0,
-		string(models.PlanVIP3M):    0,
+		string(models.PlanFree):    0,
+		string(models.PlanTrial):   0,
+		string(models.PlanBasic):   0,
+		string(models.PlanBasic3M): 0,
+		string(models.PlanVIP):     0,
+		string(models.PlanVIP3M):   0,
 	}
 	statusBreakdown := map[string]int{
 		string(models.SubActive):    0,

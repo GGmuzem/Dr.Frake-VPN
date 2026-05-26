@@ -268,7 +268,16 @@ func applyVLESSSnapshot(server *models.VPNServer, template *models.VLESSServerTe
 	template.ContainerName = "amnezia-xray"
 
 	if inbounds, ok := parsed["inbounds"].([]interface{}); ok && len(inbounds) > 0 {
-		if inbound, ok := inbounds[0].(map[string]interface{}); ok {
+		for _, rawInbound := range inbounds {
+			inbound, ok := rawInbound.(map[string]interface{})
+			if !ok {
+				continue
+			}
+			protocol, _ := inbound["protocol"].(string)
+			if protocol != "vless" {
+				continue
+			}
+
 			if port, ok := inbound["port"].(float64); ok && port > 0 {
 				template.Port = int(port)
 			}
@@ -299,11 +308,13 @@ func applyVLESSSnapshot(server *models.VPNServer, template *models.VLESSServerTe
 							}
 						}
 					}
+					template.MLDSA65Verify = ""
 					if verify, ok := realitySettings["mldsa65Verify"].(string); ok && strings.TrimSpace(verify) != "" {
 						template.MLDSA65Verify = strings.TrimSpace(verify)
 					}
 				}
 			}
+			break
 		}
 	}
 	xrayTemplateDefaults(template, server)

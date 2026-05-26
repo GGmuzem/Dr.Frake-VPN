@@ -57,8 +57,16 @@ struct VlessServerObject
     QString fingerprint = "chrome";
     QString spiderX = "/";
     QString mldsa65Verify = "";
+    QString grpcServiceName;
+    QString grpcAuthority;
+    bool grpcMultiMode = false;
+    QString xhttpPath;
+    QString xhttpMode = "packet-up";
+    QString xPaddingBytes;
+    QString xhttpExtra;
+    QString alpn;
     JSONSTRUCT_COMPARE(VlessServerObject, address, id, port, flow, encryption)
-    JSONSTRUCT_REGISTER(VlessServerObject, F(address, id, port, flow, encryption, network, security, serverName, publicKey, shortId, fingerprint, spiderX, mldsa65Verify))
+    JSONSTRUCT_REGISTER(VlessServerObject, F(address, id, port, flow, encryption, network, security, serverName, publicKey, shortId, fingerprint, spiderX, mldsa65Verify, grpcServiceName, grpcAuthority, grpcMultiMode, xhttpPath, xhttpMode, xPaddingBytes, xhttpExtra, alpn))
 };
 
 
@@ -193,9 +201,10 @@ struct QuicObject
 struct gRPCObject
 {
     QString serviceName;
+    QString authority;
     bool multiMode = false;
-    JSONSTRUCT_COMPARE(gRPCObject, serviceName, multiMode)
-    JSONSTRUCT_REGISTER(gRPCObject, F(serviceName, multiMode))
+    JSONSTRUCT_COMPARE(gRPCObject, serviceName, authority, multiMode)
+    JSONSTRUCT_REGISTER(gRPCObject, F(serviceName, authority, multiMode))
 };
 
 //
