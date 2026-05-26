@@ -23,10 +23,13 @@ PageType {
     readonly property real maxContentWidth: GC.pageMaxWidth(width)
     readonly property var systemProfiles: root.profiles.filter(function(profile) { return profile.kind === "system" })
     readonly property var copiedTemplateCodes: root.profiles
-        .filter(function(profile) { return profile.kind !== "system" && profile.template_code && profile.template_code.length > 0 })
+        .filter(function(profile) { return profile.kind !== "system" && profile.enabled && profile.template_code && profile.template_code.length > 0 })
         .map(function(profile) { return String(profile.template_code) })
 
     function isAdded(profile) {
+        if (profile.already_added === true) {
+            return true
+        }
         const code = String(profile.code || "")
         return code.length > 0 && root.copiedTemplateCodes.indexOf(code) !== -1
     }

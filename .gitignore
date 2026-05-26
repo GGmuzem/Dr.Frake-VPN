@@ -12,7 +12,12 @@
 ._.DS_Store
 ._*
 .env
-
+server.json
+backup.env
+restic-password
+*.pem
+*.key
+.*
 # =========================
 # Qt & QtCreator
 # =========================
@@ -101,6 +106,8 @@ vpn-backend/data/
 vpn-backend/logs/
 vpn-backend/certs/
 vpn-backend/vendor/
+ops/backup/receiver/auth.htpasswd
+ops/backup/receiver/data/
 
 # =========================
 # Web (Next.js)
