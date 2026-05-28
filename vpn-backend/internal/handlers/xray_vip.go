@@ -18,6 +18,7 @@ const (
 	legacyXrayContainer        = "fblink-xray"
 	xrayProxyTag               = "proxy"
 	xrayDirectTag              = "direct"
+	xrayBlockTag               = "block"
 	defaultXrayGrpcServiceName = "api.v1.VideoDownload"
 	xrayNetworkGRPC            = "grpc"
 	// Keep /me/config fast: avoid frequent SSH/template refresh on user requests.
@@ -176,12 +177,7 @@ func resolveXrayRuntimeLocation(server *models.VPNServer, container string) xray
 	}
 }
 
-func xrayGrpcAuthority(template *models.VLESSServerTemplate) string {
-	if value := strings.TrimSpace(template.GrpcAuthority); value != "" {
-		return value
-	}
-	return strings.TrimSpace(template.ServerName)
-}
+
 
 func detectXrayConfigPath(server *models.VPNServer, container string) string {
 	return resolveXrayRuntimeLocation(server, container).configPath

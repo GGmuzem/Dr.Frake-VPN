@@ -205,6 +205,12 @@ type VLESSServerTemplate struct {
 	HysteriaObfsPassword  string `gorm:"default:''"`
 	HysteriaMasqueradeURL string `gorm:"default:'https://www.microsoft.com'"`
 	ContainerName         string `gorm:"default:'amnezia-xray'"`
+	// XHTTP transport fields (xray network="xhttp")
+	XHTTPPath     string `gorm:"default:''"`
+	XHTTPHost     string `gorm:"default:''"`
+	XHTTPMode     string `gorm:"default:''"`
+	XHTTPPadding  bool   `gorm:"default:false"`
+	XHTTPPostSize int    `gorm:"default:0"`
 }
 
 type VLESSCredential struct {
