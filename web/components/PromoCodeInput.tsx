@@ -138,7 +138,7 @@ export function PromoCodeInput({ onConfirm, previewPlan = "basic", initialCode =
                 <button
                   className="promo-field-btn promo-field-btn--apply"
                   disabled={!input.trim() || isLoading}
-                  onClick={apply}
+                  onClick={() => apply()}
                   type="button"
                 >
                   {isLoading ? <Loader2 size={14} className="promo-spin" /> : "Применить"}
