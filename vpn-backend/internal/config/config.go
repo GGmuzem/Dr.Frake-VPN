@@ -72,7 +72,7 @@ func Load() *Config {
 		SMTPPassword:        getEnv("SMTP_PASSWORD", ""),
 		SMTPFrom:            getEnv("SMTP_FROM", ""),
 		AgentSigningPrivateKey: getEnv("AGENT_SIGNING_PRIVATE_KEY", ""),
-		PaymentReturnURL:    getEnv("PAYMENT_RETURN_URL", "https://frakebit.com/payment/success"),
+		PaymentReturnURL:    getEnv("PAYMENT_RETURN_URL", "https://fblink-sc.com/dashboard"),
 		AndroidDownloadURL:  getEnv("ANDROID_DOWNLOAD_URL", "https://srv.frakebit.com/download/android"),
 		WindowsDownloadURL:  getEnv("WINDOWS_DOWNLOAD_URL", "https://srv.frakebit.com/download/windows"),
 		MacOSDownloadURL:    getEnv("MACOS_DOWNLOAD_URL", "https://srv.frakebit.com/download/macos"),

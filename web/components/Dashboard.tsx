@@ -22,7 +22,6 @@ import {
 } from "lucide-react";
 import { Brand } from "./Brand";
 import Pricing04 from "@/components/ui/ruixen-pricing-04";
-import { PromoCodeInput } from "./PromoCodeInput";
 import { defaultSiteConfig } from "../lib/site-config";
 import type { PlanId, SiteConfig } from "../lib/site-config";
 
@@ -172,15 +171,13 @@ export function Dashboard() {
     }
   }
 
-  const [promoCode, setPromoCode] = useState(promoFromUrl);
-
-  async function createPayment(plan: PlanId) {
+  async function createPayment(plan: PlanId, appliedPromoCode?: string) {
     setError("");
     setMessage("");
     setLoadingPayment(plan);
     try {
       const body: Record<string, string> = { plan };
-      if (promoCode) body.promo_code = promoCode;
+      if (appliedPromoCode) body.promo_code = appliedPromoCode;
       const response = await fetch("/api/payments/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -406,17 +403,11 @@ export function Dashboard() {
                 status: session.subscription.status,
               }}
               initialPlan={selectedPlan}
+              initialPromoCode={promoFromUrl}
               loadingPlan={loadingPayment}
               mode="payment"
               onSelect={createPayment}
               plans={config.plans}
-              promoSlot={
-                <PromoCodeInput
-                  initialCode={promoFromUrl}
-                  onConfirm={setPromoCode}
-                  previewPlan="basic"
-                />
-              }
             />
           </motion.section>
 

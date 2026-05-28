@@ -1190,6 +1190,11 @@ input:focus-visible {
   outline: none;
   min-width: 0;
 }
+.promo-input:focus,
+.promo-input:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
 .promo-input::placeholder {
   color: var(--muted-2);
   letter-spacing: 0.04em;

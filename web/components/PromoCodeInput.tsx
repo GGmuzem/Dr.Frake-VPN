@@ -12,7 +12,15 @@ type PromoState =
 
 type PromoCodeInputProps = {
   /** Called whenever a valid promo code is confirmed (or cleared). */
-  onConfirm: (code: string) => void;
+  onConfirm: (
+    code: string,
+    details?: {
+      discountPercent: number;
+      originalAmount: number;
+      finalAmount: number;
+      discountAmount: number;
+    } | null
+  ) => void;
   /** Plan used for server-side preview call. */
   previewPlan?: string;
   /** Pre-fill from URL param (e.g. ?promo=SUMMER20). */
@@ -39,6 +47,17 @@ export function PromoCodeInput({ onConfirm, previewPlan = "basic", initialCode =
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const lastPlanRef = useRef(previewPlan);
+  useEffect(() => {
+    if (lastPlanRef.current !== previewPlan) {
+      lastPlanRef.current = previewPlan;
+      if (input.trim() && promo.status === "success") {
+        apply(input);
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [previewPlan]);
+
   async function apply(code?: string) {
     const resolved = (code ?? input).trim().toUpperCase();
     if (!resolved) return;
@@ -53,32 +72,35 @@ export function PromoCodeInput({ onConfirm, previewPlan = "basic", initialCode =
       const data = await res.json();
       if (!res.ok) {
         setPromo({ status: "error", message: data.error ?? "Промокод недействителен" });
-        onConfirm("");
+        onConfirm("", null);
         return;
       }
       if (!data.promo_applied) {
         setPromo({ status: "error", message: "Промокод не применён к этому тарифу" });
-        onConfirm("");
+        onConfirm("", null);
         return;
       }
-      setPromo({
-        status: "success",
+      const details = {
         discountPercent: data.discount_percent,
         originalAmount: data.original_amount,
         finalAmount: data.amount,
         discountAmount: data.discount_amount,
+      };
+      setPromo({
+        status: "success",
+        ...details,
       });
-      onConfirm(resolved);
+      onConfirm(resolved, details);
     } catch {
       setPromo({ status: "error", message: "Ошибка соединения" });
-      onConfirm("");
+      onConfirm("", null);
     }
   }
 
   function clear() {
     setInput("");
     setPromo({ status: "idle" });
-    onConfirm("");
+    onConfirm("", null);
   }
 
   function handleKeyDown(e: React.KeyboardEvent) {
@@ -158,10 +180,7 @@ export function PromoCodeInput({ onConfirm, previewPlan = "basic", initialCode =
                 >
                   <CheckCircle2 size={14} />
                   <span>
-                    Скидка <strong>{promo.discountPercent}%</strong> применена
-                    {promo.discountAmount > 0 && (
-                      <> — вы экономите <strong>{promo.discountAmount} ₽</strong></>
-                    )}
+                    Скидка <strong>{promo.discountPercent}%</strong> успешно применена!
                   </span>
                 </motion.div>
               )}
