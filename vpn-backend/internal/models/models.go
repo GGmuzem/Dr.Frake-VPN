@@ -209,7 +209,7 @@ type VLESSServerTemplate struct {
 	XHTTPPath     string `gorm:"default:''"`
 	XHTTPHost     string `gorm:"default:''"`
 	XHTTPMode     string `gorm:"default:''"`
-	XHTTPPadding  bool   `gorm:"default:false"`
+	XHTTPPadding  string `gorm:"default:''"`
 	XHTTPPostSize int    `gorm:"default:0"`
 }
 
