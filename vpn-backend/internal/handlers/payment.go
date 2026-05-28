@@ -68,17 +68,17 @@ func trialAvailableForUser(db *gorm.DB, userID uint) (bool, error) {
 func fiscalProductName(plan models.PlanType) string {
 	switch plan {
 	case models.PlanBasic:
-		return "Подписка премиум на сервис 1 мес"
+		return "Доступ к информационным ресурсам на 1 месяц"
 	case models.PlanBasic3M:
-		return "Подписка премиум на сервис 3 мес"
+		return "Доступ к информационным ресурсам на 3 месяца"
 	case models.PlanVIP:
-		return "Подписка вип на сервис 1 мес"
+		return "Доступ к информационным ресурсам на 1 месяц"
 	case models.PlanVIP3M:
-		return "Подписка вип на сервис 3 мес"
+		return "Доступ к информационным ресурсам на 3 месяца"
 	case models.PlanTrial:
-		return "Подписка премиум на сервис 3 дня"
+		return "Доступ к информационным ресурсам на 3 дня"
 	default:
-		return fmt.Sprintf("Подписка на сервис %s", plan)
+		return fmt.Sprintf("Доступ к информационным ресурсам (%s)", plan)
 	}
 }
 
