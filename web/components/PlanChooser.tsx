@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { motion, useReducedMotion } from "motion/react";
-import { Check, Crown, ShieldCheck } from "lucide-react";
+import { Check, Crown, ShieldCheck, Tag } from "lucide-react";
 import { formatRub } from "../lib/site-config";
 import type { Plan, PlanId } from "../lib/site-config";
 
@@ -27,6 +27,7 @@ export function PlanChooser({ plans, initialPlan, loadingPlan = "", mode = "link
   const currentPlan = safePlans.find((plan) => plan.code === planCode) ?? firstPlan;
   const initialPeriod = currentPlan?.periods.find((period) => period.id === initialPlan) ?? currentPlan?.periods[0];
   const [periodId, setPeriodId] = useState<PlanId>(initialPeriod?.id ?? "basic");
+  const [promoInput, setPromoInput] = useState("");
 
   const period = useMemo(() => {
     const selectedPlan = safePlans.find((plan) => plan.code === planCode) ?? firstPlan;
@@ -98,20 +99,38 @@ export function PlanChooser({ plans, initialPlan, loadingPlan = "", mode = "link
         <div className="plan-checkout">
           <span>Итого</span>
           <strong>{formatRub(period.amount)}</strong>
-          {isPayment ? (
-            <button
-              className="button button-primary"
-              disabled={loadingPlan !== ""}
-              onClick={() => onSelect?.(period.id)}
-              type="button"
-            >
-              {buttonText}
-            </button>
-          ) : (
-            <a className="button button-primary" href={`/auth?plan=${period.id}`}>
-              {buttonText}
-            </a>
-          )}
+          <div className="plan-checkout-promo">
+            <div className="promo-field" style={{borderRadius: 8, marginBottom: 8}}>
+              <Tag size={13} className="promo-field-icon" style={{marginLeft: 10}} />
+              <input
+                className="promo-input"
+                maxLength={32}
+                onChange={(e) => setPromoInput(e.target.value.toUpperCase())}
+                placeholder="Промокод (необязательно)"
+                spellCheck={false}
+                style={{fontSize: 12, padding: '8px 8px'}}
+                type="text"
+                value={promoInput}
+              />
+            </div>
+            {isPayment ? (
+              <button
+                className="button button-primary"
+                disabled={loadingPlan !== ""}
+                onClick={() => onSelect?.(period.id)}
+                type="button"
+              >
+                {buttonText}
+              </button>
+            ) : (
+              <a
+                className="button button-primary"
+                href={`/auth?plan=${period.id}${promoInput.trim() ? `&promo=${encodeURIComponent(promoInput.trim())}` : ''}`}
+              >
+                {buttonText}
+              </a>
+            )}
+          </div>
         </div>
       </div>
     </motion.div>

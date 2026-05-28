@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { Brand } from "./Brand";
 import Pricing04 from "@/components/ui/ruixen-pricing-04";
+import { PromoCodeInput } from "./PromoCodeInput";
 import { defaultSiteConfig } from "../lib/site-config";
 import type { PlanId, SiteConfig } from "../lib/site-config";
 
@@ -170,15 +171,19 @@ export function Dashboard() {
     }
   }
 
+  const [promoCode, setPromoCode] = useState("");
+
   async function createPayment(plan: PlanId) {
     setError("");
     setMessage("");
     setLoadingPayment(plan);
     try {
+      const body: Record<string, string> = { plan };
+      if (promoCode) body.promo_code = promoCode;
       const response = await fetch("/api/payments/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan }),
+        body: JSON.stringify(body),
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error ?? "Не удалось создать платеж");
@@ -394,6 +399,10 @@ export function Dashboard() {
                 {isActive ? "Продлить или сменить план" : "Активировать доступ"}
               </h2>
             </div>
+            <PromoCodeInput
+              onConfirm={setPromoCode}
+              previewPlan="basic"
+            />
             <Pricing04
               currentSubscription={{
                 plan: session.subscription.plan,
