@@ -68,7 +68,7 @@ export function PromoCodeInput({ onConfirm, previewPlan = "basic", initialCode =
         finalAmount: data.amount,
         discountAmount: data.discount_amount,
       });
-      onConfirm(code);
+      onConfirm(resolved);
     } catch {
       setPromo({ status: "error", message: "Ошибка соединения" });
       onConfirm("");
