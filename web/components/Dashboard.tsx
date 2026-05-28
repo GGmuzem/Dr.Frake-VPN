@@ -124,6 +124,7 @@ export function Dashboard() {
 
   const subscriptionMeta = useMemo(() => {
     if (!session) return null;
+    const isFree = session.subscription.plan === "free";
     const expiresAtRaw = session.subscription.expires_at;
     const expiresDate = expiresAtRaw ? new Date(expiresAtRaw) : null;
     const formatted = expiresDate
@@ -132,15 +133,17 @@ export function Dashboard() {
     const now = Date.now();
     const ms = expiresDate ? expiresDate.getTime() - now : 0;
     const daysLeft = Math.max(0, Math.ceil(ms / (1000 * 60 * 60 * 24)));
-    
+
     // Dynamically calculate period length based on plan
     const is3Months = session.subscription.plan.endsWith("_3m");
     const periodDays = is3Months ? 90 : 30;
-    const progress = Math.min(1, Math.max(0, daysLeft / periodDays));
-    
+    // Free plan ring is always full (no countdown)
+    const progress = isFree ? 1 : Math.min(1, Math.max(0, daysLeft / periodDays));
+
     const planMeta = PLAN_BADGE[session.subscription.plan] ?? PLAN_BADGE.free;
-    const isActive = session.subscription.status === "active" && daysLeft > 0;
-    return { formatted, daysLeft, progress, planMeta, isActive };
+    // Free plan is always "active" regardless of expires_at
+    const isActive = isFree || (session.subscription.status === "active" && daysLeft > 0);
+    return { formatted, daysLeft, progress, planMeta, isActive, isFree };
   }, [session]);
 
   async function toggleAutoRenew(enabled: boolean) {
@@ -226,7 +229,7 @@ export function Dashboard() {
     );
   }
 
-  const { formatted, daysLeft, progress, planMeta, isActive } = subscriptionMeta;
+  const { formatted, daysLeft, progress, planMeta, isActive, isFree } = subscriptionMeta;
   const PlanIcon = planMeta.icon;
   const dashOffset = RING_CIRCUM * (1 - progress);
 
@@ -304,7 +307,7 @@ export function Dashboard() {
                   cx="60"
                   cy="60"
                   r="54"
-                  stroke={isActive ? "url(#ring-gradient)" : "rgba(239,68,68,0.6)"}
+                  stroke={isFree ? "rgba(161,161,170,0.5)" : isActive ? "url(#ring-gradient)" : "rgba(239,68,68,0.6)"}
                   strokeWidth="6"
                   fill="none"
                   strokeLinecap="round"
@@ -321,17 +324,23 @@ export function Dashboard() {
             </div>
 
             <div className="connection-hero-body">
-              <div className="status-pill" data-active={isActive ? "true" : "false"}>
-                <span className={`dot ${isActive ? "dot-green" : "dot-red"}`} />
-                {isActive ? "Подписка активна" : "Требуется продление"}
+               <div className="status-pill" data-active={isActive ? "true" : "false"}>
+                <span className={`dot ${isFree ? "dot-muted" : isActive ? "dot-green" : "dot-red"}`} />
+                {isFree ? "Бесплатный тариф" : isActive ? "Подписка активна" : "Требуется продление"}
               </div>
               <h2>
-                {isActive ? `Осталось ${daysLeft} ${pluralizeDays(daysLeft)}` : "Подписка истекла"}
+                {isFree
+                  ? "Бесплатный план"
+                  : isActive
+                    ? `Осталось ${daysLeft} ${pluralizeDays(daysLeft)}`
+                    : "Подписка истекла"}
               </h2>
               <p className="muted">
-                {isActive
-                  ? `Действует до ${formatted}. Управляйте подпиской ниже.`
-                  : "Выберите план — и подключение восстановится сразу после оплаты."}
+                {isFree
+                  ? "Доступен базовый функционал. Выберите план для полного доступа."
+                  : isActive
+                    ? `Действует до ${formatted}. Управляйте подпиской ниже.`
+                    : "Выберите план — и подключение восстановится сразу после оплаты."}
               </p>
 
               <div className="connection-hero-meta">
@@ -345,7 +354,7 @@ export function Dashboard() {
                   <span>Email</span>
                   <strong className="account-email">{session.user.email}</strong>
                 </div>
-                {session.subscription.auto_renew && (
+                {!isFree && session.subscription.auto_renew && (
                   <div>
                     <span>Автопродление</span>
                     <strong style={{ display: "flex", alignItems: "center", gap: "12px" }}>

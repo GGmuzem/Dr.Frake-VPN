@@ -170,6 +170,11 @@ input:focus-visible {
   box-shadow: 0 0 12px rgba(239, 68, 68, 0.55);
 }
 
+.dot-muted {
+  background: var(--muted-2);
+  box-shadow: none;
+}
+
 .page-shell {
   min-height: 100vh;
 }

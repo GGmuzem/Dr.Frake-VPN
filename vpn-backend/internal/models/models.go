@@ -49,7 +49,7 @@ type Subscription struct {
 	Plan              PlanType           `gorm:"default:free"`
 	Status            SubscriptionStatus `gorm:"default:active"`
 	ExpiresAt         time.Time
-	AutoRenew         bool   `gorm:"default:true"`
+	AutoRenew         bool   `gorm:"default:false"` // true only when payment method is saved after a successful charge
 	PaymentMethodID   string `gorm:"default:''"` // YooKassa payment_method_id для автосписания
 	VIPAdBlockEnabled bool   `gorm:"column:vip_ad_block_enabled;default:false"`
 }

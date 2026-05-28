@@ -39,6 +39,15 @@ func ensureSubscriptionSchema(db *gorm.DB) error {
 		}
 	}
 
+	// Data migration: reset auto_renew for free plan subscriptions that have no
+	// saved payment method. These were incorrectly created with auto_renew=true
+	// due to the old default:true on the model.
+	if err := db.Model(&models.Subscription{}).
+		Where("plan = ? AND payment_method_id = '' AND auto_renew = ?", models.PlanFree, true).
+		Update("auto_renew", false).Error; err != nil {
+		return err
+	}
+
 	subscriptionSchemaOnce.Store(db, struct{}{})
 	return nil
 }
@@ -64,6 +73,7 @@ func ensureDefaultSubscription(db *gorm.DB, userID uint) (models.Subscription, e
 		Plan:      models.PlanFree,
 		Status:    models.SubActive,
 		ExpiresAt: time.Now().AddDate(1, 0, 0),
+		AutoRenew: false, // free plan has no auto-renew
 	}
 	if err := db.Create(&sub).Error; err != nil {
 		return sub, err

@@ -533,6 +533,7 @@ func (h *AuthHandler) VerifyEmail(c *gin.Context) {
 		Plan:      models.PlanFree,
 		Status:    models.SubActive,
 		ExpiresAt: time.Now().AddDate(1, 0, 0),
+		AutoRenew: false, // free plan has no auto-renew
 	}
 	h.db.Create(&sub)
 

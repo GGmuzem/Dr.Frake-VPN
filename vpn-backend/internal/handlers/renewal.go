@@ -69,7 +69,7 @@ func processAutoRenewals(db *gorm.DB, shopID, key string) {
 		Pluck("user_id", &subsWithPendingPayment)
 
 	expireQuery := db.Model(&models.Subscription{}).
-		Where("status = ? AND expires_at <= ?", models.SubActive, now)
+		Where("status = ? AND expires_at <= ? AND plan != ?", models.SubActive, now, models.PlanFree)
 	if len(subsWithPendingPayment) > 0 {
 		expireQuery = expireQuery.Where("user_id NOT IN ?", subsWithPendingPayment)
 	}
