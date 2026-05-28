@@ -22,6 +22,7 @@ type Pricing04Props = {
   mode?: "link" | "payment";
   onSelect?: (plan: PlanId) => void;
   currentSubscription?: CurrentSubscription | null;
+  promoSlot?: React.ReactNode;
 };
 
 function findPlan(plans: Plan[], planId?: PlanId | null): Plan | undefined {
@@ -124,6 +125,7 @@ export default function Pricing04({
   mode = "link",
   onSelect,
   currentSubscription,
+  promoSlot,
 }: Pricing04Props) {
   const reduceMotion = useReducedMotion();
   const safePlans = useMemo(() => plans.filter((plan) => Array.isArray(plan.periods) && plan.periods.length > 0), [plans]);
@@ -175,6 +177,12 @@ export default function Pricing04({
           </span>
         </div>
       </div>
+
+      {promoSlot && (
+        <div className="mx-auto mt-6 flex w-full max-w-sm flex-col items-center justify-center">
+          {promoSlot}
+        </div>
+      )}
 
       <div className="mx-auto grid w-full max-w-4xl grid-cols-1 gap-4 pt-8 lg:grid-cols-2 lg:gap-6 lg:pt-12">
         {safePlans.map((plan) => (

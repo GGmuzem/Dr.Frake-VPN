@@ -400,11 +400,6 @@ export function Dashboard() {
                 {isActive ? "Продлить или сменить план" : "Активировать доступ"}
               </h2>
             </div>
-            <PromoCodeInput
-              initialCode={promoFromUrl}
-              onConfirm={setPromoCode}
-              previewPlan="basic"
-            />
             <Pricing04
               currentSubscription={{
                 plan: session.subscription.plan,
@@ -415,6 +410,13 @@ export function Dashboard() {
               mode="payment"
               onSelect={createPayment}
               plans={config.plans}
+              promoSlot={
+                <PromoCodeInput
+                  initialCode={promoFromUrl}
+                  onConfirm={setPromoCode}
+                  previewPlan="basic"
+                />
+              }
             />
           </motion.section>
 
