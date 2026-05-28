@@ -358,6 +358,23 @@ func (h *PaymentHandler) Webhook(c *gin.Context) {
 	obj, _ := event["object"].(map[string]interface{})
 	ykPaymentID, _ := obj["id"].(string)
 	fmt.Printf("[webhook] received event=%s payment=%s ip=%s\n", eventType, ykPaymentID, c.ClientIP())
+	if eventType == "payment.canceled" {
+		paymentDetails, err := h.fetchYooKassaPayment(ykPaymentID)
+		if err != nil || paymentDetails.Status != "canceled" {
+			fmt.Printf("[webhook] Verification failed for canceled payment %s: err=%v status=%s\n", ykPaymentID, err, paymentDetails.Status)
+			c.JSON(http.StatusOK, gin.H{"status": "verification_failed"})
+			return
+		}
+		if err := h.db.Model(&models.Payment{}).Where("yoo_kassa_id = ?", ykPaymentID).Update("status", models.PaymentCancelled).Error; err != nil {
+			fmt.Printf("[webhook] failed to mark payment %s as cancelled: %v\n", ykPaymentID, err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "webhook processing failed"})
+			return
+		}
+		fmt.Printf("[webhook] marked payment=%s as cancelled\n", ykPaymentID)
+		c.JSON(http.StatusOK, gin.H{"status": "ok"})
+		return
+	}
+
 	if eventType != "payment.succeeded" {
 		c.JSON(http.StatusOK, gin.H{"status": "ignored"})
 		return
