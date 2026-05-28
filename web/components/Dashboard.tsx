@@ -122,6 +122,7 @@ export function Dashboard() {
   }, [router]);
 
   const selectedPlan = searchParams.get("plan") as PlanId | null;
+  const promoFromUrl = searchParams.get("promo")?.trim().toUpperCase() ?? "";
 
   const subscriptionMeta = useMemo(() => {
     if (!session) return null;
@@ -171,7 +172,7 @@ export function Dashboard() {
     }
   }
 
-  const [promoCode, setPromoCode] = useState("");
+  const [promoCode, setPromoCode] = useState(promoFromUrl);
 
   async function createPayment(plan: PlanId) {
     setError("");
@@ -400,6 +401,7 @@ export function Dashboard() {
               </h2>
             </div>
             <PromoCodeInput
+              initialCode={promoFromUrl}
               onConfirm={setPromoCode}
               previewPlan="basic"
             />

@@ -15,28 +15,40 @@ type PromoCodeInputProps = {
   onConfirm: (code: string) => void;
   /** Plan used for server-side preview call. */
   previewPlan?: string;
+  /** Pre-fill from URL param (e.g. ?promo=SUMMER20). */
+  initialCode?: string;
 };
 
-export function PromoCodeInput({ onConfirm, previewPlan = "basic" }: PromoCodeInputProps) {
-  const [open, setOpen] = useState(false);
-  const [input, setInput] = useState("");
+export function PromoCodeInput({ onConfirm, previewPlan = "basic", initialCode = "" }: PromoCodeInputProps) {
+  const [open, setOpen] = useState(!!initialCode);
+  const [input, setInput] = useState(initialCode);
   const [promo, setPromo] = useState<PromoState>({ status: "idle" });
   const inputRef = useRef<HTMLInputElement>(null);
+  const didAutoApply = useRef(false);
 
   useEffect(() => {
-    if (open) setTimeout(() => inputRef.current?.focus(), 80);
-  }, [open]);
+    if (open && !initialCode) setTimeout(() => inputRef.current?.focus(), 80);
+  }, [open, initialCode]);
 
-  async function apply() {
-    const code = input.trim().toUpperCase();
-    if (!code) return;
+  // Auto-apply code that arrived from URL on first render
+  useEffect(() => {
+    if (initialCode && !didAutoApply.current) {
+      didAutoApply.current = true;
+      apply(initialCode);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  async function apply(code?: string) {
+    const resolved = (code ?? input).trim().toUpperCase();
+    if (!resolved) return;
 
     setPromo({ status: "loading" });
     try {
       const res = await fetch("/api/payments/preview", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan: previewPlan, promo_code: code }),
+        body: JSON.stringify({ plan: previewPlan, promo_code: resolved }),
       });
       const data = await res.json();
       if (!res.ok) {
