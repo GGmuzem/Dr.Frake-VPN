@@ -25,7 +25,12 @@ VpnProtocol::VpnProtocol(const QJsonObject &configuration, QObject *parent)
       m_sentBytes(0)
 {
     m_timeoutTimer->setSingleShot(true);
-    connect(m_timeoutTimer, &QTimer::timeout, this, &VpnProtocol::onTimeout);
+    connect(m_timeoutTimer, &QTimer::timeout, this, [this]() {
+        qDebug() << "Timeout";
+
+        emit timeoutTimerEvent();
+        stop();
+    });
 }
 
 void VpnProtocol::setLastError(ErrorCode lastError)
@@ -40,14 +45,6 @@ void VpnProtocol::setLastError(ErrorCode lastError)
 ErrorCode VpnProtocol::lastError() const
 {
     return m_lastError;
-}
-
-void VpnProtocol::onTimeout()
-{
-    qDebug() << "Timeout";
-
-    emit timeoutTimerEvent();
-    stop();
 }
 
 void VpnProtocol::startTimeoutTimer()
