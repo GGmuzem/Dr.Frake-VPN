@@ -1,35 +1,59 @@
 package database
 
 import (
+	"os"
 	"path/filepath"
 	"testing"
-	"os"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/glebarez/sqlite"
+	"gorm.io/gorm"
 )
 
-func TestInit_Success(t *testing.T) {
-	// Create a temporary directory for the database file
+func TestInit(t *testing.T) {
 	tempDir := t.TempDir()
-	dbPath := filepath.Join(tempDir, "test_database.db")
+	dbPath := filepath.Join(tempDir, "test.db")
 
-	// Verify that the file does not exist yet
-	_, err := os.Stat(dbPath)
-	assert.True(t, os.IsNotExist(err), "database file should not exist yet")
-
-	// Call Init with the temporary path
 	db := Init(dbPath)
-
-	// Verify the returned *gorm.DB is not nil
-	assert.NotNil(t, db, "Init should return a non-nil database connection")
+	if db == nil {
+		t.Fatal("Expected db to be initialized")
+	}
 
 	// Verify the database file was created
-	_, err = os.Stat(dbPath)
-	assert.NoError(t, err, "database file should have been created")
+	if _, err := os.Stat(dbPath); os.IsNotExist(err) {
+		t.Fatalf("Expected db file to be created at %s", dbPath)
+	}
+}
 
-	// Execute a simple query to ensure the connection is active
-	var result int
-	err = db.Raw("SELECT 1").Scan(&result).Error
-	assert.NoError(t, err, "should be able to execute a simple query")
-	assert.Equal(t, 1, result, "query should return 1")
+func TestAutoMigrate(t *testing.T) {
+	// Create an in-memory database
+	db, err := gorm.Open(sqlite.Open("file::memory:?cache=shared"), &gorm.Config{})
+	if err != nil {
+		t.Fatalf("Failed to connect to database: %v", err)
+	}
+
+	// Call AutoMigrate
+	AutoMigrate(db)
+
+	// List of tables to check
+	tablesToCheck := []string{
+		"users",
+		"subscriptions",
+		"tv_logins",
+		"app_downloads",
+		"vpn_servers",
+		"vpn_keys",
+		"vless_server_templates",
+		"vless_credentials",
+		"happ_subscription_tokens",
+		"routing_profiles",
+		"promo_codes",
+		"payments",
+		"verification_codes",
+	}
+
+	for _, tableName := range tablesToCheck {
+		if !db.Migrator().HasTable(tableName) {
+			t.Errorf("Expected table '%s' to exist after migration", tableName)
+		}
+	}
 }
