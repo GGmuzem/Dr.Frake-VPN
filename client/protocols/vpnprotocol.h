@@ -75,8 +75,6 @@ signals:
     void tunnelAddressesUpdated(const QString& gateway, const QString& localAddress);
 
 public slots:
-    virtual void onTimeout(); // todo: remove?
-
     void setBytesChanged(quint64 receivedBytes, quint64 sentBytes);
     void setConnectionState(Vpn::ConnectionState state);
 
