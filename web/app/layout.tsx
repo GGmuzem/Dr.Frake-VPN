@@ -27,7 +27,7 @@ export const metadata: Metadata = {
   title: "FBLink VPN — приватный доступ за минуту",
   description:
     "Премиальный VPN без логов. Приложения для Android, Windows, macOS, Linux и iPhone. Подписка Premium или VIP, понятный личный кабинет.",
-  metadataBase: new URL("https://srv.frakebit.com"),
+  metadataBase: new URL("https://fblink-sc.com"),
   openGraph: {
     title: "FBLink VPN",
     description: "Премиальный VPN без логов. Подписка Premium или VIP за пару минут.",

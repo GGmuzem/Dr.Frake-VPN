@@ -58,12 +58,12 @@ export const defaultSiteConfig: SiteConfig = {
     },
   ],
   downloads: {
-    android: "https://srv.frakebit.com/download/android",
-    windows: "https://srv.frakebit.com/download/windows",
-    macos: "https://srv.frakebit.com/download/macos",
-    linux: "https://srv.frakebit.com/download/linux",
+    android: "https://fblink-sc.com/download/android",
+    windows: "https://fblink-sc.com/download/windows",
+    macos: "https://fblink-sc.com/download/macos",
+    linux: "https://fblink-sc.com/download/linux",
     happ: "https://apps.apple.com/search?term=happ%20proxy",
-    androidtv: "https://srv.frakebit.com/download/androidtv",
+    androidtv: "https://fblink-sc.com/download/androidtv",
   },
   support: {
     email: "support@frakebit.com",

@@ -27,10 +27,10 @@ func (h *WebConfigHandler) Get(c *gin.Context) {
 			webPlan("vip", "VIP", models.PlanVIP, models.PlanVIP3M),
 		},
 		"downloads": gin.H{
-			"android": h.downloadURL("android", "https://srv.frakebit.com/download/android"),
-			"windows": h.downloadURL("windows", "https://srv.frakebit.com/download/windows"),
-			"macos":   h.downloadURL("macos", "https://srv.frakebit.com/download/macos"),
-			"linux":   h.downloadURL("linux", "https://srv.frakebit.com/download/linux"),
+			"android": h.downloadURL("android", "https://fblink-sc.com/download/android"),
+			"windows": h.downloadURL("windows", "https://fblink-sc.com/download/windows"),
+			"macos":   h.downloadURL("macos", "https://fblink-sc.com/download/macos"),
+			"linux":   h.downloadURL("linux", "https://fblink-sc.com/download/linux"),
 			"happ":    h.configValue("happ", "https://apps.apple.com/search?term=happ%20proxy"),
 		},
 		"support": gin.H{

@@ -117,3 +117,27 @@ func TestSelfHostedHysteriaBootstrapCommandInstallsUDP443(t *testing.T) {
 		t.Fatalf("expected command to print key-value output")
 	}
 }
+
+func TestAgentBootstrapScriptUsesPublicApplicationBackend(t *testing.T) {
+	command := buildRemoteBootstrapScript(remoteBootstrapConfig{
+		NodeID:            "server-1",
+		AgentImageDigest:  "registry.example/fblink-node-agent@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+		XrayImageDigest:   "registry.example/xray@sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+		VerifyPublicKey:   "verify-key",
+		ManagementPort:    39001,
+		ManagementUUID:    "11111111-1111-4111-8111-111111111111",
+		ManagementShortID: "abcdef12",
+		ServerName:        "www.microsoft.com",
+		RealityDest:       "www.microsoft.com:443",
+		AWGContainer:      "amnezia-awg2",
+		AWGInterface:      "awg0",
+		XrayContainer:     "amnezia-xray",
+		RealityPrivateKey: "private-key",
+		BackendURL:        "https://fblink-sc.com/api/v1",
+		PushPrivateKey:    "push-private-key",
+	})
+
+	if !strings.Contains(command, "AGENT_BACKEND_URL=https://fblink-sc.com/api/v1") {
+		t.Fatalf("expected agent bootstrap env to use fblink-sc.com backend")
+	}
+}

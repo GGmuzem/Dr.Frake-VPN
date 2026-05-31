@@ -5,7 +5,7 @@ set(AMNEZIAVPN_VERSION 1.0.0.4)
 
 project(${PROJECT} VERSION ${AMNEZIAVPN_VERSION}
         DESCRIPTION "FBLink VPN"
-        HOMEPAGE_URL "https://frakebit.com/"
+        HOMEPAGE_URL "https://fblink-sc.com/"
 )
 
 string(TIMESTAMP CURRENT_DATE "%Y-%m-%d")

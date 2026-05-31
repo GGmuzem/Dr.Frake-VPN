@@ -22,7 +22,7 @@
 #include "core/qrCodeUtils.h"
 
 // Backend API URL
-const QString BACKEND_URL = "https://srv.frakebit.com/api/v1";
+const QString BACKEND_URL = "https://fblink-sc.com/api/v1";
 
 namespace
 {

@@ -27,7 +27,7 @@ void UpdateController::checkForUpdates()
     m_hasChecked = true;
     
     // Hardcode fallback url for backend API
-    QString apiUrl = "https://srv.frakebit.com";
+    QString apiUrl = "https://fblink-sc.com";
 
 
     QUrl url(apiUrl + "/api/v1/client/latest-version");

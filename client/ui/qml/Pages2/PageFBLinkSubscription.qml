@@ -184,7 +184,7 @@ PageType {
         }
     }
 
-    readonly property string apiBase: "https://srv.frakebit.com"
+    readonly property string apiBase: "https://fblink-sc.com"
 
     readonly property var plans: [
         {
