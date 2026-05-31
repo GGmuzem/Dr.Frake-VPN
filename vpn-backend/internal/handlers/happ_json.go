@@ -70,7 +70,7 @@ func buildHappClientJSON(clientID string, server *models.VPNServer, template *mo
 	}
 
 	var proxyOutbound map[string]interface{}
-	if template.HysteriaEnabled && template.PublicKey == "" {
+	if template.HysteriaEnabled {
 		hysteriaPort := template.HysteriaPort
 		if hysteriaPort <= 0 {
 			hysteriaPort = 443

@@ -1012,7 +1012,7 @@ func buildVLESSConfig(clientID string, server *models.VPNServer, template *model
 	}
 
 	var primaryOutbound map[string]interface{}
-	if template.HysteriaEnabled && template.PublicKey == "" {
+	if template.HysteriaEnabled {
 		hysteriaPort := template.HysteriaPort
 		if hysteriaPort <= 0 {
 			hysteriaPort = 443
