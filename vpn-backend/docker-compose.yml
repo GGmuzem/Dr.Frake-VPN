@@ -57,7 +57,7 @@ services:
       - "443:443"
       - "443:443/udp"
     volumes:
-      - ../Caddyfile:/etc/caddy/Caddyfile
+      - ./Caddyfile:/etc/caddy/Caddyfile
       - /data:/data # Прокидываем сертификаты с хоста
       - caddy_data:/data/caddy
       - caddy_config:/config
