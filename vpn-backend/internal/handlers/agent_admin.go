@@ -359,9 +359,18 @@ func applyVLESSSnapshot(server *models.VPNServer, template *models.VLESSServerTe
 					if extra, ok := xhttpSettings["extra"].(map[string]interface{}); ok {
 						if padding, ok := extra["padding"].(string); ok {
 							template.XHTTPPadding = padding
+						} else if padding, ok := extra["xPaddingBytes"].(string); ok {
+							template.XHTTPPadding = padding
 						}
+						
 						if postSize, ok := extra["postSize"].(float64); ok {
 							template.XHTTPPostSize = int(postSize)
+						} else if postSizeStr, ok := extra["scMaxEachPostBytes"].(string); ok {
+							if parsed, err := strconv.Atoi(postSizeStr); err == nil {
+								template.XHTTPPostSize = parsed
+							}
+						} else if postSizeFloat, ok := extra["scMaxEachPostBytes"].(float64); ok {
+							template.XHTTPPostSize = int(postSizeFloat)
 						}
 					}
 				}

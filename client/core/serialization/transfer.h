@@ -61,12 +61,13 @@ struct VlessServerObject
     QString grpcAuthority;
     bool grpcMultiMode = false;
     QString xhttpPath;
+    QString xhttpHost;
     QString xhttpMode = "packet-up";
     QString xPaddingBytes;
     QString xhttpExtra;
     QString alpn;
     JSONSTRUCT_COMPARE(VlessServerObject, address, id, port, flow, encryption)
-    JSONSTRUCT_REGISTER(VlessServerObject, F(address, id, port, flow, encryption, network, security, serverName, publicKey, shortId, fingerprint, spiderX, mldsa65Verify, grpcServiceName, grpcAuthority, grpcMultiMode, xhttpPath, xhttpMode, xPaddingBytes, xhttpExtra, alpn))
+    JSONSTRUCT_REGISTER(VlessServerObject, F(address, id, port, flow, encryption, network, security, serverName, publicKey, shortId, fingerprint, spiderX, mldsa65Verify, grpcServiceName, grpcAuthority, grpcMultiMode, xhttpPath, xhttpHost, xhttpMode, xPaddingBytes, xhttpExtra, alpn))
 };
 
 

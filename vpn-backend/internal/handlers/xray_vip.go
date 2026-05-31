@@ -991,11 +991,13 @@ func buildVLESSConfig(clientID string, server *models.VPNServer, template *model
 	}
 	if template.Network == "xhttp" {
 		streamSettings["xhttpSettings"] = map[string]interface{}{
-			"path":               template.XHTTPPath,
-			"host":               template.XHTTPHost,
-			"mode":               template.XHTTPMode,
-			"xPaddingBytes":      "100-1000",
-			"scMaxEachPostBytes": 1000000,
+			"path": template.XHTTPPath,
+			"host": template.XHTTPHost,
+			"mode": template.XHTTPMode,
+			"extra": map[string]interface{}{
+				"xPaddingBytes":      "100-1000",
+				"scMaxEachPostBytes": "1000000",
+			},
 		}
 		if template.Security == "reality" {
 			streamSettings["realitySettings"] = realitySettings

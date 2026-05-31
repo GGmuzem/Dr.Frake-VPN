@@ -192,6 +192,13 @@ QJsonObject Deserialize(const QString &str, QString *alias, QString *errMessage)
         const auto path = hasPath ? QUrl::fromPercentEncoding(query.queryItemValue("path").toUtf8()) : "/";
         QJsonIO::SetValue(stream, path, { "xhttpSettings", "path" });
 
+        const auto hasHost = query.hasQueryItem("host");
+        if (hasHost)
+        {
+            const auto host = QUrl::fromPercentEncoding(query.queryItemValue("host").toUtf8());
+            QJsonIO::SetValue(stream, host, { "xhttpSettings", "host" });
+        }
+
         const auto hasMode = query.hasQueryItem("mode");
         const auto mode = hasMode ? QUrl::fromPercentEncoding(query.queryItemValue("mode").toUtf8()) : "packet-up";
         QJsonIO::SetValue(stream, mode, { "xhttpSettings", "mode" });
@@ -315,23 +322,6 @@ const QString Serialize(const VlessServerObject &server, const QString &alias)
         }
     }
 
-    if (server.network == "xhttp") {
-        const auto path = !server.xhttpPath.isEmpty() ? server.xhttpPath : server.grpcServiceName;
-        if (!path.isEmpty()) {
-            query.addQueryItem("path", path);
-        }
-        query.addQueryItem("mode", server.xhttpMode.isEmpty() ? "packet-up" : server.xhttpMode);
-        if (!server.xPaddingBytes.isEmpty()) {
-            query.addQueryItem("x_padding_bytes", server.xPaddingBytes);
-        }
-        if (!server.xhttpExtra.isEmpty()) {
-            query.addQueryItem("extra", server.xhttpExtra);
-        }
-        if (!server.alpn.isEmpty()) {
-            query.addQueryItem("alpn", server.alpn);
-        }
-    }
-    
     if (!server.encryption.isEmpty()) {
         query.addQueryItem("encryption", server.encryption);
     }

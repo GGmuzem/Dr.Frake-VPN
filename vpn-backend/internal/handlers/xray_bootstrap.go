@@ -149,8 +149,10 @@ func selfHostedXrayTransportSettings(opts selfHostedXrayBootstrapOptions) string
           "path": "${XRAY_GRPC_SERVICE_NAME}",
           "host": "${XRAY_SITE_NAME}",
           "mode": "auto",
-          "xPaddingBytes": "100-1000",
-          "scMaxEachPostBytes": 1000000
+          "extra": {
+            "xPaddingBytes": "100-1000",
+            "scMaxEachPostBytes": "1000000"
+          }
         },
         "realitySettings": {
           "show": false,
@@ -289,8 +291,10 @@ cat > "$CONFIG_DIR/server.json" <<EOF
           "path": "${XRAY_GRPC_SERVICE_NAME}",
           "host": "${XRAY_SITE_NAME}",
           "mode": "auto",
-          "xPaddingBytes": "100-1000",
-          "scMaxEachPostBytes": 1000000
+          "extra": {
+            "xPaddingBytes": "100-1000",
+            "scMaxEachPostBytes": "1000000"
+          }
         },
         "realitySettings": {
           "show": false,
