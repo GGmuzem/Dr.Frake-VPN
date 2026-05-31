@@ -65,6 +65,7 @@ func processAutoRenewals(db *gorm.DB, shopID, key string) {
 	recentCutoff := now.Add(-2 * time.Hour)
 	var subsWithPendingPayment []uint
 	db.Model(&models.Payment{}).
+		Distinct("user_id").
 		Where("status = ? AND created_at >= ?", models.PaymentPending, recentCutoff).
 		Pluck("user_id", &subsWithPendingPayment)
 

@@ -65,6 +65,8 @@ func AutoMigrate(db *gorm.DB) {
 		&models.PromoCode{},
 		&models.Payment{},
 		&models.VerificationCode{},
+		&models.AdminNotification{},
+		&models.AdminAuditLog{},
 	)
 	if err != nil {
 		log.Fatalf("Failed to migrate database: %v", err)

@@ -5,9 +5,9 @@ import (
 	"log"
 	"os"
 
-	"fblink-vpn/vpn-backend/internal/models"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+	"vpn-backend/internal/models"
 )
 
 func main() {

@@ -36,6 +36,7 @@ func (h *AdminHandler) AgentSnapshot(c *gin.Context) {
 			"agent_last_snapshot_at":     &now,
 			"agent_last_snapshot_status": "failed: " + err.Error(),
 		})
+		auditServerAction(h.db, c, "agent.snapshot", server.ID, "failed", err.Error())
 		c.JSON(http.StatusBadGateway, gin.H{"error": err.Error()})
 		return
 	}
@@ -47,6 +48,7 @@ func (h *AdminHandler) AgentSnapshot(c *gin.Context) {
 			"agent_last_snapshot_hash":   snapshot.ContentHash,
 			"agent_last_snapshot_status": "parse_failed: " + err.Error(),
 		})
+		auditServerAction(h.db, c, "agent.snapshot", server.ID, "failed", err.Error())
 		c.JSON(http.StatusUnprocessableEntity, gin.H{"error": err.Error()})
 		return
 	}
@@ -56,6 +58,7 @@ func (h *AdminHandler) AgentSnapshot(c *gin.Context) {
 	server.AgentLastSnapshotAt = &now
 	server.AgentLastSnapshotStatus = "ok"
 	h.db.Save(&server)
+	auditServerAction(h.db, c, "agent.snapshot", server.ID, "ok", snapshot.ContentHash)
 
 	c.JSON(http.StatusOK, gin.H{
 		"message":       "snapshot imported",
@@ -79,9 +82,11 @@ func (h *AdminHandler) AgentUpdate(c *gin.Context) {
 	state, err := client.Update(server.ID, req.ImageDigest)
 	h.persistAgentUpdateState(&server, state, err)
 	if err != nil {
+		auditServerAction(h.db, c, "agent.update", server.ID, "failed", err.Error())
 		c.JSON(http.StatusBadGateway, gin.H{"error": err.Error(), "state": state})
 		return
 	}
+	auditServerAction(h.db, c, "agent.update", server.ID, "ok", req.ImageDigest)
 	c.JSON(http.StatusOK, gin.H{"state": state})
 }
 
@@ -93,9 +98,11 @@ func (h *AdminHandler) AgentRollback(c *gin.Context) {
 	state, err := client.Rollback()
 	h.persistAgentUpdateState(&server, state, err)
 	if err != nil {
+		auditServerAction(h.db, c, "agent.rollback", server.ID, "failed", err.Error())
 		c.JSON(http.StatusBadGateway, gin.H{"error": err.Error(), "state": state})
 		return
 	}
+	auditServerAction(h.db, c, "agent.rollback", server.ID, "ok", state.ActiveDigest)
 	c.JSON(http.StatusOK, gin.H{"state": state})
 }
 
@@ -146,7 +153,13 @@ func (h *AdminHandler) persistAgentHealth(server *models.VPNServer, health nodeA
 	updates := map[string]interface{}{}
 	if callErr != nil {
 		updates["agent_last_update_error"] = callErr.Error()
+		updates["agent_last_health_status"] = "failed"
 	} else {
+		now := time.Now().UTC()
+		updates["agent_last_heartbeat_at"] = &now
+		updates["agent_docker_available"] = health.DockerAvailable
+		updates["agent_uptime_seconds"] = health.UptimeSeconds
+		updates["agent_last_health_status"] = "ok"
 		updates["agent_last_version"] = health.Version
 		updates["agent_last_commit"] = health.Commit
 		if health.NodeID != "" {

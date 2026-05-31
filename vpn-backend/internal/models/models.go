@@ -50,7 +50,7 @@ type Subscription struct {
 	Status            SubscriptionStatus `gorm:"default:active"`
 	ExpiresAt         time.Time
 	AutoRenew         bool   `gorm:"default:false"` // true only when payment method is saved after a successful charge
-	PaymentMethodID   string `gorm:"default:''"` // YooKassa payment_method_id для автосписания
+	PaymentMethodID   string `gorm:"default:''"`    // YooKassa payment_method_id для автосписания
 	VIPAdBlockEnabled bool   `gorm:"column:vip_ad_block_enabled;default:false"`
 }
 
@@ -141,6 +141,10 @@ type VPNServer struct {
 	AgentBootstrapStatus     string `gorm:"default:''"`
 	AgentBootstrapError      string `gorm:"default:''"`
 	AgentBootstrapAt         *time.Time
+	AgentLastHeartbeatAt     *time.Time
+	AgentDockerAvailable     bool   `gorm:"default:false"`
+	AgentUptimeSeconds       int64  `gorm:"default:0"`
+	AgentLastHealthStatus    string `gorm:"default:''"`
 	AgentManagementPort      int    `gorm:"default:0"`
 	AgentLocalPort           int    `gorm:"default:0"`
 	AgentManagementUUID      string `gorm:"default:''"`
@@ -316,4 +320,48 @@ type VerificationCode struct {
 	Purpose   string    `gorm:"not null"` // "verify" | "reset"
 	ExpiresAt time.Time `gorm:"not null"`
 	Used      bool      `gorm:"default:false"`
+}
+
+type AdminNotificationSeverity string
+
+const (
+	AdminNotificationSeverityInfo     AdminNotificationSeverity = "info"
+	AdminNotificationSeverityWarning  AdminNotificationSeverity = "warning"
+	AdminNotificationSeverityCritical AdminNotificationSeverity = "critical"
+)
+
+type AdminNotificationStatus string
+
+const (
+	AdminNotificationStatusOpen     AdminNotificationStatus = "open"
+	AdminNotificationStatusResolved AdminNotificationStatus = "resolved"
+)
+
+type AdminNotification struct {
+	gorm.Model
+	Fingerprint      string                    `gorm:"uniqueIndex;not null"`
+	Severity         AdminNotificationSeverity `gorm:"default:info;not null"`
+	Status           AdminNotificationStatus   `gorm:"default:open;not null;index"`
+	Title            string                    `gorm:"not null"`
+	Message          string                    `gorm:"not null"`
+	ServerID         *uint                     `gorm:"index"`
+	Server           *VPNServer                `gorm:"foreignKey:ServerID"`
+	MetadataJSON     string                    `gorm:"column:metadata_json;default:'{}'"`
+	LastSeenAt       time.Time                 `gorm:"not null"`
+	AcknowledgedAt   *time.Time
+	AcknowledgedByID *uint
+	MutedUntil       *time.Time
+	ResolvedAt       *time.Time
+}
+
+type AdminAuditLog struct {
+	gorm.Model
+	ActorUserID  *uint  `gorm:"index"`
+	Action       string `gorm:"not null;index"`
+	Entity       string `gorm:"not null;index"`
+	EntityID     string `gorm:"default:'';index"`
+	Result       string `gorm:"not null;default:'ok'"`
+	Message      string `gorm:"default:''"`
+	IP           string `gorm:"default:''"`
+	MetadataJSON string `gorm:"column:metadata_json;default:'{}'"`
 }

@@ -18,12 +18,16 @@ type Config struct {
 	YooKassaKey    string
 
 	// SMTP для email
-	SMTPHost            string
-	SMTPPort            int
-	SMTPUser            string
-	SMTPPassword        string
-	SMTPFrom            string
-	AgentSigningPrivateKey string
+	SMTPHost                   string
+	SMTPPort                   int
+	SMTPUser                   string
+	SMTPPassword               string
+	SMTPFrom                   string
+	AgentSigningPrivateKey     string
+	TelegramBotToken           string
+	TelegramAdminChatIDs       string
+	AdminAlertsEnabled         bool
+	AdminHeartbeatStaleSeconds int
 
 	// Платежи
 	PaymentReturnURL string // URL для редиректа после оплаты
@@ -57,6 +61,10 @@ func Load() *Config {
 	}
 
 	smtpPort, _ := strconv.Atoi(getEnv("SMTP_PORT", "587"))
+	staleSeconds, _ := strconv.Atoi(getEnv("ADMIN_HEARTBEAT_STALE_SECONDS", "180"))
+	if staleSeconds <= 0 {
+		staleSeconds = 180
+	}
 	return &Config{
 		Port:           getEnv("PORT", "8081"),
 		DBPath:         getEnv("DB_PATH", "data/vpn.db"),
@@ -66,22 +74,26 @@ func Load() *Config {
 		YooKassaShopID: getEnv("YOOKASSA_SHOP_ID", ""),
 		YooKassaKey:    getEnv("YOOKASSA_SECRET_KEY", ""),
 
-		SMTPHost:            getEnv("SMTP_HOST", ""),
-		SMTPPort:            smtpPort,
-		SMTPUser:            getEnv("SMTP_USER", ""),
-		SMTPPassword:        getEnv("SMTP_PASSWORD", ""),
-		SMTPFrom:            getEnv("SMTP_FROM", ""),
-		AgentSigningPrivateKey: getEnv("AGENT_SIGNING_PRIVATE_KEY", ""),
-		PaymentReturnURL:    getEnv("PAYMENT_RETURN_URL", "https://fblink-sc.com/dashboard"),
-		AndroidDownloadURL:  getEnv("ANDROID_DOWNLOAD_URL", "https://srv.frakebit.com/download/android"),
-		WindowsDownloadURL:  getEnv("WINDOWS_DOWNLOAD_URL", "https://srv.frakebit.com/download/windows"),
-		MacOSDownloadURL:    getEnv("MACOS_DOWNLOAD_URL", "https://srv.frakebit.com/download/macos"),
-		LinuxDownloadURL:    getEnv("LINUX_DOWNLOAD_URL", "https://srv.frakebit.com/download/linux"),
-		HappAppURL:          getEnv("HAPP_APP_URL", "https://apps.apple.com/search?term=happ%20proxy"),
-		HappCryptoAPIURL:    getEnv("HAPP_CRYPTO_API_URL", "https://crypto.happ.su/api-v2.php"),
-		DownloadsDir:        getEnv("DOWNLOADS_DIR", "data/downloads"),
-		SupportEmail:        getEnv("SUPPORT_EMAIL", "support@frakebit.com"),
-		SupportTelegramURL:  getEnv("SUPPORT_TELEGRAM_URL", "https://t.me/+79966732628"),
+		SMTPHost:                   getEnv("SMTP_HOST", ""),
+		SMTPPort:                   smtpPort,
+		SMTPUser:                   getEnv("SMTP_USER", ""),
+		SMTPPassword:               getEnv("SMTP_PASSWORD", ""),
+		SMTPFrom:                   getEnv("SMTP_FROM", ""),
+		AgentSigningPrivateKey:     getEnv("AGENT_SIGNING_PRIVATE_KEY", ""),
+		TelegramBotToken:           getEnv("TELEGRAM_BOT_TOKEN", ""),
+		TelegramAdminChatIDs:       getEnv("TELEGRAM_ADMIN_CHAT_IDS", ""),
+		AdminAlertsEnabled:         getEnv("ADMIN_ALERTS_ENABLED", "true") == "true",
+		AdminHeartbeatStaleSeconds: staleSeconds,
+		PaymentReturnURL:           getEnv("PAYMENT_RETURN_URL", "https://fblink-sc.com/dashboard"),
+		AndroidDownloadURL:         getEnv("ANDROID_DOWNLOAD_URL", "https://srv.frakebit.com/download/android"),
+		WindowsDownloadURL:         getEnv("WINDOWS_DOWNLOAD_URL", "https://srv.frakebit.com/download/windows"),
+		MacOSDownloadURL:           getEnv("MACOS_DOWNLOAD_URL", "https://srv.frakebit.com/download/macos"),
+		LinuxDownloadURL:           getEnv("LINUX_DOWNLOAD_URL", "https://srv.frakebit.com/download/linux"),
+		HappAppURL:                 getEnv("HAPP_APP_URL", "https://apps.apple.com/search?term=happ%20proxy"),
+		HappCryptoAPIURL:           getEnv("HAPP_CRYPTO_API_URL", "https://crypto.happ.su/api-v2.php"),
+		DownloadsDir:               getEnv("DOWNLOADS_DIR", "data/downloads"),
+		SupportEmail:               getEnv("SUPPORT_EMAIL", "support@frakebit.com"),
+		SupportTelegramURL:         getEnv("SUPPORT_TELEGRAM_URL", "https://t.me/+79966732628"),
 
 		ClientLatestVersion:  getEnv("CLIENT_LATEST_VERSION", "1.0.0"),
 		ClientDownloadURL:    getEnv("CLIENT_DOWNLOAD_URL", "https://frakebit.com/download"),

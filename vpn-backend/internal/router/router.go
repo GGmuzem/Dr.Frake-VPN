@@ -124,6 +124,7 @@ func New(db *gorm.DB, cfg *config.Config) *gin.Engine {
 		// Admin only
 		adminGrp := api.Group("/admin", auth, admin)
 		{
+			adminGrp.GET("/overview", adminH.GetOverview)
 			adminGrp.GET("/users", adminH.GetUsers)
 			adminGrp.POST("/users/:id/upgrade", adminH.UpgradeUser)
 			adminGrp.POST("/users/:id/subscription/revoke", adminH.RevokeUserSubscription)
@@ -140,7 +141,14 @@ func New(db *gorm.DB, cfg *config.Config) *gin.Engine {
 			adminGrp.POST("/servers/:id/agent/update", adminH.AgentUpdate)
 			adminGrp.POST("/servers/:id/agent/rollback", adminH.AgentRollback)
 			adminGrp.GET("/servers/:id/agent/status", adminH.AgentStatus)
+			adminGrp.GET("/servers/:id/health", adminH.GetServerHealth)
+			adminGrp.POST("/servers/:id/configs/import", adminH.ImportServerConfigs)
 			adminGrp.DELETE("/servers/:id", adminH.DeleteServer)
+			adminGrp.GET("/notifications", adminH.GetNotifications)
+			adminGrp.POST("/notifications/:id/ack", adminH.AckNotification)
+			adminGrp.POST("/notifications/:id/mute", adminH.MuteNotification)
+			adminGrp.GET("/events", adminH.AdminEvents)
+			adminGrp.GET("/audit", adminH.GetAuditLogs)
 			adminGrp.GET("/payments", adminH.GetPayments)
 			adminGrp.POST("/payments/:id/approve", adminH.ApprovePayment)
 			adminGrp.GET("/promo-codes", adminH.GetPromoCodes)

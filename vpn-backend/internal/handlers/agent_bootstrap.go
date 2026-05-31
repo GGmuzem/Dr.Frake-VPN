@@ -7,6 +7,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net"
 	"net/http"
 	"net/url"
@@ -21,6 +22,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"golang.org/x/crypto/curve25519"
+	"gorm.io/gorm"
 )
 
 type agentBootstrapRequest struct {
@@ -548,4 +550,52 @@ func randomShortID() string {
 		return fmt.Sprintf("%016x", time.Now().UnixNano())
 	}
 	return hex.EncodeToString(buf)
+}
+
+// RestoreAgentTunnels recreates local management docker containers that attach to the backend's network namespace.
+// Because these containers use `--network container:vpn-backend`, they lose their networking or fail to start 
+// properly if the main backend container is recreated. This function runs on startup to restore them.
+func RestoreAgentTunnels(db *gorm.DB) {
+	var servers []models.VPNServer
+	if err := db.Where("agent_bootstrap_status = ?", "ok").Find(&servers).Error; err != nil {
+		log.Printf("[RestoreAgentTunnels] Failed to fetch servers: %v", err)
+		return
+	}
+
+	for _, s := range servers {
+		if s.AgentLocalPort <= 0 {
+			continue
+		}
+
+		dir := filepath.Join("data", "agent-tunnels", fmt.Sprintf("server-%d", s.ID))
+		configPath := filepath.Join(dir, "client.json")
+
+		configBody, err := os.ReadFile(configPath)
+		if err != nil {
+			log.Printf("[RestoreAgentTunnels] Skipping server %d: config not found at %s: %v", s.ID, configPath, err)
+			continue
+		}
+
+		containerName := fmt.Sprintf("fblink-mgmt-client-%d", s.ID)
+		_ = exec.Command("docker", "rm", "-f", containerName).Run()
+		time.Sleep(200 * time.Millisecond)
+
+		xrayImage := "teddysun/xray:latest"
+
+		cmd := exec.Command("docker", "run", "-d",
+			"--name", containerName,
+			"--restart", "unless-stopped",
+			"--network", "container:vpn-backend",
+			"-e", "XRAY_CONFIG="+string(configBody),
+			"--entrypoint", "/bin/sh",
+			xrayImage,
+			"-c", "echo \"$XRAY_CONFIG\" > /etc/xray/config.json && /usr/bin/xray run -config /etc/xray/config.json",
+		)
+		
+		if out, err := cmd.CombinedOutput(); err != nil {
+			log.Printf("[RestoreAgentTunnels] Failed to restore tunnel for server %d: %v\n%s", s.ID, err, out)
+		} else {
+			log.Printf("[RestoreAgentTunnels] Successfully restored management tunnel for server %d", s.ID)
+		}
+	}
 }

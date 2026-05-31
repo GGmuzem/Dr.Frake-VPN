@@ -66,6 +66,8 @@ func main() {
 	// ---------------------------
 
 	safeGo("sync-servers", func() { handlers.SyncAllServers(db) })
+	safeGo("restore-tunnels", func() { handlers.RestoreAgentTunnels(db) })
+	safeGo("admin-health-monitor", func() { handlers.RunAdminHealthMonitor(db, cfg) })
 	safeGo("renewal-scheduler", func() {
 		handlers.RunAutoRenewalScheduler(db, cfg.YooKassaShopID, cfg.YooKassaKey)
 	})

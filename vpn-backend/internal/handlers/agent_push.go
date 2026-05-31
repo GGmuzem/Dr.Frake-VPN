@@ -24,15 +24,15 @@ var agentPushReplay = struct {
 }{nonces: map[string]time.Time{}}
 
 type agentPushHeartbeat struct {
-	NodeID         string `json:"node_id"`
-	Version        string `json:"version"`
-	Commit         string `json:"commit"`
-	UptimeSeconds  int64  `json:"uptime_seconds"`
-	DockerAvailable bool  `json:"docker_available"`
-	ActiveDigest   string `json:"active_digest"`
-	PreviousDigest string `json:"previous_digest"`
-	UpdateStatus   string `json:"update_status"`
-	UpdateError    string `json:"update_error"`
+	NodeID          string `json:"node_id"`
+	Version         string `json:"version"`
+	Commit          string `json:"commit"`
+	UptimeSeconds   int64  `json:"uptime_seconds"`
+	DockerAvailable bool   `json:"docker_available"`
+	ActiveDigest    string `json:"active_digest"`
+	PreviousDigest  string `json:"previous_digest"`
+	UpdateStatus    string `json:"update_status"`
+	UpdateError     string `json:"update_error"`
 }
 
 func (h *AdminHandler) AgentPushHeartbeat(c *gin.Context) {
@@ -56,6 +56,10 @@ func (h *AdminHandler) AgentPushHeartbeat(c *gin.Context) {
 
 	h.db.Model(&server).Updates(map[string]interface{}{
 		"agent_node_id":            payload.NodeID,
+		"agent_last_heartbeat_at":  time.Now().UTC(),
+		"agent_docker_available":   payload.DockerAvailable,
+		"agent_uptime_seconds":     payload.UptimeSeconds,
+		"agent_last_health_status": "ok",
 		"agent_last_version":       payload.Version,
 		"agent_last_commit":        payload.Commit,
 		"agent_active_digest":      payload.ActiveDigest,

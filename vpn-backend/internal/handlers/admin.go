@@ -146,37 +146,17 @@ func (h *AdminHandler) GetServers(c *gin.Context) {
 			"agent_previous_digest":      s.AgentPreviousDigest,
 			"agent_last_update_status":   s.AgentLastUpdateStatus,
 			"agent_last_update_error":    s.AgentLastUpdateError,
+			"agent_last_heartbeat_at":    s.AgentLastHeartbeatAt,
+			"agent_docker_available":     s.AgentDockerAvailable,
+			"agent_uptime_seconds":       s.AgentUptimeSeconds,
+			"agent_last_health_status":   s.AgentLastHealthStatus,
 			"agent_bootstrap_status":     s.AgentBootstrapStatus,
 			"agent_bootstrap_error":      s.AgentBootstrapError,
 			"agent_bootstrap_at":         s.AgentBootstrapAt,
 			"agent_management_port":      s.AgentManagementPort,
 			"agent_local_port":           s.AgentLocalPort,
 			"agent_push_public_key":      s.AgentPushPublicKey,
-			"vless_template": gin.H{
-				"address":                 template.Address,
-				"port":                    template.Port,
-				"server_name":             template.ServerName,
-				"public_key":              template.PublicKey,
-				"short_id":                template.ShortID,
-				"short_ids_json":          template.ShortIDsJSON,
-				"fingerprint":             template.Fingerprint,
-				"flow":                    template.Flow,
-				"network":                 template.Network,
-				"security":                template.Security,
-				"spider_x":                template.SpiderX,
-				"mldsa65_verify":          template.MLDSA65Verify,
-				"grpc_service_name":       template.GrpcServiceName,
-				"grpc_authority":          template.GrpcAuthority,
-				"grpc_multi_mode":         template.GrpcMultiMode,
-				"hysteria_enabled":        template.HysteriaEnabled,
-				"hysteria_port":           template.HysteriaPort,
-				"hysteria_password":       template.HysteriaPassword,
-				"hysteria_sni":            template.HysteriaSNI,
-				"hysteria_insecure":       template.HysteriaInsecure,
-				"hysteria_obfs_password":  template.HysteriaObfsPassword,
-				"hysteria_masquerade_url": template.HysteriaMasqueradeURL,
-				"container_name":          template.ContainerName,
-			},
+			"vless_template":             vlessTemplateResponse(template),
 		})
 	}
 
@@ -1394,6 +1374,7 @@ func (h *AdminHandler) ToggleServer(c *gin.Context) {
 	}
 	s.Active = !s.Active
 	h.db.Save(&s)
+	auditServerAction(h.db, c, "server.toggle", s.ID, "ok", fmt.Sprintf("active=%v", s.Active))
 	c.JSON(http.StatusOK, gin.H{"message": "server toggled", "active": s.Active})
 }
 
@@ -1470,6 +1451,23 @@ func (h *AdminHandler) PiHoleSync(c *gin.Context) {
 		}
 
 		results = append(results, res)
+		result := "ok"
+		if res.Error != "" {
+			result = "failed"
+			_, _, _ = upsertAdminNotification(h.db, models.AdminNotification{
+				Fingerprint:  fmt.Sprintf("server:%d:pihole-sync", srv.ID),
+				Severity:     models.AdminNotificationSeverityWarning,
+				Status:       models.AdminNotificationStatusOpen,
+				Title:        "Pi-hole sync failed",
+				Message:      res.Error,
+				ServerID:     &srv.ID,
+				MetadataJSON: fmt.Sprintf(`{"server_name":%q,"reason":"pihole_sync"}`, srv.Name),
+				LastSeenAt:   time.Now().UTC(),
+			})
+		} else {
+			_ = resolveAdminNotification(h.db, fmt.Sprintf("server:%d:pihole-sync", srv.ID), time.Now().UTC())
+		}
+		auditServerAction(h.db, c, "server.pihole_sync", srv.ID, result, res.Error)
 		fmt.Printf("[Pi-hole Sync] server=%s mode=%s dns=%s xray_reachable=%v err=%s\n",
 			srv.Name, res.ModeDetected, res.DNSIP, res.XrayReachable, res.Error)
 	}
