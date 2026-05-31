@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"encoding/json"
 	"fmt"
 	"strings"
 	"vpn-backend/internal/models"
@@ -149,10 +148,8 @@ func selfHostedXrayTransportSettings(opts selfHostedXrayBootstrapOptions) string
           "path": "${XRAY_GRPC_SERVICE_NAME}",
           "host": "${XRAY_SITE_NAME}",
           "mode": "auto",
-          "extra": {
-            "xPaddingBytes": "100-1000",
-            "scMaxEachPostBytes": "1000000"
-          }
+          "xPaddingBytes": "100-1000",
+          "scMaxEachPostBytes": 1000000
         },
         "realitySettings": {
           "show": false,
@@ -291,10 +288,8 @@ cat > "$CONFIG_DIR/server.json" <<EOF
           "path": "${XRAY_GRPC_SERVICE_NAME}",
           "host": "${XRAY_SITE_NAME}",
           "mode": "auto",
-          "extra": {
-            "xPaddingBytes": "100-1000",
-            "scMaxEachPostBytes": "1000000"
-          }
+          "xPaddingBytes": "100-1000",
+          "scMaxEachPostBytes": 1000000
         },
         "realitySettings": {
           "show": false,
@@ -538,25 +533,5 @@ func bootstrapSelfHostedXray(server *models.VPNServer, template *models.VLESSSer
 		return nil, output, fetchErr
 	}
 
-	mergedTemplate := mergeFetchedBootstrapTemplate(fetchedTemplate, template)
-
-	if template != nil && template.AdvancedJSON != "" {
-		container := template.ContainerName
-		if container == "" {
-			container = defaultXrayContainer
-		}
-		configPath := detectXrayConfigPath(server, container)
-		if raw, err := readXrayFile(server, container, configPath); err == nil {
-			var parsed map[string]interface{}
-			if err := json.Unmarshal([]byte(raw), &parsed); err == nil {
-				applyAdvancedJSON(parsed, template.AdvancedJSON, true)
-				if updatedJSON, err := json.Marshal(parsed); err == nil {
-					_ = writeXrayFile(server, container, configPath, string(updatedJSON))
-					_ = ensureXrayRuntimeReady(server, container, configPath, template.Port)
-				}
-			}
-		}
-	}
-
-	return mergedTemplate, output, nil
+	return mergeFetchedBootstrapTemplate(fetchedTemplate, template), output, nil
 }

@@ -223,7 +223,6 @@ type addServerRequest struct {
 	HysteriaObfsPassword  string `json:"hysteria_obfs_password"`
 	HysteriaMasqueradeURL string `json:"hysteria_masquerade_url"`
 	VLESSContainerName    string `json:"vless_container_name"`
-	AdvancedJSON          string `json:"advanced_json"`
 	// Bootstrap self-hosted XRay
 	BootstrapSelfHostedXray  bool `json:"bootstrap_selfhosted_xray"`
 	BootstrapForceRegenerate bool `json:"bootstrap_force_regenerate"`
@@ -382,7 +381,6 @@ func (h *AdminHandler) AddServer(c *gin.Context) {
 		HysteriaObfsPassword:  req.HysteriaObfsPassword,
 		HysteriaMasqueradeURL: req.HysteriaMasqueradeURL,
 		ContainerName:         req.VLESSContainerName,
-		AdvancedJSON:          req.AdvancedJSON,
 	}
 	if req.VLESSGrpcMultiMode != nil {
 		template.GrpcMultiMode = *req.VLESSGrpcMultiMode
@@ -506,7 +504,6 @@ func (h *AdminHandler) UpdateServer(c *gin.Context) {
 		CountryCode string  `json:"country_code"`
 		VIPOnly     *bool   `json:"is_vip_only"`
 		Endpoint    string  `json:"endpoint"`
-		PublicKey   string  `json:"public_key"`
 		MaxPeers    int     `json:"max_peers"`
 		SSHPassword string  `json:"ssh_password"`
 		AWGPort     int     `json:"awg_port"`
@@ -574,9 +571,6 @@ func (h *AdminHandler) UpdateServer(c *gin.Context) {
 	if req.Endpoint != "" {
 		updates["endpoint"] = req.Endpoint
 	}
-	if req.PublicKey != "" {
-		updates["public_key"] = req.PublicKey
-	}
 	if req.MaxPeers > 0 {
 		updates["max_peers"] = req.MaxPeers
 	}
@@ -609,9 +603,6 @@ func (h *AdminHandler) UpdateServer(c *gin.Context) {
 	}
 	if req.Endpoint != "" {
 		s.Endpoint = req.Endpoint
-	}
-	if req.PublicKey != "" {
-		s.PublicKey = req.PublicKey
 	}
 	if req.MaxPeers > 0 {
 		s.MaxPeers = req.MaxPeers

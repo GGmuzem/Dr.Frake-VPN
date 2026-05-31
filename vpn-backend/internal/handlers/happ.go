@@ -192,17 +192,12 @@ func (h *HappHandler) Subscription(c *gin.Context) {
 		return
 	}
 
-	lines, err := h.happVLESSLinks(token.UserID, sub)
+	configs, err := h.happJSONConfigs(token.UserID, sub)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to build happ subscription"})
 		return
 	}
-	routingLink, err := h.happRoutingLink(token.UserID, sub)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to build happ routing profile"})
-		return
-	}
-	if len(lines) == 0 {
+	if len(configs) == 0 {
 		go func() {
 			if err := h.ensureHappCredentials(token.UserID, sub); err != nil {
 				// pass
@@ -215,8 +210,8 @@ func (h *HappHandler) Subscription(c *gin.Context) {
 	now := time.Now()
 	_ = h.db.Model(&models.HappSubscriptionToken{}).Where("id = ?", token.ID).Update("last_used_at", &now).Error
 
-	c.Header("Content-Type", "text/plain; charset=utf-8")
-	c.Header("Content-Disposition", `attachment; filename="fblink-happ.txt"`)
+	c.Header("Content-Type", "application/json; charset=utf-8")
+	c.Header("Content-Disposition", `attachment; filename="fblink-happ.json"`)
 	c.Header("Cache-Control", "no-store")
 
 	totalBytes := int64(100) * 1024 * 1024 * 1024 * 1024 // 100 TB to represent unlimited
@@ -225,12 +220,12 @@ func (h *HappHandler) Subscription(c *gin.Context) {
 	c.Header("profile-update-interval", "24")
 	c.Header("profile-web-page-url", h.publicBaseURL(c))
 	c.Header("profile-title", happSubscriptionTitle)
-	if routingLink != "" {
-		c.Header("routing", routingLink)
-		lines = append([]string{routingLink}, lines...)
-	}
 
-	c.String(http.StatusOK, strings.Join(lines, "\n"))
+	// Instruct Happ to use the auth settings directly from the JSON (which is noauth)
+	c.Header("socks-auth-mode", "from-json")
+	c.Header("http-auth-mode", "from-json")
+
+	c.JSON(http.StatusOK, configs)
 }
 
 func (h *HappHandler) happRoutingLink(userID uint, sub models.Subscription) (string, error) {
@@ -529,7 +524,7 @@ func buildHappHysteria2URI(server *models.VPNServer, template *models.VLESSServe
 		query = "?" + query
 	}
 
-	return fmt.Sprintf("hy2://%s@%s:%d%s#%s",
+	return fmt.Sprintf("hy2://%s@%s:%d/%s#%s",
 		url.PathEscape(strings.TrimSpace(template.HysteriaPassword)),
 		address,
 		template.HysteriaPort,
@@ -568,30 +563,18 @@ func buildHappVLESSURI(clientID string, server *models.VPNServer, template *mode
 		params.Set("spx", template.SpiderX)
 	}
 	if template.Network == "xhttp" {
-		path := strings.TrimSpace(template.XHTTPPath)
-		if path == "" {
-			path = strings.TrimSpace(template.GrpcServiceName)
-		}
+		path := strings.TrimSpace(template.GrpcServiceName)
 		if path == "" {
 			path = "/assets/7d91f0e4"
 		}
 		if !strings.HasPrefix(path, "/") {
 			path = "/" + path
 		}
-		host := strings.TrimSpace(template.XHTTPHost)
-		if host == "" {
-			host = template.ServerName
-		}
 		params.Set("path", path)
-		params.Set("host", host)
+		params.Set("host", template.ServerName)
 		params.Set("mode", "auto")
-		padding := strings.TrimSpace(template.XHTTPPadding)
-		if padding == "" {
-			padding = "100-1000"
-		}
-		params.Set("x_padding_bytes", padding)
-		extraJSON := fmt.Sprintf(`{"mode":"auto","scMaxEachPostBytes":"1000000","xPaddingBytes":%q}`, padding)
-		params.Set("extra", extraJSON)
+		params.Set("x_padding_bytes", "100-1000")
+		params.Set("extra", `{"mode":"auto","scMaxEachPostBytes":"1000000","xPaddingBytes":"100-1000"}`)
 		if template.Security == "tls" {
 			params.Set("alpn", "h3")
 		}

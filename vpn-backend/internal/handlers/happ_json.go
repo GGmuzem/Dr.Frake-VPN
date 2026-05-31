@@ -52,22 +52,15 @@ func buildHappClientJSON(clientID string, server *models.VPNServer, template *mo
 			},
 		}
 	case "xhttp":
-		xhttpSettings := map[string]interface{}{
+		streamSettings["xhttpSettings"] = map[string]interface{}{
 			"path": template.XHTTPPath,
 			"host": template.XHTTPHost,
 			"mode": template.XHTTPMode,
+			"extra": map[string]interface{}{
+				"padding":  template.XHTTPPadding,
+				"postSize": template.XHTTPPostSize,
+			},
 		}
-		if template.XHTTPPadding != "" || template.XHTTPPostSize > 0 {
-			extra := map[string]interface{}{}
-			if template.XHTTPPadding != "" {
-				extra["padding"] = template.XHTTPPadding
-			}
-			if template.XHTTPPostSize > 0 {
-				extra["postSize"] = template.XHTTPPostSize
-			}
-			xhttpSettings["extra"] = extra
-		}
-		streamSettings["xhttpSettings"] = xhttpSettings
 	case "grpc":
 		streamSettings["grpcSettings"] = map[string]interface{}{
 			"serviceName": template.GrpcServiceName,
@@ -76,84 +69,11 @@ func buildHappClientJSON(clientID string, server *models.VPNServer, template *mo
 		}
 	}
 
-	var proxyOutbound map[string]interface{}
-	if template.HysteriaEnabled {
-		hysteriaPort := template.HysteriaPort
-		if hysteriaPort <= 0 {
-			hysteriaPort = 443
-		}
-		sni := template.HysteriaSNI
-		if sni == "" {
-			sni = template.ServerName
-		}
-		serverConfig := map[string]interface{}{
-			"address":  template.Address,
-			"port":     hysteriaPort,
-			"password": template.HysteriaPassword,
-			"version":  2,
-		}
-		if template.HysteriaObfsPassword != "" {
-			serverConfig["obfs"] = map[string]interface{}{
-				"type":     "salamander",
-				"password": template.HysteriaObfsPassword,
-			}
-		}
-
-		proxyOutbound = map[string]interface{}{
-			"protocol": "hysteria2",
-			"settings": map[string]interface{}{
-				"servers": []interface{}{serverConfig},
-			},
-			"streamSettings": map[string]interface{}{
-				"network":  "hysteria2",
-				"security": "tls",
-				"tlsSettings": map[string]interface{}{
-					"serverName":    sni,
-					"allowInsecure": template.HysteriaInsecure,
-					"alpn":          []string{"h3"},
-				},
-			},
-			"tag": "proxy",
-		}
-		
-		if template.HysteriaObfsPassword != "" {
-			proxyOutbound["finalmask"] = map[string]interface{}{
-				"udp": []interface{}{
-					map[string]interface{}{
-						"type": "salamander",
-						"settings": map[string]interface{}{
-							"password": template.HysteriaObfsPassword,
-						},
-					},
-				},
-			}
-		}
-	} else {
-		proxyOutbound = map[string]interface{}{
-			"mux": map[string]interface{}{
-				"concurrency":     -1,
-				"enabled":         false,
-				"xudpConcurrency": 8,
-				"xudpProxyUDP443": "reject",
-			},
-			"protocol": "vless",
-			"settings": map[string]interface{}{
-				"vnext": []interface{}{
-					map[string]interface{}{
-						"address": template.Address,
-						"port":    template.Port,
-						"users": []interface{}{
-							userConfig,
-						},
-					},
-				},
-			},
-			"streamSettings": streamSettings,
-			"tag": "proxy",
-		}
-	}
-
-	xrayConfig := map[string]interface{}{
+	return map[string]interface{}{
+		"remarks": description,
+		"meta": map[string]interface{}{
+			"serverDescription": description,
+		},
 		"dns": map[string]interface{}{
 			"hosts": map[string]interface{}{
 				"cloudflare-dns.com": "1.1.1.1",
@@ -221,7 +141,28 @@ func buildHappClientJSON(clientID string, server *models.VPNServer, template *mo
 			"tag": "metrics_out",
 		},
 		"outbounds": []interface{}{
-			proxyOutbound,
+			map[string]interface{}{
+				"mux": map[string]interface{}{
+					"concurrency":     -1,
+					"enabled":         false,
+					"xudpConcurrency": 8,
+					"xudpProxyUDP443": "reject",
+				},
+				"protocol": "vless",
+				"settings": map[string]interface{}{
+					"vnext": []interface{}{
+						map[string]interface{}{
+							"address": template.Address,
+							"port":    template.Port,
+							"users": []interface{}{
+								userConfig,
+							},
+						},
+					},
+				},
+				"streamSettings": streamSettings,
+				"tag": "proxy",
+			},
 			map[string]interface{}{
 				"protocol": "freedom",
 				"settings": map[string]interface{}{
@@ -259,63 +200,49 @@ func buildHappClientJSON(clientID string, server *models.VPNServer, template *mo
 				"statsOutboundUplink":   true,
 			},
 		},
+		"routing": map[string]interface{}{
+			"domainStrategy": "IPIfNonMatch",
+			"rules": []interface{}{
+				map[string]interface{}{
+					"network":     "udp",
+					"port":        443,
+					"outboundTag": "block",
+				},
+				map[string]interface{}{
+					"ip":          []string{"1.1.1.1"},
+					"outboundTag": "proxy",
+					"port":        443,
+				},
+				map[string]interface{}{
+					"ip":          []string{"8.8.8.8"},
+					"outboundTag": "direct",
+					"port":        443,
+				},
+				map[string]interface{}{
+					"inboundTag":  []string{"metrics_in"},
+					"outboundTag": "metrics_out",
+				},
+				map[string]interface{}{
+					"domain": []string{
+						"full:.ru",
+						"full:.xn--p1ai",
+					},
+					"outboundTag": "direct",
+				},
+				map[string]interface{}{
+					"ip": []string{
+						"10.0.0.0/8",
+						"172.16.0.0/12",
+						"192.168.0.0/16",
+						"169.254.0.0/16",
+						"224.0.0.0/4",
+						"255.255.255.255",
+					},
+					"outboundTag": "direct",
+				},
+			},
+		},
 		"stats": map[string]interface{}{},
-	}
-
-	var routingRules []interface{}
-	if !template.HysteriaEnabled {
-		routingRules = append(routingRules, map[string]interface{}{
-			"network":     "udp",
-			"port":        443,
-			"outboundTag": "block",
-		})
-	}
-	routingRules = append(routingRules,
-		map[string]interface{}{
-			"ip":          []string{"1.1.1.1"},
-			"outboundTag": "proxy",
-			"port":        443,
-		},
-		map[string]interface{}{
-			"ip":          []string{"8.8.8.8"},
-			"outboundTag": "direct",
-			"port":        443,
-		},
-		map[string]interface{}{
-			"inboundTag":  []string{"metrics_in"},
-			"outboundTag": "metrics_out",
-		},
-		map[string]interface{}{
-			"domain": []string{
-				"full:.ru",
-				"full:.xn--p1ai",
-			},
-			"outboundTag": "direct",
-		},
-		map[string]interface{}{
-			"ip": []string{
-				"10.0.0.0/8",
-				"172.16.0.0/12",
-				"192.168.0.0/16",
-				"169.254.0.0/16",
-				"224.0.0.0/4",
-				"255.255.255.255",
-			},
-			"outboundTag": "direct",
-		},
-	)
-
-	xrayConfig["routing"] = map[string]interface{}{
-		"domainStrategy": "IPIfNonMatch",
-		"rules":          routingRules,
-	}
-
-	return map[string]interface{}{
-		"remarks": description,
-		"meta": map[string]interface{}{
-			"type": "xray",
-		},
-		"config": xrayConfig,
 	}
 }
 

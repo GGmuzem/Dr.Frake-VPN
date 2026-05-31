@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -11,7 +10,6 @@ import (
 	"vpn-backend/internal/models"
 
 	"github.com/gin-gonic/gin"
-	"golang.org/x/crypto/curve25519"
 	"gorm.io/gorm"
 )
 
@@ -264,8 +262,8 @@ func applyVLESSSnapshot(server *models.VPNServer, template *models.VLESSServerTe
 		return nil
 	}
 
-	parsed, err := parseXrayConfigPayload(serverConfigRaw)
-	if err != nil {
+	var parsed map[string]interface{}
+	if err := json.Unmarshal([]byte(serverConfigRaw), &parsed); err != nil {
 		return err
 	}
 
@@ -276,20 +274,13 @@ func applyVLESSSnapshot(server *models.VPNServer, template *models.VLESSServerTe
 			template.Address = strings.Split(server.Endpoint, ":")[0]
 		}
 	}
-	if publicKey := strings.TrimSpace(string(files["xray/xray_public.key"])); publicKey != "" {
-		template.PublicKey = publicKey
-	}
-	if shortID := strings.TrimSpace(string(files["xray/xray_short_id.key"])); shortID != "" {
-		template.ShortID = shortID
-	}
-	if clientID := strings.TrimSpace(string(files["xray/xray_uuid.key"])); clientID != "" {
-		template.ClientID = clientID
-	}
+	template.PublicKey = strings.TrimSpace(string(files["xray/xray_public.key"]))
+	template.ShortID = strings.TrimSpace(string(files["xray/xray_short_id.key"]))
+	template.ClientID = strings.TrimSpace(string(files["xray/xray_uuid.key"]))
 	template.MLDSA65Verify = ""
 	template.ContainerName = "amnezia-xray"
 
 	if inbounds, ok := parsed["inbounds"].([]interface{}); ok && len(inbounds) > 0 {
-		template.HysteriaEnabled = false // сброс перед разбором
 		for _, rawInbound := range inbounds {
 			inbound, ok := rawInbound.(map[string]interface{})
 			if !ok {
@@ -297,9 +288,6 @@ func applyVLESSSnapshot(server *models.VPNServer, template *models.VLESSServerTe
 			}
 			protocol, _ := inbound["protocol"].(string)
 			if protocol != "vless" {
-				if protocol == "hysteria" || protocol == "hysteria2" {
-					applyHysteriaInbound(template, inbound)
-				}
 				continue
 			}
 
@@ -314,14 +302,6 @@ func applyVLESSSnapshot(server *models.VPNServer, template *models.VLESSServerTe
 					template.Security = security
 				}
 				if realitySettings, ok := streamSettings["realitySettings"].(map[string]interface{}); ok {
-					if publicKey, ok := realitySettings["publicKey"].(string); ok && strings.TrimSpace(publicKey) != "" && strings.TrimSpace(template.PublicKey) == "" {
-						template.PublicKey = strings.TrimSpace(publicKey)
-					}
-					if privateKey, ok := realitySettings["privateKey"].(string); ok && strings.TrimSpace(template.PublicKey) == "" {
-						if publicKey, err := xrayRealityPublicKeyFromPrivate(privateKey); err == nil {
-							template.PublicKey = publicKey
-						}
-					}
 					if serverNames, ok := realitySettings["serverNames"].([]interface{}); ok && len(serverNames) > 0 {
 						if serverName, ok := serverNames[0].(string); ok {
 							template.ServerName = serverName
@@ -346,199 +326,10 @@ func applyVLESSSnapshot(server *models.VPNServer, template *models.VLESSServerTe
 						template.MLDSA65Verify = strings.TrimSpace(verify)
 					}
 				}
-				if xhttpSettings, ok := streamSettings["xhttpSettings"].(map[string]interface{}); ok {
-					if path, ok := xhttpSettings["path"].(string); ok {
-						template.XHTTPPath = path
-					}
-					if host, ok := xhttpSettings["host"].(string); ok {
-						template.XHTTPHost = host
-					}
-					if mode, ok := xhttpSettings["mode"].(string); ok {
-						template.XHTTPMode = mode
-					}
-					// extra sub-object (older format)
-					if extra, ok := xhttpSettings["extra"].(map[string]interface{}); ok {
-						if padding, ok := extra["padding"].(string); ok {
-							template.XHTTPPadding = padding
-						} else if padding, ok := extra["xPaddingBytes"].(string); ok {
-							template.XHTTPPadding = padding
-						}
-						if postSize, ok := extra["postSize"].(float64); ok {
-							template.XHTTPPostSize = int(postSize)
-						} else if postSizeStr, ok := extra["scMaxEachPostBytes"].(string); ok {
-							if parsed, err := strconv.Atoi(postSizeStr); err == nil {
-								template.XHTTPPostSize = parsed
-							}
-						} else if postSizeFloat, ok := extra["scMaxEachPostBytes"].(float64); ok {
-							template.XHTTPPostSize = int(postSizeFloat)
-						}
-					}
-					// top-level format used by x-ui / newer xray builds
-					if template.XHTTPPadding == "" {
-						if padding, ok := xhttpSettings["xPaddingBytes"].(string); ok && padding != "" {
-							template.XHTTPPadding = padding
-						}
-					}
-					if template.XHTTPPostSize == 0 {
-						if postSizeStr, ok := xhttpSettings["scMaxEachPostBytes"].(string); ok {
-							if parsed, err := strconv.Atoi(postSizeStr); err == nil {
-								template.XHTTPPostSize = parsed
-							}
-						} else if postSizeFloat, ok := xhttpSettings["scMaxEachPostBytes"].(float64); ok {
-							template.XHTTPPostSize = int(postSizeFloat)
-						}
-					}
-				}
-				if grpcSettings, ok := streamSettings["grpcSettings"].(map[string]interface{}); ok {
-					if serviceName, ok := grpcSettings["serviceName"].(string); ok {
-						template.GrpcServiceName = serviceName
-					}
-					if authority, ok := grpcSettings["authority"].(string); ok {
-						template.GrpcAuthority = authority
-					}
-					if multiMode, ok := grpcSettings["multiMode"].(bool); ok {
-						template.GrpcMultiMode = multiMode
-					}
-				}
-			}
-			// Use the actual client UUID from server.json as the shared ClientID.
-			// This is the ground truth of what the server accepts, and takes
-			// priority over xray_uuid.key which may be stale after x-ui changes.
-			if settings, ok := inbound["settings"].(map[string]interface{}); ok {
-				if clients, ok := settings["clients"].([]interface{}); ok && len(clients) > 0 {
-					if client, ok := clients[0].(map[string]interface{}); ok {
-						if id, ok := client["id"].(string); ok && strings.TrimSpace(id) != "" {
-							template.ClientID = strings.TrimSpace(id)
-						}
-					}
-				}
 			}
 			break
 		}
 	}
 	xrayTemplateDefaults(template, server)
 	return nil
-}
-
-func parseXrayConfigPayload(raw string) (map[string]interface{}, error) {
-	var parsed interface{}
-	trimmed := strings.TrimSpace(raw)
-	if err := json.Unmarshal([]byte(trimmed), &parsed); err != nil {
-		repaired := repairCommonXrayJSON(trimmed)
-		if repaired == trimmed {
-			return nil, err
-		}
-		if repairErr := json.Unmarshal([]byte(repaired), &parsed); repairErr != nil {
-			return nil, err
-		}
-	}
-	switch value := parsed.(type) {
-	case map[string]interface{}:
-		if _, ok := value["inbounds"]; ok {
-			return value, nil
-		}
-		if _, ok := value["protocol"].(string); ok {
-			return map[string]interface{}{"inbounds": []interface{}{value}}, nil
-		}
-		return value, nil
-	case []interface{}:
-		return map[string]interface{}{"inbounds": value}, nil
-	default:
-		return nil, fmt.Errorf("xray config must be a server object, inbound object, or inbound array")
-	}
-}
-
-func repairCommonXrayJSON(raw string) string {
-	repaired := raw
-	repaired = strings.ReplaceAll(repaired, `}]}],"hysteriaSettings"`, `}]},"hysteriaSettings"`)
-	repaired = strings.ReplaceAll(repaired, `}]}],"finalmask"`, `}]},"finalmask"`)
-	return repaired
-}
-
-func applyHysteriaInbound(template *models.VLESSServerTemplate, inbound map[string]interface{}) {
-	template.HysteriaEnabled = true
-	if port, ok := inbound["port"].(float64); ok && port > 0 {
-		template.HysteriaPort = int(port)
-	}
-	if settings, ok := inbound["settings"].(map[string]interface{}); ok {
-		if password := firstString(settings, "password", "auth", "key"); password != "" {
-			template.HysteriaPassword = password
-		}
-		if users, ok := settings["users"].([]interface{}); ok && len(users) > 0 {
-			if user, ok := users[0].(map[string]interface{}); ok {
-				if password := firstString(user, "password", "auth", "key"); password != "" {
-					template.HysteriaPassword = password
-				}
-			}
-		}
-	}
-	streamSettings, _ := inbound["streamSettings"].(map[string]interface{})
-	if tlsSettings, ok := streamSettings["tlsSettings"].(map[string]interface{}); ok {
-		if sni, ok := tlsSettings["serverName"].(string); ok && strings.TrimSpace(sni) != "" {
-			template.HysteriaSNI = strings.TrimSpace(sni)
-			if strings.TrimSpace(template.ServerName) == "" {
-				template.ServerName = template.HysteriaSNI
-			}
-		}
-		if insecure, ok := tlsSettings["allowInsecure"].(bool); ok {
-			template.HysteriaInsecure = insecure
-		}
-	}
-	if hysteriaSettings, ok := streamSettings["hysteriaSettings"].(map[string]interface{}); ok {
-		if masquerade, ok := hysteriaSettings["masquerade"].(map[string]interface{}); ok {
-			if url, ok := masquerade["url"].(string); ok && strings.TrimSpace(url) != "" {
-				template.HysteriaMasqueradeURL = strings.TrimSpace(url)
-			}
-			if insecure, ok := masquerade["insecure"].(bool); ok {
-				template.HysteriaInsecure = insecure
-			}
-		}
-	}
-	if finalmask, ok := streamSettings["finalmask"].(map[string]interface{}); ok {
-		if udp, ok := finalmask["udp"].([]interface{}); ok {
-			for _, rawMask := range udp {
-				mask, ok := rawMask.(map[string]interface{})
-				if !ok {
-					continue
-				}
-				if maskType, _ := mask["type"].(string); maskType != "salamander" {
-					continue
-				}
-				settings, _ := mask["settings"].(map[string]interface{})
-				if password := firstString(settings, "password"); password != "" {
-					template.HysteriaObfsPassword = password
-					if strings.TrimSpace(template.HysteriaPassword) == "" {
-						template.HysteriaPassword = password
-					}
-				}
-			}
-		}
-	}
-}
-
-func firstString(values map[string]interface{}, keys ...string) string {
-	for _, key := range keys {
-		if value, ok := values[key].(string); ok && strings.TrimSpace(value) != "" {
-			return strings.TrimSpace(value)
-		}
-	}
-	return ""
-}
-
-func xrayRealityPublicKeyFromPrivate(privateKey string) (string, error) {
-	raw, err := base64.RawURLEncoding.DecodeString(strings.TrimSpace(privateKey))
-	if err != nil {
-		raw, err = base64.StdEncoding.DecodeString(strings.TrimSpace(privateKey))
-	}
-	if err != nil {
-		return "", err
-	}
-	if len(raw) != curve25519.ScalarSize {
-		return "", fmt.Errorf("invalid xray private key length: %d", len(raw))
-	}
-	publicKey, err := curve25519.X25519(raw, curve25519.Basepoint)
-	if err != nil {
-		return "", err
-	}
-	return base64.RawURLEncoding.EncodeToString(publicKey), nil
 }

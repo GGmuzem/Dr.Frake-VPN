@@ -181,14 +181,7 @@ func (h *VPNHandler) GetConfig(c *gin.Context) {
 					fmt.Printf("[WARN] ensureVLESSTemplate failed for server %s: %v\n", server.Name, err)
 					return
 				}
-				if template == nil {
-					return
-				}
-				if template.HysteriaEnabled {
-					if template.HysteriaPassword == "" {
-						return
-					}
-				} else if template.PublicKey == "" || template.ShortID == "" || template.ServerName == "" {
+				if template == nil || template.PublicKey == "" || template.ShortID == "" || template.ServerName == "" {
 					return
 				}
 

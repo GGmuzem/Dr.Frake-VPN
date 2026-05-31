@@ -215,7 +215,6 @@ type VLESSServerTemplate struct {
 	XHTTPMode     string `gorm:"default:''"`
 	XHTTPPadding  string `gorm:"default:''"`
 	XHTTPPostSize int    `gorm:"default:0"`
-	AdvancedJSON  string `gorm:"column:advanced_json;default:'{}'"`
 }
 
 type VLESSCredential struct {

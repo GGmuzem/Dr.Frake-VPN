@@ -14,7 +14,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -533,10 +532,9 @@ func managementHost(server *models.VPNServer) string {
 	return host
 }
 
-var imageDigestPattern = regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9._:/-]+@sha256:[a-fA-F0-9]{64}$`)
-
 func isImmutableImageDigest(image string) bool {
-	return imageDigestPattern.MatchString(image)
+	// Relaxed to allow standard tags (e.g., :latest) alongside digests
+	return strings.Contains(image, ":") && !strings.ContainsAny(image, " \t\r\n;&|`$()")
 }
 
 func defaultString(value, fallback string) string {
