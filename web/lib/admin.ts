@@ -118,6 +118,57 @@ export type AdminAuditLog = {
   created_at: string;
 };
 
+export type LegacyAdminUser = {
+  id: number;
+  email: string;
+  role: "admin" | "user";
+  created_at: string;
+  subscription?: {
+    plan?: string;
+    status?: string;
+    expires_at?: string | null;
+  };
+};
+
+export type LegacyAdminPayment = {
+  id: number;
+  user_email?: string;
+  amount: number;
+  original_amount?: number;
+  discount_amount?: number;
+  promo_code?: string;
+  plan: string;
+  status: string;
+  created_at: string;
+  confirmed_at?: string | null;
+};
+
+export type LegacyAdminPromoCode = {
+  id: number;
+  code: string;
+  description?: string;
+  discount_percent: number;
+  max_uses?: number;
+  used_count?: number;
+  active: boolean;
+  applicable_plans?: string;
+  once_per_user?: boolean;
+  expires_at?: string | null;
+  created_at?: string;
+};
+
+export type LegacyAdminDownload = {
+  platform: string;
+  current_file?: string;
+  file_name?: string;
+  public_url?: string;
+  url?: string;
+  allowed_extensions?: string[];
+  enabled?: boolean;
+  size_bytes?: number;
+  uploaded_at?: string | null;
+};
+
 export type ServerFilters = {
   query: string;
   status: "all" | "active" | "inactive" | "stale";

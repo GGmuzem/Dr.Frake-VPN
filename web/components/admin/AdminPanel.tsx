@@ -13,6 +13,7 @@ import {
   HardDrive,
   History,
   MonitorCog,
+  Power,
   Radio,
   RefreshCw,
   RotateCcw,
@@ -22,6 +23,8 @@ import {
   ShieldAlert,
   ShieldCheck,
   Terminal,
+  TicketPercent,
+  UploadCloud,
   UserRound,
   Users,
   WalletCards,
@@ -30,6 +33,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import type React from "react";
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -37,6 +41,10 @@ import {
   type AdminNotification,
   type AdminOverview,
   type AdminServer,
+  type LegacyAdminDownload,
+  type LegacyAdminPayment,
+  type LegacyAdminPromoCode,
+  type LegacyAdminUser,
   applyServerFilters,
   hasUnacknowledgedCriticalIncident,
   mergeNotificationEvent,
@@ -56,6 +64,8 @@ const navItems = [
   { id: "incidents", label: "Инциденты", hint: "SLA и алерты", icon: Bell },
   { id: "users", label: "Пользователи", hint: "Аудитория и ключи", icon: Users },
   { id: "payments", label: "Платежи", hint: "Выручка и риски", icon: WalletCards },
+  { id: "promo", label: "Промокоды", hint: "Скидки и лимиты", icon: TicketPercent },
+  { id: "downloads", label: "Приложения", hint: "Файлы клиентов", icon: UploadCloud },
   { id: "agent", label: "Агент", hint: "Digest, Docker, snapshot", icon: MonitorCog },
   { id: "settings", label: "Настройки", hint: "AWG/Xray и аудит", icon: Settings },
 ] as const;
@@ -74,6 +84,11 @@ export function AdminPanel({ adminEmail, initialOverview }: { adminEmail: string
   const [drawerTab, setDrawerTab] = useState<DrawerTab>("Health");
   const [stats, setStats] = useState<AdminStats>({});
   const [auditLogs, setAuditLogs] = useState<AdminAuditLog[]>([]);
+  const [users, setUsers] = useState<LegacyAdminUser[]>([]);
+  const [payments, setPayments] = useState<LegacyAdminPayment[]>([]);
+  const [promoCodes, setPromoCodes] = useState<LegacyAdminPromoCode[]>([]);
+  const [downloads, setDownloads] = useState<LegacyAdminDownload[]>([]);
+  const [legacyLoading, setLegacyLoading] = useState<string>("");
   const [busyAction, setBusyAction] = useState<string | null>(null);
   const [toast, setToast] = useState<string>("");
   const reduceMotion = useReducedMotion();
@@ -99,6 +114,10 @@ export function AdminPanel({ adminEmail, initialOverview }: { adminEmail: string
     if (activeSection === "agent") setDrawerTab("Agent");
     if (activeSection === "settings") setDrawerTab("Config");
     if (activeSection === "servers") setDrawerTab("Health");
+    if (activeSection === "users") void loadLegacyResource("users");
+    if (activeSection === "payments") void loadLegacyResource("payments");
+    if (activeSection === "promo") void loadLegacyResource("promo-codes");
+    if (activeSection === "downloads") void loadLegacyResource("downloads");
   }, [activeSection]);
 
   useEffect(() => {
@@ -170,6 +189,110 @@ export function AdminPanel({ adminEmail, initialOverview }: { adminEmail: string
     }
   }
 
+  async function loadLegacyResource(resource: "users" | "payments" | "promo-codes" | "downloads") {
+    setLegacyLoading(resource);
+    try {
+      const response = await fetch(`/api/admin/${resource}`, { cache: "no-store" });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error ?? `Не удалось загрузить ${resource}`);
+      if (resource === "users") setUsers(data.users ?? []);
+      if (resource === "payments") setPayments(data.payments ?? []);
+      if (resource === "promo-codes") setPromoCodes(data.promo_codes ?? []);
+      if (resource === "downloads") setDownloads(data.downloads ?? []);
+    } catch (error) {
+      setToast(error instanceof Error ? error.message : "Ошибка загрузки данных");
+    } finally {
+      setLegacyLoading("");
+    }
+  }
+
+  async function exportCSV(entity: "users" | "servers" | "payments" | "promo-codes") {
+    try {
+      const response = await fetch(`/api/admin/export/${entity}`, { cache: "no-store" });
+      if (!response.ok) throw new Error("Не удалось скачать CSV");
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `fblink-${entity}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      setToast(error instanceof Error ? error.message : "Ошибка экспорта");
+    }
+  }
+
+  async function uploadDownload(platform: string, file: File) {
+    setBusyAction(`download-${platform}`);
+    try {
+      const body = new FormData();
+      body.set("file", file);
+      const response = await fetch(`/api/admin/downloads/${encodeURIComponent(platform)}`, {
+        method: "POST",
+        body,
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error ?? "Не удалось загрузить файл");
+      setToast("Файл приложения загружен");
+      await loadLegacyResource("downloads");
+    } catch (error) {
+      setToast(error instanceof Error ? error.message : "Ошибка загрузки файла");
+    } finally {
+      setBusyAction(null);
+    }
+  }
+
+  async function quickAddServer() {
+    const name = window.prompt("Название сервера");
+    if (!name) return;
+    const host = window.prompt("Host/IP для backend");
+    if (!host) return;
+    const endpoint = window.prompt("Endpoint для клиентов", host) ?? host;
+    const region = window.prompt("Регион", "") ?? "";
+    const country_code = window.prompt("Country code", "") ?? "";
+    const maxPeers = Number(window.prompt("Лимит peer", "100") ?? 100);
+    const ok = await postAction("server-add", "/api/admin/servers", {
+      name,
+      host,
+      endpoint,
+      region,
+      country_code,
+      max_peers: Number.isFinite(maxPeers) ? maxPeers : 100,
+      awg_port: 51820,
+    });
+    if (ok) await refreshOverview();
+  }
+
+  async function quickEditServer(server: AdminServer) {
+    const name = window.prompt("Название сервера", server.name);
+    if (!name) return;
+    const region = window.prompt("Регион", server.region ?? "") ?? "";
+    const endpoint = window.prompt("Endpoint", server.endpoint ?? server.host ?? "") ?? "";
+    const maxPeers = Number(window.prompt("Лимит peer", String(server.max_peers ?? 100)) ?? server.max_peers ?? 100);
+    const ok = await postAction(`server-edit-${server.id}`, `/api/admin/servers/${server.id}`, {
+      name,
+      region,
+      endpoint,
+      max_peers: Number.isFinite(maxPeers) ? maxPeers : server.max_peers,
+      country_code: server.country_code ?? "",
+      is_vip_only: Boolean(server.is_vip_only),
+    }, "PUT");
+    if (ok) await refreshOverview();
+  }
+
+  async function deleteServer(server: AdminServer) {
+    if (!window.confirm(`Удалить сервер ${server.name} и связанные ключи?`)) return;
+    const ok = await postAction(`server-delete-${server.id}`, `/api/admin/servers/${server.id}`, undefined, "DELETE");
+    if (ok) await refreshOverview();
+  }
+
+  async function runPiHoleSync() {
+    const ok = await postAction("pihole-sync", "/api/admin/servers/pihole-sync", { force: true });
+    if (ok) await refreshOverview();
+  }
+
   async function postAction(label: string, url: string, body?: unknown, method = "POST") {
     setBusyAction(label);
     try {
@@ -183,8 +306,10 @@ export function AdminPanel({ adminEmail, initialOverview }: { adminEmail: string
       setToast("Команда выполнена");
       await refreshOverview();
       if (selectedServer) await refreshAudit(selectedServer.id);
+      return true;
     } catch (error) {
       setToast(error instanceof Error ? error.message : "Ошибка команды");
+      return false;
     } finally {
       setBusyAction(null);
     }
@@ -336,10 +461,19 @@ export function AdminPanel({ adminEmail, initialOverview }: { adminEmail: string
                   notifications={notifications}
                   userPoints={userPoints}
                   revenuePoints={revenuePoints}
+                  users={users}
+                  payments={payments}
+                  promoCodes={promoCodes}
+                  downloads={downloads}
+                  legacyLoading={legacyLoading}
+                  busyAction={busyAction}
                   onSelectSection={setActiveSection}
                   onSelectServer={setSelectedServerID}
                   onRefreshHealth={refreshServerHealth}
-                  busyAction={busyAction}
+                  onAction={postAction}
+                  onLoadLegacy={loadLegacyResource}
+                  onExport={exportCSV}
+                  onUploadDownload={uploadDownload}
                 />
               </motion.div>
             </AnimatePresence>
@@ -357,6 +491,9 @@ export function AdminPanel({ adminEmail, initialOverview }: { adminEmail: string
                   <Button size="sm" variant="secondary" onClick={() => void refreshOverview()}>
                     <RefreshCw size={14} /> Обновить
                   </Button>
+                  <Button size="sm" variant="secondary" onClick={() => void exportCSV("servers")}>CSV</Button>
+                  <Button size="sm" variant="secondary" onClick={() => void runPiHoleSync()} disabled={busyAction === "pihole-sync"}>Pi-hole Sync</Button>
+                  <Button size="sm" onClick={() => void quickAddServer()}>Добавить сервер</Button>
                 </div>
               </div>
               <div className="overflow-x-auto">
@@ -390,7 +527,10 @@ export function AdminPanel({ adminEmail, initialOverview }: { adminEmail: string
                           <div className="flex gap-2">
                             <IconButton label="Health" onClick={() => refreshServerHealth(server.id)} icon={RefreshCw} active={busyAction === `health-${server.id}`} />
                             <IconButton label="Snapshot" onClick={() => postAction(`snapshot-${server.id}`, `/api/admin/servers/${server.id}/agent/snapshot`)} icon={DatabaseBackup} active={busyAction === `snapshot-${server.id}`} />
+                            <IconButton label="Edit" onClick={() => quickEditServer(server)} icon={Settings} active={busyAction === `server-edit-${server.id}`} />
+                            <IconButton label="Toggle active" onClick={() => postAction(`toggle-${server.id}`, `/api/admin/servers/${server.id}/toggle`)} icon={Power} active={busyAction === `toggle-${server.id}`} />
                             <IconButton label="Details" onClick={() => setSelectedServerID(server.id)} icon={ChevronRight} />
+                            <IconButton label="Delete" onClick={() => deleteServer(server)} icon={X} active={busyAction === `server-delete-${server.id}`} />
                           </div>
                         </td>
                       </tr>
@@ -457,10 +597,19 @@ function SectionFocus({
   notifications,
   userPoints,
   revenuePoints,
+  users,
+  payments,
+  promoCodes,
+  downloads,
+  legacyLoading,
+  busyAction,
   onSelectSection,
   onSelectServer,
   onRefreshHealth,
-  busyAction,
+  onAction,
+  onLoadLegacy,
+  onExport,
+  onUploadDownload,
 }: {
   section: AdminSection;
   fleetHealth: number;
@@ -471,10 +620,19 @@ function SectionFocus({
   notifications: AdminNotification[];
   userPoints: Array<{ label: string; value: number }>;
   revenuePoints: Array<{ label: string; value: number }>;
+  users: LegacyAdminUser[];
+  payments: LegacyAdminPayment[];
+  promoCodes: LegacyAdminPromoCode[];
+  downloads: LegacyAdminDownload[];
+  legacyLoading: string;
+  busyAction: string | null;
   onSelectSection: (section: AdminSection) => void;
   onSelectServer: (id: number) => void;
   onRefreshHealth: (serverID: number) => Promise<void>;
-  busyAction: string | null;
+  onAction: (label: string, url: string, body?: unknown, method?: string) => Promise<boolean>;
+  onLoadLegacy: (resource: "users" | "payments" | "promo-codes" | "downloads") => Promise<void>;
+  onExport: (entity: "users" | "servers" | "payments" | "promo-codes") => Promise<void>;
+  onUploadDownload: (platform: string, file: File) => Promise<void>;
 }) {
   if (section === "incidents") {
     return (
@@ -510,21 +668,52 @@ function SectionFocus({
 
   if (section === "users") {
     return (
-      <div className="grid gap-4 xl:grid-cols-3">
-        <StatusCard icon={Users} label="Аудитория" value={String(userPoints.at(-1)?.value ?? 0)} detail="Регистрации за выбранный период" />
-        <StatusCard icon={ShieldCheck} label="Активные ключи" value={String(servers.reduce((sum, server) => sum + (server.active_keys ?? 0), 0))} detail="Распределены по VPS" />
-        <PanelHeader icon={Globe2} title="Срез по регионам" text={`${new Set(servers.map((server) => server.region).filter(Boolean)).size || 0} регионов, VIP-only маршрутизация видна в таблице ниже.`} />
+      <div className="space-y-4">
+        <div className="grid gap-4 xl:grid-cols-3">
+          <StatusCard icon={Users} label="Аудитория" value={String(users.length || userPoints.at(-1)?.value || 0)} detail="Пользователи из legacy API" />
+          <StatusCard icon={ShieldCheck} label="Активные ключи" value={String(servers.reduce((sum, server) => sum + (server.active_keys ?? 0), 0))} detail="Распределены по VPS" />
+          <PanelHeader icon={Globe2} title="Управление пользователями" text="Выдача тарифов, отзыв подписки и ключей, смена роли, удаление и CSV экспорт как в старой панели." />
+        </div>
+        <UsersManager users={users} loading={legacyLoading === "users"} onLoad={() => onLoadLegacy("users")} onExport={() => onExport("users")} onAction={onAction} />
       </div>
     );
   }
 
   if (section === "payments") {
     return (
-      <div className="grid gap-4 xl:grid-cols-[1fr_1fr_0.8fr]">
-        <SparkAreaChart title="Выручка по дням" points={revenuePoints} color="#22c55e" />
-        <SparkAreaChart title="Рост пользователей" points={userPoints} color="#facc15" />
-        <PanelHeader icon={WalletCards} title="Финансовый контроль" text="Платежные риски выводятся рядом с инцидентами, чтобы не терять связь между выручкой и доступностью сети." />
+      <div className="space-y-4">
+        <div className="grid gap-4 xl:grid-cols-[1fr_1fr_0.8fr]">
+          <SparkAreaChart title="Выручка по дням" points={revenuePoints} color="#22c55e" />
+          <SparkAreaChart title="Рост пользователей" points={userPoints} color="#facc15" />
+          <PanelHeader icon={WalletCards} title="Финансовый контроль" text="История платежей, фильтры, ручное подтверждение pending-платежей и экспорт CSV." />
+        </div>
+        <PaymentsManager payments={payments} loading={legacyLoading === "payments"} onLoad={() => onLoadLegacy("payments")} onExport={() => onExport("payments")} onAction={onAction} />
       </div>
+    );
+  }
+
+  if (section === "promo") {
+    return (
+      <PromoCodesManager
+        promoCodes={promoCodes}
+        loading={legacyLoading === "promo-codes"}
+        busyAction={busyAction}
+        onLoad={() => onLoadLegacy("promo-codes")}
+        onExport={() => onExport("promo-codes")}
+        onAction={onAction}
+      />
+    );
+  }
+
+  if (section === "downloads") {
+    return (
+      <DownloadsManager
+        downloads={downloads}
+        loading={legacyLoading === "downloads"}
+        busyAction={busyAction}
+        onLoad={() => onLoadLegacy("downloads")}
+        onUpload={onUploadDownload}
+      />
     );
   }
 
@@ -610,6 +799,264 @@ function StatusCard({ icon: Icon, label, value, detail, danger = false, onClick 
   );
 }
 
+function UsersManager({ users, loading, onLoad, onExport, onAction }: { users: LegacyAdminUser[]; loading: boolean; onLoad: () => Promise<void>; onExport: () => Promise<void>; onAction: (label: string, url: string, body?: unknown, method?: string) => Promise<boolean> }) {
+  const [query, setQuery] = useState("");
+  const [role, setRole] = useState("");
+  const [status, setStatus] = useState("");
+  const visible = users.filter((user) => {
+    const subscription = user.subscription ?? {};
+    if (query && !user.email.toLowerCase().includes(query.toLowerCase())) return false;
+    if (role && user.role !== role) return false;
+    if (status && (subscription.status ?? "none") !== status && !(status === "none" && !subscription.status)) return false;
+    return true;
+  });
+
+  async function userAction(action: string, user: LegacyAdminUser, plan?: string) {
+    const labels: Record<string, string> = {
+      upgrade: `Выдать тариф ${planLabel(plan)} пользователю ${user.email}?`,
+      revokeSubscription: `Снять подписку и отозвать ключи у ${user.email}?`,
+      revokeKeys: `Отозвать все VPN-ключи ${user.email}?`,
+      role: `Сменить роль ${user.email} на ${user.role === "admin" ? "user" : "admin"}?`,
+      delete: `Удалить пользователя ${user.email} и связанные данные?`,
+    };
+    if (!window.confirm(labels[action])) return;
+    if (action === "upgrade") await onAction(`user-upgrade-${user.id}`, `/api/admin/users/${user.id}/upgrade`, { plan });
+    if (action === "revokeSubscription") await onAction(`user-revoke-sub-${user.id}`, `/api/admin/users/${user.id}/subscription/revoke`, { revoke_keys: true });
+    if (action === "revokeKeys") await onAction(`user-revoke-keys-${user.id}`, `/api/admin/users/${user.id}/revoke`);
+    if (action === "role") await onAction(`user-role-${user.id}`, `/api/admin/users/${user.id}/set-role`, { role: user.role === "admin" ? "user" : "admin" });
+    if (action === "delete") await onAction(`user-delete-${user.id}`, `/api/admin/users/${user.id}`, undefined, "DELETE");
+    await onLoad();
+  }
+
+  return (
+    <section className="rounded-lg border border-white/10 bg-zinc-950/70">
+      <LegacyToolbar title="Пользователи" loading={loading} onLoad={onLoad} onExport={onExport}>
+        <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Поиск email" className="legacy-input" />
+        <select value={role} onChange={(event) => setRole(event.target.value)} className="legacy-select"><option value="">Все роли</option><option value="admin">Администратор</option><option value="user">Пользователь</option></select>
+        <select value={status} onChange={(event) => setStatus(event.target.value)} className="legacy-select"><option value="">Все статусы</option><option value="active">Активные</option><option value="expired">Истекшие</option><option value="cancelled">Отменённые</option><option value="none">Без подписки</option></select>
+      </LegacyToolbar>
+      <LegacyTable empty="Пользователи не загружены">
+        <thead><tr><LegacyTh>ID</LegacyTh><LegacyTh>Email</LegacyTh><LegacyTh>Роль</LegacyTh><LegacyTh>Тариф</LegacyTh><LegacyTh>Статус</LegacyTh><LegacyTh>Истекает</LegacyTh><LegacyTh>Действия</LegacyTh></tr></thead>
+        <tbody>{visible.map((user) => (
+          <tr key={user.id}>
+            <LegacyTd>{user.id}</LegacyTd>
+            <LegacyTd>{user.email}</LegacyTd>
+            <LegacyTd><BadgeText value={user.role} /></LegacyTd>
+            <LegacyTd>{planLabel(user.subscription?.plan)}</LegacyTd>
+            <LegacyTd>{user.subscription?.status ?? "none"}</LegacyTd>
+            <LegacyTd>{formatDate(user.subscription?.expires_at)}</LegacyTd>
+            <LegacyTd>
+              <div className="flex flex-wrap gap-2">
+                <Button size="sm" variant="secondary" onClick={() => userAction("upgrade", user, "basic")}>Premium</Button>
+                <Button size="sm" variant="secondary" onClick={() => userAction("upgrade", user, "vip")}>VIP</Button>
+                <Button size="sm" variant="ghost" onClick={() => userAction("revokeSubscription", user)}>Снять</Button>
+                <Button size="sm" variant="ghost" onClick={() => userAction("revokeKeys", user)}>Ключи</Button>
+                <Button size="sm" variant="ghost" onClick={() => userAction("role", user)}>Роль</Button>
+                <Button size="sm" variant="destructive" onClick={() => userAction("delete", user)}>Удалить</Button>
+              </div>
+            </LegacyTd>
+          </tr>
+        ))}
+        {visible.length === 0 ? <tr><LegacyTd colSpan={7}>Пользователи не найдены</LegacyTd></tr> : null}</tbody>
+      </LegacyTable>
+    </section>
+  );
+}
+
+function PaymentsManager({ payments, loading, onLoad, onExport, onAction }: { payments: LegacyAdminPayment[]; loading: boolean; onLoad: () => Promise<void>; onExport: () => Promise<void>; onAction: (label: string, url: string, body?: unknown, method?: string) => Promise<boolean> }) {
+  const [query, setQuery] = useState("");
+  const [plan, setPlan] = useState("");
+  const [status, setStatus] = useState("");
+  const visible = payments.filter((payment) => {
+    if (query && !(payment.user_email ?? "").toLowerCase().includes(query.toLowerCase())) return false;
+    if (plan && payment.plan !== plan) return false;
+    if (status && payment.status !== status) return false;
+    return true;
+  });
+  async function approve(payment: LegacyAdminPayment) {
+    if (!window.confirm(`Подтвердить платёж #${payment.id} вручную и выдать подписку?`)) return;
+    await onAction(`payment-approve-${payment.id}`, `/api/admin/payments/${payment.id}/approve`);
+    await onLoad();
+  }
+  return (
+    <section className="rounded-lg border border-white/10 bg-zinc-950/70">
+      <LegacyToolbar title="Платежи" loading={loading} onLoad={onLoad} onExport={onExport}>
+        <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Поиск email" className="legacy-input" />
+        <select value={plan} onChange={(event) => setPlan(event.target.value)} className="legacy-select"><option value="">Все планы</option><option value="trial">Trial</option><option value="basic">Premium</option><option value="vip">VIP</option><option value="free">Free</option></select>
+        <select value={status} onChange={(event) => setStatus(event.target.value)} className="legacy-select"><option value="">Все статусы</option><option value="pending">Ожидают</option><option value="succeeded">Успешные</option><option value="failed">Неуспешные</option></select>
+      </LegacyToolbar>
+      <LegacyTable empty="Платежи не загружены">
+        <thead><tr><LegacyTh>ID</LegacyTh><LegacyTh>Email</LegacyTh><LegacyTh>Сумма</LegacyTh><LegacyTh>Скидка</LegacyTh><LegacyTh>Промо</LegacyTh><LegacyTh>План</LegacyTh><LegacyTh>Статус</LegacyTh><LegacyTh>Создан</LegacyTh><LegacyTh>Действия</LegacyTh></tr></thead>
+        <tbody>{visible.map((payment) => (
+          <tr key={payment.id}>
+            <LegacyTd>{payment.id}</LegacyTd>
+            <LegacyTd>{payment.user_email ?? "—"}</LegacyTd>
+            <LegacyTd>{formatMoney(payment.amount)}</LegacyTd>
+            <LegacyTd>{formatMoney(payment.discount_amount ?? 0)}</LegacyTd>
+            <LegacyTd>{payment.promo_code || "—"}</LegacyTd>
+            <LegacyTd>{planLabel(payment.plan)}</LegacyTd>
+            <LegacyTd><BadgeText value={payment.status} /></LegacyTd>
+            <LegacyTd>{formatDate(payment.created_at)}</LegacyTd>
+            <LegacyTd>{payment.status === "pending" ? <Button size="sm" onClick={() => approve(payment)}>Подтвердить</Button> : null}</LegacyTd>
+          </tr>
+        ))}
+        {visible.length === 0 ? <tr><LegacyTd colSpan={9}>Платежи не найдены</LegacyTd></tr> : null}</tbody>
+      </LegacyTable>
+    </section>
+  );
+}
+
+function PromoCodesManager({ promoCodes, loading, busyAction, onLoad, onExport, onAction }: { promoCodes: LegacyAdminPromoCode[]; loading: boolean; busyAction: string | null; onLoad: () => Promise<void>; onExport: () => Promise<void>; onAction: (label: string, url: string, body?: unknown, method?: string) => Promise<boolean> }) {
+  const [query, setQuery] = useState("");
+  const [status, setStatus] = useState("");
+  const [editing, setEditing] = useState<LegacyAdminPromoCode | null>(null);
+  const [formOpen, setFormOpen] = useState(false);
+  const [draft, setDraft] = useState({ code: "", description: "", discount_percent: 10, max_uses: 0, applicable_plans: "all", once_per_user: true, active: true, expires_at: "" });
+  const visible = promoCodes.filter((promo) => {
+    const haystack = `${promo.code} ${promo.description ?? ""}`.toLowerCase();
+    if (query && !haystack.includes(query.toLowerCase())) return false;
+    if (status === "active" && !promo.active) return false;
+    if (status === "inactive" && promo.active) return false;
+    return true;
+  });
+  function open(promo?: LegacyAdminPromoCode) {
+    setEditing(promo ?? null);
+    setFormOpen(true);
+    setDraft({
+      code: promo?.code ?? "",
+      description: promo?.description ?? "",
+      discount_percent: promo?.discount_percent ?? 10,
+      max_uses: promo?.max_uses ?? 0,
+      applicable_plans: promo?.applicable_plans ?? "all",
+      once_per_user: promo?.once_per_user ?? true,
+      active: promo?.active ?? true,
+      expires_at: toDatetimeLocal(promo?.expires_at),
+    });
+  }
+  async function save() {
+    if (!draft.code.trim() || draft.discount_percent < 1 || draft.discount_percent > 100) return window.alert("Код и скидка 1-100 обязательны");
+    const payload = { ...draft, expires_at: draft.expires_at ? new Date(draft.expires_at).toISOString() : null };
+    const ok = await onAction(`promo-save-${editing?.id ?? "new"}`, editing ? `/api/admin/promo-codes/${editing.id}` : "/api/admin/promo-codes", payload, editing ? "PUT" : "POST");
+    if (ok) {
+      setEditing(null);
+      setFormOpen(false);
+      await onLoad();
+    }
+  }
+  async function remove(promo: LegacyAdminPromoCode) {
+    if (!window.confirm(`Отключить промокод ${promo.code}?`)) return;
+    await onAction(`promo-delete-${promo.id}`, `/api/admin/promo-codes/${promo.id}`, undefined, "DELETE");
+    await onLoad();
+  }
+  return (
+    <section className="rounded-lg border border-white/10 bg-zinc-950/70">
+      <LegacyToolbar title="Промокоды" loading={loading} onLoad={onLoad} onExport={onExport}>
+        <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Код или описание" className="legacy-input" />
+        <select value={status} onChange={(event) => setStatus(event.target.value)} className="legacy-select"><option value="">Все статусы</option><option value="active">Активные</option><option value="inactive">Отключённые</option></select>
+        <Button size="sm" onClick={() => open()}>Добавить</Button>
+      </LegacyToolbar>
+      {formOpen ? (
+        <div className="grid gap-2 border-b border-white/10 p-4 md:grid-cols-4">
+          <input className="legacy-input" placeholder="Код" value={draft.code} onChange={(e) => setDraft((d) => ({ ...d, code: e.target.value.toUpperCase() }))} />
+          <input className="legacy-input" placeholder="Описание" value={draft.description} onChange={(e) => setDraft((d) => ({ ...d, description: e.target.value }))} />
+          <input className="legacy-input" type="number" min={1} max={100} value={draft.discount_percent} onChange={(e) => setDraft((d) => ({ ...d, discount_percent: Number(e.target.value) }))} />
+          <input className="legacy-input" type="number" min={0} value={draft.max_uses} onChange={(e) => setDraft((d) => ({ ...d, max_uses: Number(e.target.value) }))} />
+          <input className="legacy-input" placeholder="Тарифы: all/basic/vip" value={draft.applicable_plans} onChange={(e) => setDraft((d) => ({ ...d, applicable_plans: e.target.value }))} />
+          <input className="legacy-input" type="datetime-local" value={draft.expires_at} onChange={(e) => setDraft((d) => ({ ...d, expires_at: e.target.value }))} />
+          <label className="flex items-center gap-2 text-sm text-zinc-300"><input type="checkbox" checked={draft.once_per_user} onChange={(e) => setDraft((d) => ({ ...d, once_per_user: e.target.checked }))} /> 1 раз на пользователя</label>
+          <div className="flex gap-2"><Button size="sm" onClick={save} disabled={busyAction?.startsWith("promo-save")}>Сохранить</Button><Button size="sm" variant="ghost" onClick={() => { setEditing(null); setFormOpen(false); setDraft((d) => ({ ...d, code: "" })); }}>Отмена</Button></div>
+        </div>
+      ) : null}
+      <LegacyTable empty="Промокоды не загружены">
+        <thead><tr><LegacyTh>Код</LegacyTh><LegacyTh>Скидка</LegacyTh><LegacyTh>Использовано</LegacyTh><LegacyTh>Тарифы</LegacyTh><LegacyTh>Истекает</LegacyTh><LegacyTh>Статус</LegacyTh><LegacyTh>Действия</LegacyTh></tr></thead>
+        <tbody>{visible.map((promo) => (
+          <tr key={promo.id}>
+            <LegacyTd>{promo.code}</LegacyTd>
+            <LegacyTd>{promo.discount_percent}%</LegacyTd>
+            <LegacyTd>{promo.used_count ?? 0}/{promo.max_uses || "∞"}</LegacyTd>
+            <LegacyTd>{promo.applicable_plans || "all"}</LegacyTd>
+            <LegacyTd>{formatDate(promo.expires_at)}</LegacyTd>
+            <LegacyTd><BadgeText value={promo.active ? "active" : "inactive"} /></LegacyTd>
+            <LegacyTd><div className="flex gap-2"><Button size="sm" variant="secondary" onClick={() => open(promo)}>Ред.</Button><Button size="sm" variant="destructive" onClick={() => remove(promo)}>Откл.</Button></div></LegacyTd>
+          </tr>
+        ))}
+        {visible.length === 0 ? <tr><LegacyTd colSpan={7}>Промокоды не найдены</LegacyTd></tr> : null}</tbody>
+      </LegacyTable>
+    </section>
+  );
+}
+
+function DownloadsManager({ downloads, loading, busyAction, onLoad, onUpload }: { downloads: LegacyAdminDownload[]; loading: boolean; busyAction: string | null; onLoad: () => Promise<void>; onUpload: (platform: string, file: File) => Promise<void> }) {
+  const [files, setFiles] = useState<Record<string, File | null>>({});
+  return (
+    <section className="rounded-lg border border-white/10 bg-zinc-950/70">
+      <LegacyToolbar title="Приложения" loading={loading} onLoad={onLoad} />
+      <LegacyTable empty="Файлы приложений не загружены">
+        <thead><tr><LegacyTh>Платформа</LegacyTh><LegacyTh>Текущий файл</LegacyTh><LegacyTh>Разрешено</LegacyTh><LegacyTh>Публичная ссылка</LegacyTh><LegacyTh>Загрузка</LegacyTh></tr></thead>
+        <tbody>{downloads.map((item) => {
+          const file = files[item.platform] ?? null;
+          return (
+            <tr key={item.platform}>
+              <LegacyTd>{item.platform}</LegacyTd>
+              <LegacyTd>{item.current_file || item.file_name || "—"}<div className="text-xs text-zinc-600">{fmtBytes(item.size_bytes)}</div></LegacyTd>
+              <LegacyTd>{(item.allowed_extensions ?? []).join(", ") || "—"}</LegacyTd>
+              <LegacyTd>{item.public_url || item.url ? <a className="text-amber-200 hover:underline" href={item.public_url || item.url} target="_blank">Открыть</a> : "—"}</LegacyTd>
+              <LegacyTd>
+                <div className="flex min-w-[260px] flex-wrap gap-2">
+                  <input type="file" className="max-w-[170px] text-xs text-zinc-400" onChange={(event) => setFiles((current) => ({ ...current, [item.platform]: event.target.files?.[0] ?? null }))} />
+                  <Button size="sm" disabled={!file || busyAction === `download-${item.platform}`} onClick={() => file && onUpload(item.platform, file)}>Загрузить</Button>
+                </div>
+              </LegacyTd>
+            </tr>
+          );
+        })}
+        {downloads.length === 0 ? <tr><LegacyTd colSpan={5}>Файлы приложений не найдены</LegacyTd></tr> : null}</tbody>
+      </LegacyTable>
+    </section>
+  );
+}
+
+function LegacyToolbar({ title, loading, onLoad, onExport, children }: { title: string; loading: boolean; onLoad: () => Promise<void>; onExport?: () => Promise<void>; children?: React.ReactNode }) {
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 p-4">
+      <div>
+        <h2 className="font-semibold">{title}</h2>
+        <p className="text-xs text-zinc-500">Функции перенесены из legacy admin/index.html</p>
+      </div>
+      <div className="flex flex-wrap items-center gap-2">
+        {children}
+        <Button size="sm" variant="secondary" onClick={onLoad} disabled={loading}><RefreshCw size={14} /> {loading ? "Загрузка" : "Обновить"}</Button>
+        {onExport ? <Button size="sm" onClick={onExport}>CSV</Button> : null}
+      </div>
+    </div>
+  );
+}
+
+function LegacyTable({ children, empty }: { children: React.ReactNode; empty: string }) {
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full min-w-[920px] text-left text-sm">
+        {children}
+      </table>
+      <div className="sr-only">{empty}</div>
+    </div>
+  );
+}
+
+function LegacyTh({ children }: { children: React.ReactNode }) {
+  return <th className="border-b border-white/10 px-4 py-3 text-xs font-medium uppercase text-zinc-500">{children}</th>;
+}
+
+function LegacyTd({ children, colSpan }: { children: React.ReactNode; colSpan?: number }) {
+  return <td colSpan={colSpan} className="border-b border-white/[0.06] px-4 py-3 align-top text-zinc-300">{children}</td>;
+}
+
+function BadgeText({ value }: { value: string }) {
+  const positive = ["active", "succeeded", "admin", "ok"].includes(value);
+  const danger = ["failed", "expired", "cancelled", "inactive"].includes(value);
+  return <span className={`inline-flex rounded-full border px-2 py-1 text-xs ${positive ? "border-emerald-400/30 bg-emerald-500/10 text-emerald-100" : danger ? "border-red-400/30 bg-red-500/10 text-red-100" : "border-white/10 bg-white/[0.04] text-zinc-300"}`}>{value}</span>;
+}
+
 function FilterSelect<T extends string>({ label, value, onChange, options }: { label: string; value: T; onChange: (value: T) => void; options: Array<[T, string]> }) {
   return (
     <label>
@@ -688,7 +1135,7 @@ function NotificationInbox({ notifications, onAck, onMute }: { notifications: Ad
   );
 }
 
-function ServerDrawer({ server, tab, setTab, auditLogs, busyAction, onAction, onRefreshHealth }: { server: AdminServer; tab: DrawerTab; setTab: (tab: DrawerTab) => void; auditLogs: AdminAuditLog[]; busyAction: string | null; onAction: (label: string, url: string, body?: unknown, method?: string) => Promise<void>; onRefreshHealth: (serverID: number) => Promise<void> }) {
+function ServerDrawer({ server, tab, setTab, auditLogs, busyAction, onAction, onRefreshHealth }: { server: AdminServer; tab: DrawerTab; setTab: (tab: DrawerTab) => void; auditLogs: AdminAuditLog[]; busyAction: string | null; onAction: (label: string, url: string, body?: unknown, method?: string) => Promise<boolean>; onRefreshHealth: (serverID: number) => Promise<void> }) {
   return (
     <section className="rounded-lg border border-white/10 bg-zinc-950/70">
       <div className="border-b border-white/10 p-4">
@@ -771,7 +1218,7 @@ function ServerDrawer({ server, tab, setTab, auditLogs, busyAction, onAction, on
   );
 }
 
-function ConfigImportPanel({ server, busyAction, onAction }: { server: AdminServer; busyAction: string | null; onAction: (label: string, url: string, body?: unknown, method?: string) => Promise<void> }) {
+function ConfigImportPanel({ server, busyAction, onAction }: { server: AdminServer; busyAction: string | null; onAction: (label: string, url: string, body?: unknown, method?: string) => Promise<boolean> }) {
   const [awgConfig, setAwgConfig] = useState(() => seedAWGConfig(server));
   const [xrayConfig, setXrayConfig] = useState("");
   const [xrayPublicKey, setXrayPublicKey] = useState(server.config_summary?.xray?.public_key ?? "");
@@ -912,6 +1359,51 @@ function InfoRow({ label, value, mono = false }: { label: string; value: string;
       <dd className={`truncate text-zinc-200 ${mono ? "font-mono text-xs" : ""}`} title={value}>{value}</dd>
     </div>
   );
+}
+
+function planLabel(plan?: string | null) {
+  return ({
+    free: "Free",
+    trial: "Пробный",
+    basic: "Premium",
+    basic_3m: "Premium 3м",
+    vip: "VIP",
+    vip_3m: "VIP 3м",
+    none: "Нет",
+  } as Record<string, string>)[String(plan || "none")] ?? String(plan || "Нет");
+}
+
+function formatMoney(value?: number | null) {
+  const amount = Number(value || 0);
+  return `${amount.toLocaleString("ru-RU", { minimumFractionDigits: amount % 1 ? 2 : 0, maximumFractionDigits: 2 })} ₽`;
+}
+
+function formatDate(value?: string | null) {
+  if (!value) return "—";
+  const timestamp = Date.parse(value);
+  if (!Number.isFinite(timestamp)) return "—";
+  return new Date(timestamp).toLocaleString("ru-RU");
+}
+
+function toDatetimeLocal(value?: string | null) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  const offset = date.getTimezoneOffset() * 60000;
+  return new Date(date.getTime() - offset).toISOString().slice(0, 16);
+}
+
+function fmtBytes(value?: number | null) {
+  const bytes = Number(value || 0);
+  if (!bytes) return "—";
+  const units = ["B", "KB", "MB", "GB"];
+  let size = bytes;
+  let unit = 0;
+  while (size >= 1024 && unit < units.length - 1) {
+    size /= 1024;
+    unit += 1;
+  }
+  return `${size.toFixed(size >= 10 || unit === 0 ? 0 : 1)} ${units[unit]}`;
 }
 
 function formatRelative(value?: string | null) {

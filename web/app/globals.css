@@ -2473,3 +2473,22 @@ input:disabled + .slider {
   border-color: rgba(234, 179, 8, 0.5); /* gold */
   box-shadow: 0 0 0 2px rgba(234, 179, 8, 0.2);
 }
+
+.legacy-input,
+.legacy-select {
+  min-height: 36px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.35);
+  color: var(--text);
+  padding: 0 10px;
+  font-size: 13px;
+  outline: none;
+  transition: border-color 160ms var(--ease-out), box-shadow 160ms var(--ease-out);
+}
+
+.legacy-input:focus,
+.legacy-select:focus {
+  border-color: rgba(234, 179, 8, 0.58);
+  box-shadow: 0 0 0 2px rgba(234, 179, 8, 0.18);
+}
