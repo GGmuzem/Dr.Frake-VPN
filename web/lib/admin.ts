@@ -35,6 +35,8 @@ export type AdminServer = {
   active: boolean;
   is_vip_only?: boolean;
   max_peers?: number;
+  awg_port?: number;
+  agent_url?: string;
   active_keys?: number;
   active_awg?: number;
   active_vless?: number;
@@ -84,6 +86,7 @@ export type AdminServer = {
       server_name?: string;
       public_key?: string;
       short_id?: string;
+      mldsa65_verify?: string;
       network?: string;
       security?: string;
       grpc_service_name?: string;

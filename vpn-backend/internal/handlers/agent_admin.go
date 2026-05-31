@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -10,6 +11,7 @@ import (
 	"vpn-backend/internal/models"
 
 	"github.com/gin-gonic/gin"
+	"golang.org/x/crypto/curve25519"
 	"gorm.io/gorm"
 )
 
@@ -274,9 +276,15 @@ func applyVLESSSnapshot(server *models.VPNServer, template *models.VLESSServerTe
 			template.Address = strings.Split(server.Endpoint, ":")[0]
 		}
 	}
-	template.PublicKey = strings.TrimSpace(string(files["xray/xray_public.key"]))
-	template.ShortID = strings.TrimSpace(string(files["xray/xray_short_id.key"]))
-	template.ClientID = strings.TrimSpace(string(files["xray/xray_uuid.key"]))
+	if publicKey := strings.TrimSpace(string(files["xray/xray_public.key"])); publicKey != "" {
+		template.PublicKey = publicKey
+	}
+	if shortID := strings.TrimSpace(string(files["xray/xray_short_id.key"])); shortID != "" {
+		template.ShortID = shortID
+	}
+	if clientID := strings.TrimSpace(string(files["xray/xray_uuid.key"])); clientID != "" {
+		template.ClientID = clientID
+	}
 	template.MLDSA65Verify = ""
 	template.ContainerName = "amnezia-xray"
 
@@ -302,6 +310,14 @@ func applyVLESSSnapshot(server *models.VPNServer, template *models.VLESSServerTe
 					template.Security = security
 				}
 				if realitySettings, ok := streamSettings["realitySettings"].(map[string]interface{}); ok {
+					if publicKey, ok := realitySettings["publicKey"].(string); ok && strings.TrimSpace(publicKey) != "" && strings.TrimSpace(template.PublicKey) == "" {
+						template.PublicKey = strings.TrimSpace(publicKey)
+					}
+					if privateKey, ok := realitySettings["privateKey"].(string); ok && strings.TrimSpace(template.PublicKey) == "" {
+						if publicKey, err := xrayRealityPublicKeyFromPrivate(privateKey); err == nil {
+							template.PublicKey = publicKey
+						}
+					}
 					if serverNames, ok := realitySettings["serverNames"].([]interface{}); ok && len(serverNames) > 0 {
 						if serverName, ok := serverNames[0].(string); ok {
 							template.ServerName = serverName
@@ -332,4 +348,22 @@ func applyVLESSSnapshot(server *models.VPNServer, template *models.VLESSServerTe
 	}
 	xrayTemplateDefaults(template, server)
 	return nil
+}
+
+func xrayRealityPublicKeyFromPrivate(privateKey string) (string, error) {
+	raw, err := base64.RawURLEncoding.DecodeString(strings.TrimSpace(privateKey))
+	if err != nil {
+		raw, err = base64.StdEncoding.DecodeString(strings.TrimSpace(privateKey))
+	}
+	if err != nil {
+		return "", err
+	}
+	if len(raw) != curve25519.ScalarSize {
+		return "", fmt.Errorf("invalid xray private key length: %d", len(raw))
+	}
+	publicKey, err := curve25519.X25519(raw, curve25519.Basepoint)
+	if err != nil {
+		return "", err
+	}
+	return base64.RawURLEncoding.EncodeToString(publicKey), nil
 }

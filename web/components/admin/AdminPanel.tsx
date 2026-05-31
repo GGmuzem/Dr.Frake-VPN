@@ -58,6 +58,46 @@ type AdminStats = {
   revenue_series?: Array<{ label: string; value: number }>;
 };
 
+type ServerFormState = {
+  mode: "add" | "edit";
+  serverID?: number;
+  name: string;
+  host: string;
+  endpoint: string;
+  region: string;
+  country_code: string;
+  max_peers: number;
+  awg_port: number;
+  is_vip_only: boolean;
+  agent_url: string;
+  agent_node_id: string;
+};
+
+type ConfirmDialogState = {
+  title: string;
+  message: string;
+  actionLabel: string;
+  danger?: boolean;
+  onConfirm: () => Promise<void> | void;
+};
+
+type DigestDialogState = {
+  server: AdminServer;
+  image_digest: string;
+};
+
+type BootstrapDialogState = {
+  server: AdminServer;
+  agent_image_digest: string;
+  xray_image_digest: string;
+  management_port: number;
+  local_port: number;
+  node_id: string;
+  server_name: string;
+  reality_dest: string;
+  force: boolean;
+};
+
 const navItems = [
   { id: "overview", label: "Обзор", hint: "Состояние продукта", icon: Gauge },
   { id: "servers", label: "VPS", hint: "Флот и действия", icon: Server },
@@ -91,6 +131,10 @@ export function AdminPanel({ adminEmail, initialOverview }: { adminEmail: string
   const [legacyLoading, setLegacyLoading] = useState<string>("");
   const [busyAction, setBusyAction] = useState<string | null>(null);
   const [toast, setToast] = useState<string>("");
+  const [serverModal, setServerModal] = useState<ServerFormState | null>(null);
+  const [confirmDialog, setConfirmDialog] = useState<ConfirmDialogState | null>(null);
+  const [digestDialog, setDigestDialog] = useState<DigestDialogState | null>(null);
+  const [bootstrapDialog, setBootstrapDialog] = useState<BootstrapDialogState | null>(null);
   const reduceMotion = useReducedMotion();
 
   const servers = overview.servers;
@@ -244,48 +288,128 @@ export function AdminPanel({ adminEmail, initialOverview }: { adminEmail: string
     }
   }
 
-  async function quickAddServer() {
-    const name = window.prompt("Название сервера");
-    if (!name) return;
-    const host = window.prompt("Host/IP для backend");
-    if (!host) return;
-    const endpoint = window.prompt("Endpoint для клиентов", host) ?? host;
-    const region = window.prompt("Регион", "") ?? "";
-    const country_code = window.prompt("Country code", "") ?? "";
-    const maxPeers = Number(window.prompt("Лимит peer", "100") ?? 100);
-    const ok = await postAction("server-add", "/api/admin/servers", {
-      name,
-      host,
-      endpoint,
-      region,
-      country_code,
-      max_peers: Number.isFinite(maxPeers) ? maxPeers : 100,
+  function openAddServerModal() {
+    setServerModal({
+      mode: "add",
+      name: "",
+      host: "",
+      endpoint: "",
+      region: "",
+      country_code: "",
+      max_peers: 100,
       awg_port: 51820,
+      is_vip_only: false,
+      agent_url: "",
+      agent_node_id: "",
     });
-    if (ok) await refreshOverview();
   }
 
-  async function quickEditServer(server: AdminServer) {
-    const name = window.prompt("Название сервера", server.name);
-    if (!name) return;
-    const region = window.prompt("Регион", server.region ?? "") ?? "";
-    const endpoint = window.prompt("Endpoint", server.endpoint ?? server.host ?? "") ?? "";
-    const maxPeers = Number(window.prompt("Лимит peer", String(server.max_peers ?? 100)) ?? server.max_peers ?? 100);
-    const ok = await postAction(`server-edit-${server.id}`, `/api/admin/servers/${server.id}`, {
-      name,
-      region,
-      endpoint,
-      max_peers: Number.isFinite(maxPeers) ? maxPeers : server.max_peers,
+  function openEditServerModal(server: AdminServer) {
+    setServerModal({
+      mode: "edit",
+      serverID: server.id,
+      name: server.name,
+      host: server.host ?? "",
+      endpoint: server.endpoint ?? "",
+      region: server.region ?? "",
       country_code: server.country_code ?? "",
+      max_peers: server.max_peers ?? 100,
+      awg_port: server.awg_port ?? 51820,
       is_vip_only: Boolean(server.is_vip_only),
-    }, "PUT");
+      agent_url: server.agent_url ?? "",
+      agent_node_id: server.agent_node_id ?? "",
+    });
+  }
+
+  async function submitServerModal() {
+    if (!serverModal) return;
+    if (!serverModal.name.trim()) return setToast("Название сервера обязательно");
+    if (serverModal.mode === "add" && !serverModal.host.trim()) return setToast("Host/IP обязателен для нового сервера");
+    const payload = {
+      name: serverModal.name.trim(),
+      host: serverModal.host.trim(),
+      endpoint: serverModal.endpoint.trim(),
+      region: serverModal.region.trim(),
+      country_code: serverModal.country_code.trim(),
+      max_peers: Number(serverModal.max_peers) || 100,
+      awg_port: Number(serverModal.awg_port) || 51820,
+      is_vip_only: serverModal.is_vip_only,
+      agent_url: serverModal.agent_url.trim(),
+      agent_node_id: serverModal.agent_node_id.trim(),
+    };
+    const ok = await postAction(
+      serverModal.mode === "add" ? "server-add" : `server-edit-${serverModal.serverID}`,
+      serverModal.mode === "add" ? "/api/admin/servers" : `/api/admin/servers/${serverModal.serverID}`,
+      payload,
+      serverModal.mode === "add" ? "POST" : "PUT",
+    );
+    if (ok) {
+      setServerModal(null);
+      await refreshOverview();
+    }
+  }
+
+  async function submitDigestDialog() {
+    if (!digestDialog) return;
+    const digest = digestDialog.image_digest.trim();
+    if (!digest.includes("@sha256:")) return setToast("Нужен immutable digest вида image@sha256:...");
+    const ok = await postAction(`update-${digestDialog.server.id}`, `/api/admin/servers/${digestDialog.server.id}/agent/update`, { image_digest: digest });
+    if (ok) setDigestDialog(null);
+  }
+
+  async function submitBootstrapDialog() {
+    if (!bootstrapDialog) return;
+    if (!bootstrapDialog.agent_image_digest.includes("@sha256:") || !bootstrapDialog.xray_image_digest.includes("@sha256:")) {
+      return setToast("Agent и Xray digest должны быть immutable image@sha256:...");
+    }
+    const ok = await postAction(`bootstrap-${bootstrapDialog.server.id}`, `/api/admin/servers/${bootstrapDialog.server.id}/agent/bootstrap`, {
+      agent_image_digest: bootstrapDialog.agent_image_digest.trim(),
+      xray_image_digest: bootstrapDialog.xray_image_digest.trim(),
+      management_port: Number(bootstrapDialog.management_port) || undefined,
+      local_port: Number(bootstrapDialog.local_port) || undefined,
+      node_id: bootstrapDialog.node_id.trim(),
+      server_name: bootstrapDialog.server_name.trim(),
+      reality_dest: bootstrapDialog.reality_dest.trim(),
+      force: bootstrapDialog.force,
+    });
+    if (ok) setBootstrapDialog(null);
+  }
+
+  function openBootstrapDialog(server: AdminServer) {
+    setBootstrapDialog({
+      server,
+      agent_image_digest: "",
+      xray_image_digest: "",
+      management_port: 39000 + server.id,
+      local_port: 19000 + server.id,
+      node_id: server.agent_node_id || `server-${server.id}`,
+      server_name: server.config_summary?.xray?.server_name || "www.microsoft.com",
+      reality_dest: `${server.config_summary?.xray?.server_name || "www.microsoft.com"}:443`,
+      force: false,
+    });
+  }
+
+  async function confirmAction(dialog: ConfirmDialogState) {
+    setConfirmDialog(null);
+    await dialog.onConfirm();
+  }
+
+  async function toggleServer(server: AdminServer) {
+    const ok = await postAction(`toggle-${server.id}`, `/api/admin/servers/${server.id}/toggle`);
     if (ok) await refreshOverview();
   }
 
   async function deleteServer(server: AdminServer) {
-    if (!window.confirm(`Удалить сервер ${server.name} и связанные ключи?`)) return;
-    const ok = await postAction(`server-delete-${server.id}`, `/api/admin/servers/${server.id}`, undefined, "DELETE");
-    if (ok) await refreshOverview();
+    setConfirmDialog({
+      title: "Удалить сервер",
+      message: `Удалить ${server.name} и связанные ключи? Это действие нельзя быстро откатить.`,
+      actionLabel: "Удалить",
+      danger: true,
+      onConfirm: async () => {
+        const ok = await postAction(`server-delete-${server.id}`, `/api/admin/servers/${server.id}`, undefined, "DELETE");
+        if (ok) await refreshOverview();
+      },
+    });
   }
 
   async function runPiHoleSync() {
@@ -493,7 +617,7 @@ export function AdminPanel({ adminEmail, initialOverview }: { adminEmail: string
                   </Button>
                   <Button size="sm" variant="secondary" onClick={() => void exportCSV("servers")}>CSV</Button>
                   <Button size="sm" variant="secondary" onClick={() => void runPiHoleSync()} disabled={busyAction === "pihole-sync"}>Pi-hole Sync</Button>
-                  <Button size="sm" onClick={() => void quickAddServer()}>Добавить сервер</Button>
+                  <Button size="sm" onClick={openAddServerModal}>Добавить сервер</Button>
                 </div>
               </div>
               <div className="overflow-x-auto">
@@ -527,8 +651,13 @@ export function AdminPanel({ adminEmail, initialOverview }: { adminEmail: string
                           <div className="flex gap-2">
                             <IconButton label="Health" onClick={() => refreshServerHealth(server.id)} icon={RefreshCw} active={busyAction === `health-${server.id}`} />
                             <IconButton label="Snapshot" onClick={() => postAction(`snapshot-${server.id}`, `/api/admin/servers/${server.id}/agent/snapshot`)} icon={DatabaseBackup} active={busyAction === `snapshot-${server.id}`} />
-                            <IconButton label="Edit" onClick={() => quickEditServer(server)} icon={Settings} active={busyAction === `server-edit-${server.id}`} />
-                            <IconButton label="Toggle active" onClick={() => postAction(`toggle-${server.id}`, `/api/admin/servers/${server.id}/toggle`)} icon={Power} active={busyAction === `toggle-${server.id}`} />
+                            <IconButton label="Edit" onClick={() => openEditServerModal(server)} icon={Settings} active={busyAction === `server-edit-${server.id}`} />
+                            <IconButton label="Toggle active" onClick={() => setConfirmDialog({
+                              title: server.active ? "Отключить сервер" : "Включить сервер",
+                              message: `${server.active ? "Отключить" : "Включить"} ${server.name}?`,
+                              actionLabel: server.active ? "Отключить" : "Включить",
+                              onConfirm: () => toggleServer(server),
+                            })} icon={Power} active={busyAction === `toggle-${server.id}`} />
                             <IconButton label="Details" onClick={() => setSelectedServerID(server.id)} icon={ChevronRight} />
                             <IconButton label="Delete" onClick={() => deleteServer(server)} icon={X} active={busyAction === `server-delete-${server.id}`} />
                           </div>
@@ -558,12 +687,138 @@ export function AdminPanel({ adminEmail, initialOverview }: { adminEmail: string
                 busyAction={busyAction}
                 onAction={postAction}
                 onRefreshHealth={refreshServerHealth}
+                onOpenDigest={setDigestDialog}
+                onOpenBootstrap={openBootstrapDialog}
+                onConfirm={setConfirmDialog}
               />
             ) : null}
           </aside>
         </div>
       </main>
+      <ServerEditModal state={serverModal} busy={busyAction === "server-add" || Boolean(serverModal?.serverID && busyAction === `server-edit-${serverModal.serverID}`)} onChange={setServerModal} onClose={() => setServerModal(null)} onSubmit={submitServerModal} />
+      <DigestModal state={digestDialog} busy={Boolean(digestDialog && busyAction === `update-${digestDialog.server.id}`)} onChange={setDigestDialog} onClose={() => setDigestDialog(null)} onSubmit={submitDigestDialog} />
+      <BootstrapModal state={bootstrapDialog} busy={Boolean(bootstrapDialog && busyAction === `bootstrap-${bootstrapDialog.server.id}`)} onChange={setBootstrapDialog} onClose={() => setBootstrapDialog(null)} onSubmit={submitBootstrapDialog} />
+      <ConfirmModal state={confirmDialog} busy={Boolean(busyAction)} onClose={() => setConfirmDialog(null)} onConfirm={confirmAction} />
     </div>
+  );
+}
+
+function ModalShell({ title, children, footer, onClose }: { title: string; children: React.ReactNode; footer: React.ReactNode; onClose: () => void }) {
+  return (
+    <div className="fixed inset-0 z-[80] grid place-items-center bg-black/70 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label={title}>
+      <motion.div initial={{ opacity: 0, y: 12, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} className="max-h-[92vh] w-full max-w-2xl overflow-hidden rounded-lg border border-white/10 bg-zinc-950 shadow-2xl">
+        <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
+          <h2 className="text-lg font-bold">{title}</h2>
+          <button className="rounded-lg p-2 text-zinc-400 transition hover:bg-white/10 hover:text-white" onClick={onClose} aria-label="Закрыть">
+            <X size={16} />
+          </button>
+        </div>
+        <div className="max-h-[68vh] overflow-auto p-5">{children}</div>
+        <div className="flex flex-wrap justify-end gap-2 border-t border-white/10 px-5 py-4">{footer}</div>
+      </motion.div>
+    </div>
+  );
+}
+
+function ServerEditModal({ state, busy, onChange, onClose, onSubmit }: { state: ServerFormState | null; busy: boolean; onChange: (state: ServerFormState | null) => void; onClose: () => void; onSubmit: () => Promise<void> }) {
+  if (!state) return null;
+  const patch = (updates: Partial<ServerFormState>) => onChange({ ...state, ...updates });
+  return (
+    <ModalShell
+      title={state.mode === "add" ? "Добавить VPS" : "Редактировать VPS"}
+      onClose={onClose}
+      footer={<><Button variant="ghost" onClick={onClose}>Отмена</Button><Button onClick={onSubmit} disabled={busy}>{busy ? "Сохраняю..." : "Сохранить"}</Button></>}
+    >
+      <div className="grid gap-3 md:grid-cols-2">
+        <ModalInput label="Название" value={state.name} onChange={(name) => patch({ name })} />
+        <ModalInput label="Host/IP backend" value={state.host} onChange={(host) => patch({ host })} disabled={state.mode === "edit"} />
+        <ModalInput label="Endpoint клиента" value={state.endpoint} onChange={(endpoint) => patch({ endpoint })} />
+        <ModalInput label="Регион" value={state.region} onChange={(region) => patch({ region })} />
+        <ModalInput label="Country code" value={state.country_code} onChange={(country_code) => patch({ country_code })} />
+        <ModalInput label="Лимит peers" type="number" value={String(state.max_peers)} onChange={(max_peers) => patch({ max_peers: Number(max_peers) })} />
+        <ModalInput label="AWG port" type="number" value={String(state.awg_port)} onChange={(awg_port) => patch({ awg_port: Number(awg_port) })} />
+        <ModalInput label="Agent URL" value={state.agent_url} onChange={(agent_url) => patch({ agent_url })} />
+        <ModalInput label="Agent node id" value={state.agent_node_id} onChange={(agent_node_id) => patch({ agent_node_id })} />
+        <label className="flex min-h-11 items-center gap-2 rounded-lg border border-white/10 bg-black/30 px-3 text-sm text-zinc-300">
+          <input type="checkbox" checked={state.is_vip_only} onChange={(event) => patch({ is_vip_only: event.target.checked })} />
+          VIP-only сервер
+        </label>
+      </div>
+    </ModalShell>
+  );
+}
+
+function DigestModal({ state, busy, onChange, onClose, onSubmit }: { state: DigestDialogState | null; busy: boolean; onChange: (state: DigestDialogState | null) => void; onClose: () => void; onSubmit: () => Promise<void> }) {
+  if (!state) return null;
+  return (
+    <ModalShell
+      title={`Update agent: ${state.server.name}`}
+      onClose={onClose}
+      footer={<><Button variant="ghost" onClick={onClose}>Отмена</Button><Button onClick={onSubmit} disabled={busy}>{busy ? "Запускаю..." : "Обновить"}</Button></>}
+    >
+      <p className="mb-3 text-sm text-zinc-400">Укажите immutable digest образа agent. Тег `latest` не принимается backend-ом.</p>
+      <ModalInput label="Agent image digest" value={state.image_digest} onChange={(image_digest) => onChange({ ...state, image_digest })} placeholder="registry/fblink-agent@sha256:..." />
+    </ModalShell>
+  );
+}
+
+function BootstrapModal({ state, busy, onChange, onClose, onSubmit }: { state: BootstrapDialogState | null; busy: boolean; onChange: (state: BootstrapDialogState | null) => void; onClose: () => void; onSubmit: () => Promise<void> }) {
+  if (!state) return null;
+  const patch = (updates: Partial<BootstrapDialogState>) => onChange({ ...state, ...updates });
+  return (
+    <ModalShell
+      title={`Bootstrap agent: ${state.server.name}`}
+      onClose={onClose}
+      footer={<><Button variant="ghost" onClick={onClose}>Отмена</Button><Button onClick={onSubmit} disabled={busy}>{busy ? "Bootstrap..." : "Запустить bootstrap"}</Button></>}
+    >
+      <div className="mb-4 rounded-lg border border-amber-300/20 bg-amber-300/[0.06] p-3 text-sm text-amber-50/80">
+        Нужны два immutable digest: agent и management Xray. Backend также требует сохранённый SSH password у сервера и валидный `AGENT_SIGNING_PRIVATE_KEY`.
+      </div>
+      <div className="grid gap-3">
+        <ModalInput label="Agent image digest" value={state.agent_image_digest} onChange={(agent_image_digest) => patch({ agent_image_digest })} placeholder="registry/fblink-agent@sha256:..." />
+        <ModalInput label="Xray image digest" value={state.xray_image_digest} onChange={(xray_image_digest) => patch({ xray_image_digest })} placeholder="teddysun/xray@sha256:..." />
+        <div className="grid gap-3 md:grid-cols-2">
+          <ModalInput label="Management port" type="number" value={String(state.management_port)} onChange={(value) => patch({ management_port: Number(value) })} />
+          <ModalInput label="Local tunnel port" type="number" value={String(state.local_port)} onChange={(value) => patch({ local_port: Number(value) })} />
+          <ModalInput label="Node ID" value={state.node_id} onChange={(node_id) => patch({ node_id })} />
+          <ModalInput label="Reality server name" value={state.server_name} onChange={(server_name) => patch({ server_name, reality_dest: state.reality_dest || `${server_name}:443` })} />
+          <ModalInput label="Reality dest" value={state.reality_dest} onChange={(reality_dest) => patch({ reality_dest })} />
+          <label className="flex min-h-11 items-center gap-2 rounded-lg border border-white/10 bg-black/30 px-3 text-sm text-zinc-300">
+            <input type="checkbox" checked={state.force} onChange={(event) => patch({ force: event.target.checked })} />
+            Force reinstall
+          </label>
+        </div>
+      </div>
+    </ModalShell>
+  );
+}
+
+function ConfirmModal({ state, busy, onClose, onConfirm }: { state: ConfirmDialogState | null; busy: boolean; onClose: () => void; onConfirm: (state: ConfirmDialogState) => Promise<void> }) {
+  if (!state) return null;
+  return (
+    <ModalShell
+      title={state.title}
+      onClose={onClose}
+      footer={<><Button variant="ghost" onClick={onClose}>Отмена</Button><Button variant={state.danger ? "destructive" : "default"} onClick={() => onConfirm(state)} disabled={busy}>{state.actionLabel}</Button></>}
+    >
+      <p className="text-sm leading-6 text-zinc-300">{state.message}</p>
+    </ModalShell>
+  );
+}
+
+function ModalInput({ label, value, onChange, type = "text", placeholder, disabled = false }: { label: string; value: string; onChange: (value: string) => void; type?: string; placeholder?: string; disabled?: boolean }) {
+  return (
+    <label className="block">
+      <span className="mb-1 block text-xs font-semibold text-zinc-500">{label}</span>
+      <input
+        value={value}
+        type={type}
+        disabled={disabled}
+        placeholder={placeholder}
+        onChange={(event) => onChange(event.target.value)}
+        className="h-10 w-full rounded-lg border border-white/10 bg-black/35 px-3 text-sm text-zinc-100 outline-none transition focus:border-amber-300/60 focus:ring-2 focus:ring-amber-300/20 disabled:opacity-60"
+      />
+    </label>
   );
 }
 
@@ -674,7 +929,7 @@ function SectionFocus({
           <StatusCard icon={ShieldCheck} label="Активные ключи" value={String(servers.reduce((sum, server) => sum + (server.active_keys ?? 0), 0))} detail="Распределены по VPS" />
           <PanelHeader icon={Globe2} title="Управление пользователями" text="Выдача тарифов, отзыв подписки и ключей, смена роли, удаление и CSV экспорт как в старой панели." />
         </div>
-        <UsersManager users={users} loading={legacyLoading === "users"} onLoad={() => onLoadLegacy("users")} onExport={() => onExport("users")} onAction={onAction} />
+        <UsersManager users={users} loading={legacyLoading === "users"} onLoad={() => onLoadLegacy("users")} onExport={() => onExport("users")} onAction={onAction} onConfirm={onConfirm} />
       </div>
     );
   }
@@ -687,7 +942,7 @@ function SectionFocus({
           <SparkAreaChart title="Рост пользователей" points={userPoints} color="#facc15" />
           <PanelHeader icon={WalletCards} title="Финансовый контроль" text="История платежей, фильтры, ручное подтверждение pending-платежей и экспорт CSV." />
         </div>
-        <PaymentsManager payments={payments} loading={legacyLoading === "payments"} onLoad={() => onLoadLegacy("payments")} onExport={() => onExport("payments")} onAction={onAction} />
+        <PaymentsManager payments={payments} loading={legacyLoading === "payments"} onLoad={() => onLoadLegacy("payments")} onExport={() => onExport("payments")} onAction={onAction} onConfirm={onConfirm} />
       </div>
     );
   }
@@ -701,6 +956,7 @@ function SectionFocus({
         onLoad={() => onLoadLegacy("promo-codes")}
         onExport={() => onExport("promo-codes")}
         onAction={onAction}
+        onConfirm={onConfirm}
       />
     );
   }
@@ -799,7 +1055,7 @@ function StatusCard({ icon: Icon, label, value, detail, danger = false, onClick 
   );
 }
 
-function UsersManager({ users, loading, onLoad, onExport, onAction }: { users: LegacyAdminUser[]; loading: boolean; onLoad: () => Promise<void>; onExport: () => Promise<void>; onAction: (label: string, url: string, body?: unknown, method?: string) => Promise<boolean> }) {
+function UsersManager({ users, loading, onLoad, onExport, onAction, onConfirm }: { users: LegacyAdminUser[]; loading: boolean; onLoad: () => Promise<void>; onExport: () => Promise<void>; onAction: (label: string, url: string, body?: unknown, method?: string) => Promise<boolean>; onConfirm: (state: ConfirmDialogState) => void }) {
   const [query, setQuery] = useState("");
   const [role, setRole] = useState("");
   const [status, setStatus] = useState("");
@@ -819,13 +1075,20 @@ function UsersManager({ users, loading, onLoad, onExport, onAction }: { users: L
       role: `Сменить роль ${user.email} на ${user.role === "admin" ? "user" : "admin"}?`,
       delete: `Удалить пользователя ${user.email} и связанные данные?`,
     };
-    if (!window.confirm(labels[action])) return;
-    if (action === "upgrade") await onAction(`user-upgrade-${user.id}`, `/api/admin/users/${user.id}/upgrade`, { plan });
-    if (action === "revokeSubscription") await onAction(`user-revoke-sub-${user.id}`, `/api/admin/users/${user.id}/subscription/revoke`, { revoke_keys: true });
-    if (action === "revokeKeys") await onAction(`user-revoke-keys-${user.id}`, `/api/admin/users/${user.id}/revoke`);
-    if (action === "role") await onAction(`user-role-${user.id}`, `/api/admin/users/${user.id}/set-role`, { role: user.role === "admin" ? "user" : "admin" });
-    if (action === "delete") await onAction(`user-delete-${user.id}`, `/api/admin/users/${user.id}`, undefined, "DELETE");
-    await onLoad();
+    onConfirm({
+      title: "Действие с пользователем",
+      message: labels[action],
+      actionLabel: action === "delete" ? "Удалить" : "Выполнить",
+      danger: action === "delete" || action === "revokeSubscription" || action === "revokeKeys",
+      onConfirm: async () => {
+        if (action === "upgrade") await onAction(`user-upgrade-${user.id}`, `/api/admin/users/${user.id}/upgrade`, { plan });
+        if (action === "revokeSubscription") await onAction(`user-revoke-sub-${user.id}`, `/api/admin/users/${user.id}/subscription/revoke`, { revoke_keys: true });
+        if (action === "revokeKeys") await onAction(`user-revoke-keys-${user.id}`, `/api/admin/users/${user.id}/revoke`);
+        if (action === "role") await onAction(`user-role-${user.id}`, `/api/admin/users/${user.id}/set-role`, { role: user.role === "admin" ? "user" : "admin" });
+        if (action === "delete") await onAction(`user-delete-${user.id}`, `/api/admin/users/${user.id}`, undefined, "DELETE");
+        await onLoad();
+      },
+    });
   }
 
   return (
@@ -863,7 +1126,7 @@ function UsersManager({ users, loading, onLoad, onExport, onAction }: { users: L
   );
 }
 
-function PaymentsManager({ payments, loading, onLoad, onExport, onAction }: { payments: LegacyAdminPayment[]; loading: boolean; onLoad: () => Promise<void>; onExport: () => Promise<void>; onAction: (label: string, url: string, body?: unknown, method?: string) => Promise<boolean> }) {
+function PaymentsManager({ payments, loading, onLoad, onExport, onAction, onConfirm }: { payments: LegacyAdminPayment[]; loading: boolean; onLoad: () => Promise<void>; onExport: () => Promise<void>; onAction: (label: string, url: string, body?: unknown, method?: string) => Promise<boolean>; onConfirm: (state: ConfirmDialogState) => void }) {
   const [query, setQuery] = useState("");
   const [plan, setPlan] = useState("");
   const [status, setStatus] = useState("");
@@ -874,9 +1137,15 @@ function PaymentsManager({ payments, loading, onLoad, onExport, onAction }: { pa
     return true;
   });
   async function approve(payment: LegacyAdminPayment) {
-    if (!window.confirm(`Подтвердить платёж #${payment.id} вручную и выдать подписку?`)) return;
-    await onAction(`payment-approve-${payment.id}`, `/api/admin/payments/${payment.id}/approve`);
-    await onLoad();
+    onConfirm({
+      title: "Подтвердить платёж",
+      message: `Подтвердить платёж #${payment.id} вручную и выдать подписку?`,
+      actionLabel: "Подтвердить",
+      onConfirm: async () => {
+        await onAction(`payment-approve-${payment.id}`, `/api/admin/payments/${payment.id}/approve`);
+        await onLoad();
+      },
+    });
   }
   return (
     <section className="rounded-lg border border-white/10 bg-zinc-950/70">
@@ -906,7 +1175,7 @@ function PaymentsManager({ payments, loading, onLoad, onExport, onAction }: { pa
   );
 }
 
-function PromoCodesManager({ promoCodes, loading, busyAction, onLoad, onExport, onAction }: { promoCodes: LegacyAdminPromoCode[]; loading: boolean; busyAction: string | null; onLoad: () => Promise<void>; onExport: () => Promise<void>; onAction: (label: string, url: string, body?: unknown, method?: string) => Promise<boolean> }) {
+function PromoCodesManager({ promoCodes, loading, busyAction, onLoad, onExport, onAction, onConfirm }: { promoCodes: LegacyAdminPromoCode[]; loading: boolean; busyAction: string | null; onLoad: () => Promise<void>; onExport: () => Promise<void>; onAction: (label: string, url: string, body?: unknown, method?: string) => Promise<boolean>; onConfirm: (state: ConfirmDialogState) => void }) {
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState("");
   const [editing, setEditing] = useState<LegacyAdminPromoCode | null>(null);
@@ -934,7 +1203,7 @@ function PromoCodesManager({ promoCodes, loading, busyAction, onLoad, onExport, 
     });
   }
   async function save() {
-    if (!draft.code.trim() || draft.discount_percent < 1 || draft.discount_percent > 100) return window.alert("Код и скидка 1-100 обязательны");
+    if (!draft.code.trim() || draft.discount_percent < 1 || draft.discount_percent > 100) return;
     const payload = { ...draft, expires_at: draft.expires_at ? new Date(draft.expires_at).toISOString() : null };
     const ok = await onAction(`promo-save-${editing?.id ?? "new"}`, editing ? `/api/admin/promo-codes/${editing.id}` : "/api/admin/promo-codes", payload, editing ? "PUT" : "POST");
     if (ok) {
@@ -944,9 +1213,16 @@ function PromoCodesManager({ promoCodes, loading, busyAction, onLoad, onExport, 
     }
   }
   async function remove(promo: LegacyAdminPromoCode) {
-    if (!window.confirm(`Отключить промокод ${promo.code}?`)) return;
-    await onAction(`promo-delete-${promo.id}`, `/api/admin/promo-codes/${promo.id}`, undefined, "DELETE");
-    await onLoad();
+    onConfirm({
+      title: "Отключить промокод",
+      message: `Отключить промокод ${promo.code}? Уже созданные платежи сохранят историю скидки.`,
+      actionLabel: "Отключить",
+      danger: true,
+      onConfirm: async () => {
+        await onAction(`promo-delete-${promo.id}`, `/api/admin/promo-codes/${promo.id}`, undefined, "DELETE");
+        await onLoad();
+      },
+    });
   }
   return (
     <section className="rounded-lg border border-white/10 bg-zinc-950/70">
@@ -1135,7 +1411,7 @@ function NotificationInbox({ notifications, onAck, onMute }: { notifications: Ad
   );
 }
 
-function ServerDrawer({ server, tab, setTab, auditLogs, busyAction, onAction, onRefreshHealth }: { server: AdminServer; tab: DrawerTab; setTab: (tab: DrawerTab) => void; auditLogs: AdminAuditLog[]; busyAction: string | null; onAction: (label: string, url: string, body?: unknown, method?: string) => Promise<boolean>; onRefreshHealth: (serverID: number) => Promise<void> }) {
+function ServerDrawer({ server, tab, setTab, auditLogs, busyAction, onAction, onRefreshHealth, onOpenDigest, onOpenBootstrap, onConfirm }: { server: AdminServer; tab: DrawerTab; setTab: (tab: DrawerTab) => void; auditLogs: AdminAuditLog[]; busyAction: string | null; onAction: (label: string, url: string, body?: unknown, method?: string) => Promise<boolean>; onRefreshHealth: (serverID: number) => Promise<void>; onOpenDigest: (state: DigestDialogState) => void; onOpenBootstrap: (server: AdminServer) => void; onConfirm: (state: ConfirmDialogState) => void }) {
   return (
     <section className="rounded-lg border border-white/10 bg-zinc-950/70">
       <div className="border-b border-white/10 p-4">
@@ -1189,17 +1465,11 @@ function ServerDrawer({ server, tab, setTab, auditLogs, busyAction, onAction, on
         ) : null}
         {tab === "Actions" ? (
           <div className="space-y-3">
+            <Button className="w-full justify-start" onClick={() => onOpenBootstrap(server)} disabled={busyAction === `bootstrap-${server.id}`}><Terminal size={14} /> Bootstrap agent</Button>
             <Button className="w-full justify-start" variant="secondary" onClick={() => onAction(`status-${server.id}`, `/api/admin/servers/${server.id}/agent/status`, undefined, "GET")} disabled={busyAction === `status-${server.id}`}><RefreshCw size={14} /> Agent status</Button>
-            <Button className="w-full justify-start" variant="secondary" onClick={() => {
-              const digest = window.prompt("Immutable image digest");
-              if (digest) void onAction(`update-${server.id}`, `/api/admin/servers/${server.id}/agent/update`, { image_digest: digest });
-            }}><Zap size={14} /> Update by digest</Button>
-            <Button className="w-full justify-start" variant="secondary" onClick={() => {
-              if (window.confirm("Rollback agent image?")) void onAction(`rollback-${server.id}`, `/api/admin/servers/${server.id}/agent/rollback`);
-            }}><RotateCcw size={14} /> Rollback</Button>
-            <Button className="w-full justify-start" variant="destructive" onClick={() => {
-              if (window.confirm("Toggle server active state?")) void onAction(`toggle-${server.id}`, `/api/admin/servers/${server.id}/toggle`);
-            }}><AlertTriangle size={14} /> Toggle active</Button>
+            <Button className="w-full justify-start" variant="secondary" onClick={() => onOpenDigest({ server, image_digest: "" })}><Zap size={14} /> Update by digest</Button>
+            <Button className="w-full justify-start" variant="secondary" onClick={() => onConfirm({ title: "Rollback agent", message: `Откатить agent image на ${server.name}?`, actionLabel: "Rollback", onConfirm: () => onAction(`rollback-${server.id}`, `/api/admin/servers/${server.id}/agent/rollback`) })}><RotateCcw size={14} /> Rollback</Button>
+            <Button className="w-full justify-start" variant="destructive" onClick={() => onConfirm({ title: "Toggle active", message: `Переключить active state для ${server.name}?`, actionLabel: "Toggle", danger: true, onConfirm: () => onAction(`toggle-${server.id}`, `/api/admin/servers/${server.id}/toggle`) })}><AlertTriangle size={14} /> Toggle active</Button>
           </div>
         ) : null}
         {tab === "Audit" ? (
@@ -1224,12 +1494,14 @@ function ConfigImportPanel({ server, busyAction, onAction }: { server: AdminServ
   const [xrayPublicKey, setXrayPublicKey] = useState(server.config_summary?.xray?.public_key ?? "");
   const [xrayShortID, setXrayShortID] = useState(server.config_summary?.xray?.short_id ?? "");
   const [xrayClientID, setXrayClientID] = useState("");
+  const [xrayMLDSA65, setXrayMLDSA65] = useState(server.config_summary?.xray?.mldsa65_verify ?? "");
   const busy = busyAction === `config-import-${server.id}`;
 
   useEffect(() => {
     setAwgConfig(seedAWGConfig(server));
     setXrayPublicKey(server.config_summary?.xray?.public_key ?? "");
     setXrayShortID(server.config_summary?.xray?.short_id ?? "");
+    setXrayMLDSA65(server.config_summary?.xray?.mldsa65_verify ?? "");
     setXrayClientID("");
     setXrayConfig("");
   }, [server.id]);
@@ -1237,7 +1509,7 @@ function ConfigImportPanel({ server, busyAction, onAction }: { server: AdminServ
   return (
     <div className="space-y-3">
       <div className="rounded-lg border border-amber-300/20 bg-amber-300/[0.05] p-3 text-xs leading-5 text-amber-50/80">
-        Импорт сохраняет шаблон в базе и не пишет напрямую в файлы VPS. Для применения на ноде используйте snapshot/agent действия отдельно.
+        Можно вставить обычный Xray server.json. Если внутри есть realitySettings.privateKey и shortIds, public key и short id будут извлечены автоматически.
       </div>
       <label className="block">
         <span className="mb-1 block text-xs font-semibold text-zinc-400">AWG config</span>
@@ -1258,10 +1530,11 @@ function ConfigImportPanel({ server, busyAction, onAction }: { server: AdminServ
           spellCheck={false}
         />
       </label>
-      <div className="grid gap-2 sm:grid-cols-3">
-        <ConfigInput label="Reality public key" value={xrayPublicKey} onChange={setXrayPublicKey} />
-        <ConfigInput label="Short ID" value={xrayShortID} onChange={setXrayShortID} />
+      <div className="grid gap-2 sm:grid-cols-2">
+        <ConfigInput label="Reality public key (опционально)" value={xrayPublicKey} onChange={setXrayPublicKey} />
+        <ConfigInput label="Short ID (опционально)" value={xrayShortID} onChange={setXrayShortID} />
         <ConfigInput label="Template client ID" value={xrayClientID} onChange={setXrayClientID} />
+        <ConfigInput label="MLDSA65 verify" value={xrayMLDSA65} onChange={setXrayMLDSA65} />
       </div>
       <Button
         size="sm"
@@ -1274,6 +1547,7 @@ function ConfigImportPanel({ server, busyAction, onAction }: { server: AdminServ
             xray_public_key: xrayPublicKey,
             xray_short_id: xrayShortID,
             xray_client_id: xrayClientID,
+            xray_mldsa65_verify: xrayMLDSA65,
           })
         }
       >
