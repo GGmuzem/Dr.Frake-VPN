@@ -71,6 +71,8 @@ type ServerFormState = {
   is_vip_only: boolean;
   agent_url: string;
   agent_node_id: string;
+  ssh_password?: string;
+  public_key?: string;
 };
 
 type ConfirmDialogState = {
@@ -301,6 +303,8 @@ export function AdminPanel({ adminEmail, initialOverview }: { adminEmail: string
       is_vip_only: false,
       agent_url: "",
       agent_node_id: "",
+      ssh_password: "",
+      public_key: "",
     });
   }
 
@@ -318,6 +322,8 @@ export function AdminPanel({ adminEmail, initialOverview }: { adminEmail: string
       is_vip_only: Boolean(server.is_vip_only),
       agent_url: server.agent_url ?? "",
       agent_node_id: server.agent_node_id ?? "",
+      ssh_password: "", // Not returned by API
+      public_key: "",   // Usually not needed during edit unless changed
     });
   }
 
@@ -336,6 +342,8 @@ export function AdminPanel({ adminEmail, initialOverview }: { adminEmail: string
       is_vip_only: serverModal.is_vip_only,
       agent_url: serverModal.agent_url.trim(),
       agent_node_id: serverModal.agent_node_id.trim(),
+      ssh_password: serverModal.ssh_password?.trim() || undefined,
+      public_key: serverModal.public_key?.trim() || undefined,
     };
     const ok = await postAction(
       serverModal.mode === "add" ? "server-add" : `server-edit-${serverModal.serverID}`,
@@ -740,6 +748,8 @@ function ServerEditModal({ state, busy, onChange, onClose, onSubmit }: { state: 
         <ModalInput label="AWG port" type="number" value={String(state.awg_port)} onChange={(awg_port) => patch({ awg_port: Number(awg_port) })} />
         <ModalInput label="Agent URL" value={state.agent_url} onChange={(agent_url) => patch({ agent_url })} />
         <ModalInput label="Agent node id" value={state.agent_node_id} onChange={(agent_node_id) => patch({ agent_node_id })} />
+        <ModalInput label="SSH Password" type="password" value={state.ssh_password || ""} onChange={(ssh_password) => patch({ ssh_password })} placeholder="Для получения public key или деплоя" />
+        <ModalInput label="AWG Public Key" value={state.public_key || ""} onChange={(public_key) => patch({ public_key })} placeholder="Если нет SSH" />
         <label className="flex min-h-11 items-center gap-2 rounded-lg border border-white/10 bg-black/30 px-3 text-sm text-zinc-300">
           <input type="checkbox" checked={state.is_vip_only} onChange={(event) => patch({ is_vip_only: event.target.checked })} />
           VIP-only сервер

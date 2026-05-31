@@ -504,6 +504,7 @@ func (h *AdminHandler) UpdateServer(c *gin.Context) {
 		CountryCode string  `json:"country_code"`
 		VIPOnly     *bool   `json:"is_vip_only"`
 		Endpoint    string  `json:"endpoint"`
+		PublicKey   string  `json:"public_key"`
 		MaxPeers    int     `json:"max_peers"`
 		SSHPassword string  `json:"ssh_password"`
 		AWGPort     int     `json:"awg_port"`
@@ -571,6 +572,9 @@ func (h *AdminHandler) UpdateServer(c *gin.Context) {
 	if req.Endpoint != "" {
 		updates["endpoint"] = req.Endpoint
 	}
+	if req.PublicKey != "" {
+		updates["public_key"] = req.PublicKey
+	}
 	if req.MaxPeers > 0 {
 		updates["max_peers"] = req.MaxPeers
 	}
@@ -603,6 +607,9 @@ func (h *AdminHandler) UpdateServer(c *gin.Context) {
 	}
 	if req.Endpoint != "" {
 		s.Endpoint = req.Endpoint
+	}
+	if req.PublicKey != "" {
+		s.PublicKey = req.PublicKey
 	}
 	if req.MaxPeers > 0 {
 		s.MaxPeers = req.MaxPeers
