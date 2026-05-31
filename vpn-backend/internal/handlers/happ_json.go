@@ -69,6 +69,67 @@ func buildHappClientJSON(clientID string, server *models.VPNServer, template *mo
 		}
 	}
 
+	var proxyOutbound map[string]interface{}
+	if template.HysteriaEnabled && template.PublicKey == "" {
+		hysteriaPort := template.HysteriaPort
+		if hysteriaPort <= 0 {
+			hysteriaPort = 443
+		}
+		sni := template.HysteriaSNI
+		if sni == "" {
+			sni = template.ServerName
+		}
+		proxyOutbound = map[string]interface{}{
+			"protocol": "hysteria2",
+			"settings": map[string]interface{}{
+				"vnext": []interface{}{
+					map[string]interface{}{
+						"address": template.Address,
+						"port":    hysteriaPort,
+						"users": []interface{}{
+							map[string]interface{}{
+								"password": template.HysteriaPassword,
+							},
+						},
+					},
+				},
+			},
+			"streamSettings": map[string]interface{}{
+				"network":  "hysteria2",
+				"security": "tls",
+				"tlsSettings": map[string]interface{}{
+					"serverName":    sni,
+					"allowInsecure": template.HysteriaInsecure,
+					"alpn":          []string{"h3"},
+				},
+			},
+			"tag": "proxy",
+		}
+	} else {
+		proxyOutbound = map[string]interface{}{
+			"mux": map[string]interface{}{
+				"concurrency":     -1,
+				"enabled":         false,
+				"xudpConcurrency": 8,
+				"xudpProxyUDP443": "reject",
+			},
+			"protocol": "vless",
+			"settings": map[string]interface{}{
+				"vnext": []interface{}{
+					map[string]interface{}{
+						"address": template.Address,
+						"port":    template.Port,
+						"users": []interface{}{
+							userConfig,
+						},
+					},
+				},
+			},
+			"streamSettings": streamSettings,
+			"tag": "proxy",
+		}
+	}
+
 	return map[string]interface{}{
 		"remarks": description,
 		"meta": map[string]interface{}{
@@ -141,28 +202,7 @@ func buildHappClientJSON(clientID string, server *models.VPNServer, template *mo
 			"tag": "metrics_out",
 		},
 		"outbounds": []interface{}{
-			map[string]interface{}{
-				"mux": map[string]interface{}{
-					"concurrency":     -1,
-					"enabled":         false,
-					"xudpConcurrency": 8,
-					"xudpProxyUDP443": "reject",
-				},
-				"protocol": "vless",
-				"settings": map[string]interface{}{
-					"vnext": []interface{}{
-						map[string]interface{}{
-							"address": template.Address,
-							"port":    template.Port,
-							"users": []interface{}{
-								userConfig,
-							},
-						},
-					},
-				},
-				"streamSettings": streamSettings,
-				"tag": "proxy",
-			},
+			proxyOutbound,
 			map[string]interface{}{
 				"protocol": "freedom",
 				"settings": map[string]interface{}{

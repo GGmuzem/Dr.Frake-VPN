@@ -1010,24 +1010,65 @@ func buildVLESSConfig(clientID string, server *models.VPNServer, template *model
 	if template.Network == "xhttp" {
 		flowValue = ""
 	}
-	primaryOutbound := map[string]interface{}{
-		"protocol": "vless",
-		"settings": map[string]interface{}{
-			"vnext": []interface{}{
-				map[string]interface{}{
-					"address": template.Address,
-					"port":    template.Port,
-					"users": []interface{}{
-						map[string]interface{}{
-							"id":         clientID,
-							"flow":       flowValue,
-							"encryption": "none",
+
+	var primaryOutbound map[string]interface{}
+	if template.HysteriaEnabled && template.PublicKey == "" {
+		hysteriaPort := template.HysteriaPort
+		if hysteriaPort <= 0 {
+			hysteriaPort = 443
+		}
+		sni := template.HysteriaSNI
+		if sni == "" {
+			sni = template.ServerName
+		}
+		primaryOutbound = map[string]interface{}{
+			"protocol": "hysteria2",
+			"settings": map[string]interface{}{
+				"vnext": []interface{}{
+					map[string]interface{}{
+						"address": template.Address,
+						"port":    hysteriaPort,
+						"users": []interface{}{
+							map[string]interface{}{
+								"password": template.HysteriaPassword,
+							},
 						},
 					},
 				},
 			},
-		},
-		"streamSettings": streamSettings,
+			"streamSettings": map[string]interface{}{
+				"network":  "hysteria2",
+				"security": "tls",
+				"tlsSettings": map[string]interface{}{
+					"serverName":    sni,
+					"allowInsecure": template.HysteriaInsecure,
+					"alpn":          []string{"h3"},
+				},
+				"sockopt": map[string]interface{}{
+					"tcpFastOpen": true,
+				},
+			},
+		}
+	} else {
+		primaryOutbound = map[string]interface{}{
+			"protocol": "vless",
+			"settings": map[string]interface{}{
+				"vnext": []interface{}{
+					map[string]interface{}{
+						"address": template.Address,
+						"port":    template.Port,
+						"users": []interface{}{
+							map[string]interface{}{
+								"id":         clientID,
+								"flow":       flowValue,
+								"encryption": "none",
+							},
+						},
+					},
+				},
+			},
+			"streamSettings": streamSettings,
+		}
 	}
 
 	xrayConfig := map[string]interface{}{
