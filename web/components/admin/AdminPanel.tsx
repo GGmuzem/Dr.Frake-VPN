@@ -1505,6 +1505,8 @@ function ConfigDirectEditPanel({ server, busyAction, onAction }: { server: Admin
   const [awgConfig, setAwgConfig] = useState(() => seedAWGConfig(server));
   const xray = server.config_summary?.xray;
   
+  const [protocol, setProtocol] = useState(xray?.hysteria_enabled && (!xray?.network || xray?.network === "") ? "hysteria2" : "vless");
+
   const [address, setAddress] = useState(xray?.address ?? "");
   const [port, setPort] = useState(String(xray?.port ?? 443));
   const [serverName, setServerName] = useState(xray?.server_name ?? "");
@@ -1530,7 +1532,6 @@ function ConfigDirectEditPanel({ server, busyAction, onAction }: { server: Admin
   const [grpcAuthority, setGrpcAuthority] = useState(xray?.grpc_authority ?? "");
   const [grpcMultiMode, setGrpcMultiMode] = useState(xray?.grpc_multi_mode ?? true);
 
-  const [hysteriaEnabled, setHysteriaEnabled] = useState(xray?.hysteria_enabled ?? false);
   const [hysteriaPort, setHysteriaPort] = useState(String(xray?.hysteria_port ?? 443));
   const [hysteriaPassword, setHysteriaPassword] = useState(xray?.hysteria_password ?? "");
   const [hysteriaSni, setHysteriaSni] = useState(xray?.hysteria_sni ?? "");
@@ -1543,6 +1544,7 @@ function ConfigDirectEditPanel({ server, busyAction, onAction }: { server: Admin
   useEffect(() => {
     setAwgConfig(seedAWGConfig(server));
     const x = server.config_summary?.xray;
+    setProtocol(x?.hysteria_enabled && (!x?.network || x?.network === "") ? "hysteria2" : "vless");
     setAddress(x?.address ?? "");
     setPort(String(x?.port ?? 443));
     setServerName(x?.server_name ?? "");
@@ -1563,7 +1565,6 @@ function ConfigDirectEditPanel({ server, busyAction, onAction }: { server: Admin
     setGrpcServiceName(x?.grpc_service_name ?? "");
     setGrpcAuthority(x?.grpc_authority ?? "");
     setGrpcMultiMode(x?.grpc_multi_mode ?? true);
-    setHysteriaEnabled(x?.hysteria_enabled ?? false);
     setHysteriaPort(String(x?.hysteria_port ?? 443));
     setHysteriaPassword(x?.hysteria_password ?? "");
     setHysteriaSni(x?.hysteria_sni ?? "");
@@ -1585,97 +1586,110 @@ function ConfigDirectEditPanel({ server, busyAction, onAction }: { server: Admin
       </label>
 
       <div className="rounded-lg border border-white/10 bg-black/20 p-3">
-        <div className="mb-3 text-sm font-semibold text-zinc-300">Базовые настройки VLESS</div>
-        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-          <ConfigInput label="Address" value={address} onChange={setAddress} />
-          <ConfigInput label="Port" value={port} onChange={setPort} />
-          <ConfigInput label="Server Name (SNI)" value={serverName} onChange={setServerName} />
-          <ConfigInput label="Client ID (UUID)" value={clientId} onChange={setClientId} />
+        <div className="mb-3 text-sm font-semibold text-zinc-300">Тип подключения (Протокол)</div>
+        <div className="flex gap-4">
+          <label className="flex items-center space-x-2">
+            <input type="radio" checked={protocol === "vless"} onChange={() => setProtocol("vless")} className="text-amber-400 focus:ring-amber-400/50 border-white/10 bg-black/35" />
+            <span className="text-sm text-zinc-200">VLESS (Reality / TLS)</span>
+          </label>
+          <label className="flex items-center space-x-2">
+            <input type="radio" checked={protocol === "hysteria2"} onChange={() => setProtocol("hysteria2")} className="text-indigo-400 focus:ring-indigo-400/50 border-white/10 bg-black/35" />
+            <span className="text-sm text-zinc-200">Hysteria 2</span>
+          </label>
         </div>
       </div>
 
       <div className="rounded-lg border border-white/10 bg-black/20 p-3">
-        <div className="mb-3 text-sm font-semibold text-zinc-300">Транспорт и безопасность</div>
+        <div className="mb-3 text-sm font-semibold text-zinc-300">Базовые настройки сервера</div>
         <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-          <label className="block">
-            <span className="mb-1 block text-xs font-semibold text-zinc-500">Network</span>
-            <select
-              value={network}
-              onChange={(e) => setNetwork(e.target.value)}
-              className="h-9 w-full rounded-lg border border-white/10 bg-black/35 px-2 font-mono text-xs text-zinc-100 outline-none focus:border-amber-300/60 focus:ring-2 focus:ring-amber-300/20"
-            >
-              <option value="tcp">tcp</option>
-              <option value="xhttp">xhttp</option>
-              <option value="grpc">grpc</option>
-              <option value="ws">ws</option>
-            </select>
-          </label>
-          <label className="block">
-            <span className="mb-1 block text-xs font-semibold text-zinc-500">Security</span>
-            <select
-              value={security}
-              onChange={(e) => setSecurity(e.target.value)}
-              className="h-9 w-full rounded-lg border border-white/10 bg-black/35 px-2 font-mono text-xs text-zinc-100 outline-none focus:border-amber-300/60 focus:ring-2 focus:ring-amber-300/20"
-            >
-              <option value="reality">reality</option>
-              <option value="tls">tls</option>
-              <option value="none">none</option>
-            </select>
-          </label>
-          <ConfigInput label="Flow" value={flow} onChange={setFlow} placeholder="xtls-rprx-vision" />
+          <ConfigInput label="Address (IP/Domain)" value={address} onChange={setAddress} />
+          {protocol === "vless" && (
+            <ConfigInput label="Server Name (SNI)" value={serverName} onChange={setServerName} />
+          )}
+          <ConfigInput label="Client ID (UUID)" value={clientId} onChange={setClientId} />
         </div>
       </div>
 
-      {security === "reality" && (
-        <div className="rounded-lg border border-white/10 bg-black/20 p-3">
-          <div className="mb-3 text-sm font-semibold text-zinc-300">Reality</div>
-          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-            <ConfigInput label="Public Key" value={publicKey} onChange={setPublicKey} />
-            <ConfigInput label="Short ID" value={shortId} onChange={setShortId} />
-            <ConfigInput label="Fingerprint" value={fingerprint} onChange={setFingerprint} />
-            <ConfigInput label="Spider X" value={spiderX} onChange={setSpiderX} />
-            <ConfigInput label="MLDSA65 Verify" value={mldsa65Verify} onChange={setMldsa65Verify} />
+      {protocol === "vless" && (
+        <>
+          <div className="rounded-lg border border-white/10 bg-black/20 p-3">
+            <div className="mb-3 text-sm font-semibold text-zinc-300">Транспорт и безопасность</div>
+            <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+              <label className="block">
+                <span className="mb-1 block text-xs font-semibold text-zinc-500">Network</span>
+                <select
+                  value={network}
+                  onChange={(e) => setNetwork(e.target.value)}
+                  className="h-9 w-full rounded-lg border border-white/10 bg-black/35 px-2 font-mono text-xs text-zinc-100 outline-none focus:border-amber-300/60 focus:ring-2 focus:ring-amber-300/20"
+                >
+                  <option value="tcp">tcp</option>
+                  <option value="xhttp">xhttp</option>
+                  <option value="grpc">grpc</option>
+                  <option value="ws">ws</option>
+                </select>
+              </label>
+              <label className="block">
+                <span className="mb-1 block text-xs font-semibold text-zinc-500">Security</span>
+                <select
+                  value={security}
+                  onChange={(e) => setSecurity(e.target.value)}
+                  className="h-9 w-full rounded-lg border border-white/10 bg-black/35 px-2 font-mono text-xs text-zinc-100 outline-none focus:border-amber-300/60 focus:ring-2 focus:ring-amber-300/20"
+                >
+                  <option value="reality">reality</option>
+                  <option value="tls">tls</option>
+                  <option value="none">none</option>
+                </select>
+              </label>
+              <ConfigInput label="Port" value={port} onChange={setPort} />
+              <ConfigInput label="Flow" value={flow} onChange={setFlow} placeholder="xtls-rprx-vision" />
+            </div>
           </div>
-        </div>
+
+          {security === "reality" && (
+            <div className="rounded-lg border border-white/10 bg-black/20 p-3">
+              <div className="mb-3 text-sm font-semibold text-zinc-300">Reality</div>
+              <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                <ConfigInput label="Public Key" value={publicKey} onChange={setPublicKey} />
+                <ConfigInput label="Short ID" value={shortId} onChange={setShortId} />
+                <ConfigInput label="Fingerprint" value={fingerprint} onChange={setFingerprint} />
+                <ConfigInput label="Spider X" value={spiderX} onChange={setSpiderX} />
+                <ConfigInput label="MLDSA65 Verify" value={mldsa65Verify} onChange={setMldsa65Verify} />
+              </div>
+            </div>
+          )}
+
+          {network === "xhttp" && (
+            <div className="rounded-lg border border-white/10 bg-black/20 p-3">
+              <div className="mb-3 text-sm font-semibold text-zinc-300">XHTTP Settings</div>
+              <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                <ConfigInput label="Path" value={xhttpPath} onChange={setXhttpPath} />
+                <ConfigInput label="Host" value={xhttpHost} onChange={setXhttpHost} />
+                <ConfigInput label="Mode" value={xhttpMode} onChange={setXhttpMode} placeholder="auto" />
+                <ConfigInput label="Padding" value={xhttpPadding} onChange={setXhttpPadding} placeholder="100-1000" />
+                <ConfigInput label="Post Size" value={xhttpPostSize} onChange={setXhttpPostSize} />
+              </div>
+            </div>
+          )}
+
+          {network === "grpc" && (
+            <div className="rounded-lg border border-white/10 bg-black/20 p-3">
+              <div className="mb-3 text-sm font-semibold text-zinc-300">GRPC Settings</div>
+              <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                <ConfigInput label="Service Name" value={grpcServiceName} onChange={setGrpcServiceName} />
+                <ConfigInput label="Authority" value={grpcAuthority} onChange={setGrpcAuthority} />
+                <label className="flex items-center space-x-2 pt-6">
+                  <input type="checkbox" checked={grpcMultiMode} onChange={(e) => setGrpcMultiMode(e.target.checked)} className="rounded border-white/10 bg-black/35 text-amber-400" />
+                  <span className="text-xs font-semibold text-zinc-300">Multi Mode</span>
+                </label>
+              </div>
+            </div>
+          )}
+        </>
       )}
 
-      {network === "xhttp" && (
-        <div className="rounded-lg border border-white/10 bg-black/20 p-3">
-          <div className="mb-3 text-sm font-semibold text-zinc-300">XHTTP Settings</div>
-          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-            <ConfigInput label="Path" value={xhttpPath} onChange={setXhttpPath} />
-            <ConfigInput label="Host" value={xhttpHost} onChange={setXhttpHost} />
-            <ConfigInput label="Mode" value={xhttpMode} onChange={setXhttpMode} placeholder="auto" />
-            <ConfigInput label="Padding" value={xhttpPadding} onChange={setXhttpPadding} placeholder="100-1000" />
-            <ConfigInput label="Post Size" value={xhttpPostSize} onChange={setXhttpPostSize} />
-          </div>
-        </div>
-      )}
-
-      {network === "grpc" && (
-        <div className="rounded-lg border border-white/10 bg-black/20 p-3">
-          <div className="mb-3 text-sm font-semibold text-zinc-300">GRPC Settings</div>
-          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-            <ConfigInput label="Service Name" value={grpcServiceName} onChange={setGrpcServiceName} />
-            <ConfigInput label="Authority" value={grpcAuthority} onChange={setGrpcAuthority} />
-            <label className="flex items-center space-x-2 pt-6">
-              <input type="checkbox" checked={grpcMultiMode} onChange={(e) => setGrpcMultiMode(e.target.checked)} className="rounded border-white/10 bg-black/35 text-amber-400" />
-              <span className="text-xs font-semibold text-zinc-300">Multi Mode</span>
-            </label>
-          </div>
-        </div>
-      )}
-
-      <div className="rounded-lg border border-indigo-400/20 bg-indigo-500/5 p-3">
-        <div className="mb-3 flex items-center justify-between">
-          <div className="text-sm font-semibold text-indigo-300">Hysteria 2 (VIP Only)</div>
-          <label className="flex items-center space-x-2">
-            <span className="text-xs font-semibold text-zinc-300">Enabled</span>
-            <input type="checkbox" checked={hysteriaEnabled} onChange={(e) => setHysteriaEnabled(e.target.checked)} className="rounded border-white/10 bg-black/35 text-indigo-400 focus:ring-indigo-400/50" />
-          </label>
-        </div>
-        
-        {hysteriaEnabled && (
+      {protocol === "hysteria2" && (
+        <div className="rounded-lg border border-indigo-400/20 bg-indigo-500/5 p-3">
+          <div className="mb-3 text-sm font-semibold text-indigo-300">Настройки Hysteria 2</div>
           <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
             <ConfigInput label="Port" value={hysteriaPort} onChange={setHysteriaPort} />
             <ConfigInput label="Password" value={hysteriaPassword} onChange={setHysteriaPassword} />
@@ -1687,8 +1701,8 @@ function ConfigDirectEditPanel({ server, busyAction, onAction }: { server: Admin
               <span className="text-xs font-semibold text-zinc-300">Allow Insecure</span>
             </label>
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       <Button
         size="sm"
@@ -1705,8 +1719,8 @@ function ConfigDirectEditPanel({ server, busyAction, onAction }: { server: Admin
             short_id: shortId,
             fingerprint: fingerprint,
             flow: flow,
-            network: network,
-            security: security,
+            network: protocol === "vless" ? network : "", // clear network if hysteria
+            security: protocol === "vless" ? security : "",
             spider_x: spiderX,
             mldsa65_verify: mldsa65Verify,
             grpc_service_name: grpcServiceName,
@@ -1717,7 +1731,7 @@ function ConfigDirectEditPanel({ server, busyAction, onAction }: { server: Admin
             x_http_mode: xhttpMode,
             x_http_padding: xhttpPadding,
             x_http_post_size: parseInt(xhttpPostSize) || 0,
-            hysteria_enabled: hysteriaEnabled,
+            hysteria_enabled: protocol === "hysteria2", // ONLY true if hysteria2 selected
             hysteria_port: parseInt(hysteriaPort) || 0,
             hysteria_password: hysteriaPassword,
             hysteria_sni: hysteriaSni,
