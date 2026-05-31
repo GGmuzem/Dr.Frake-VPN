@@ -35,8 +35,6 @@ export type AdminServer = {
   active: boolean;
   is_vip_only?: boolean;
   max_peers?: number;
-  awg_port?: number;
-  agent_url?: string;
   active_keys?: number;
   active_awg?: number;
   active_vless?: number;
@@ -84,32 +82,12 @@ export type AdminServer = {
       address?: string;
       port?: number;
       server_name?: string;
-      client_id?: string;
       public_key?: string;
       short_id?: string;
-      fingerprint?: string;
-      mldsa65_verify?: string;
       network?: string;
       security?: string;
-      flow?: string;
-      spider_x?: string;
       grpc_service_name?: string;
-      grpc_authority?: string;
-      grpc_multi_mode?: boolean;
-      x_http_path?: string;
-      x_http_host?: string;
-      x_http_mode?: string;
-      x_http_padding?: string;
-      x_http_post_size?: number;
-      hysteria_enabled?: boolean;
-      hysteria_port?: number;
-      hysteria_password?: string;
-      hysteria_sni?: string;
-      hysteria_insecure?: boolean;
-      hysteria_obfs_password?: string;
-      hysteria_masquerade_url?: string;
       container_name?: string;
-      advanced_json?: string;
     };
   };
 };
@@ -138,57 +116,6 @@ export type AdminAuditLog = {
   message: string;
   ip: string;
   created_at: string;
-};
-
-export type LegacyAdminUser = {
-  id: number;
-  email: string;
-  role: "admin" | "user";
-  created_at: string;
-  subscription?: {
-    plan?: string;
-    status?: string;
-    expires_at?: string | null;
-  };
-};
-
-export type LegacyAdminPayment = {
-  id: number;
-  user_email?: string;
-  amount: number;
-  original_amount?: number;
-  discount_amount?: number;
-  promo_code?: string;
-  plan: string;
-  status: string;
-  created_at: string;
-  confirmed_at?: string | null;
-};
-
-export type LegacyAdminPromoCode = {
-  id: number;
-  code: string;
-  description?: string;
-  discount_percent: number;
-  max_uses?: number;
-  used_count?: number;
-  active: boolean;
-  applicable_plans?: string;
-  once_per_user?: boolean;
-  expires_at?: string | null;
-  created_at?: string;
-};
-
-export type LegacyAdminDownload = {
-  platform: string;
-  current_file?: string;
-  file_name?: string;
-  public_url?: string;
-  url?: string;
-  allowed_extensions?: string[];
-  enabled?: boolean;
-  size_bytes?: number;
-  uploaded_at?: string | null;
 };
 
 export type ServerFilters = {

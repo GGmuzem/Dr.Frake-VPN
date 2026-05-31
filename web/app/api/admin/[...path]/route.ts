@@ -11,15 +11,11 @@ async function proxyAdmin(request: Request, context: RouteContext) {
     const { path } = await context.params;
     const sourceURL = new URL(request.url);
     const backendPath = `/api/v1/admin/${path.join("/")}${sourceURL.search}`;
-    const body =
-      request.method === "GET" || request.method === "HEAD"
-        ? undefined
-        : Buffer.from(await request.arrayBuffer());
+    const body = request.method === "GET" || request.method === "HEAD" ? undefined : await request.text();
     const response = await authorizedFetch((token) => {
       const headers = new Headers();
       headers.set("Authorization", `Bearer ${token}`);
-      const contentType = request.headers.get("Content-Type");
-      if (contentType) headers.set("Content-Type", contentType);
+      headers.set("Content-Type", request.headers.get("Content-Type") ?? "application/json");
       return backendFetch(backendPath, {
         method: request.method,
         headers,
