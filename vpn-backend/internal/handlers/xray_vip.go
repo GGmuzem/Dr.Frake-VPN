@@ -990,13 +990,21 @@ func buildVLESSConfig(clientID string, server *models.VPNServer, template *model
 		},
 	}
 	if template.Network == "xhttp" {
+		xhttpPadding := strings.TrimSpace(template.XHTTPPadding)
+		if xhttpPadding == "" {
+			xhttpPadding = "100-1000"
+		}
+		xhttpPostSize := "1000000"
+		if template.XHTTPPostSize > 0 {
+			xhttpPostSize = fmt.Sprintf("%d", template.XHTTPPostSize)
+		}
 		streamSettings["xhttpSettings"] = map[string]interface{}{
 			"path": template.XHTTPPath,
 			"host": template.XHTTPHost,
 			"mode": template.XHTTPMode,
 			"extra": map[string]interface{}{
-				"xPaddingBytes":      "100-1000",
-				"scMaxEachPostBytes": "1000000",
+				"xPaddingBytes":      xhttpPadding,
+				"scMaxEachPostBytes": xhttpPostSize,
 			},
 		}
 		if template.Security == "reality" {
