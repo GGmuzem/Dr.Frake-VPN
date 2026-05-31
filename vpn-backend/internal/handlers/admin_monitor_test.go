@@ -16,6 +16,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/glebarez/sqlite"
+	"golang.org/x/crypto/curve25519"
 	"gorm.io/gorm"
 )
 
@@ -115,6 +116,65 @@ func TestAdminImportServerConfigsPersistsAWGAndXrayTemplate(t *testing.T) {
 	var audit models.AdminAuditLog
 	if err := db.Where("action = ? AND entity_id = ?", "server.config_import", fmt.Sprint(server.ID)).First(&audit).Error; err != nil {
 		t.Fatalf("expected audit entry: %v", err)
+	}
+}
+
+func TestAdminImportServerConfigsDerivesXrayRealityPublicKey(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	db := openAdminMonitorDB(t)
+	admin := models.User{Email: "admin@example.com", PasswordHash: "hash", Role: models.RoleAdmin}
+	if err := db.Create(&admin).Error; err != nil {
+		t.Fatalf("create admin: %v", err)
+	}
+	server := models.VPNServer{
+		Name:      "Berlin-2",
+		Host:      "berlin2.example.com",
+		Endpoint:  "berlin2.example.com:443",
+		PublicKey: "server-public-key",
+		Active:    true,
+		H1:        "1",
+		H2:        "2",
+		H3:        "3",
+		H4:        "4",
+	}
+	if err := db.Create(&server).Error; err != nil {
+		t.Fatalf("create server: %v", err)
+	}
+
+	privateRaw := make([]byte, curve25519.ScalarSize)
+	for index := range privateRaw {
+		privateRaw[index] = byte(index + 1)
+	}
+	expectedPublicRaw, err := curve25519.X25519(privateRaw, curve25519.Basepoint)
+	if err != nil {
+		t.Fatalf("derive expected public key: %v", err)
+	}
+	privateKey := base64.RawURLEncoding.EncodeToString(privateRaw)
+	expectedPublicKey := base64.RawURLEncoding.EncodeToString(expectedPublicRaw)
+	serverJSON := fmt.Sprintf(`{"inbounds":[{"protocol":"vless","port":9443,"streamSettings":{"network":"xhttp","security":"reality","realitySettings":{"privateKey":%q,"serverNames":["www.cloudflare.com"],"shortIds":["feedface"],"mldsa65Verify":"verify-key"},"xhttpSettings":{"path":"/xray/admin"}}}]}`, privateKey)
+	body := []byte(fmt.Sprintf(`{
+		"xray_config_json":%q,
+		"xray_client_id":"22222222-2222-4222-8222-222222222222"
+	}`, serverJSON))
+
+	recorder := httptest.NewRecorder()
+	context, _ := gin.CreateTestContext(recorder)
+	context.Params = gin.Params{{Key: "id", Value: fmt.Sprint(server.ID)}}
+	context.Set("user_id", admin.ID)
+	context.Request = httptest.NewRequest(http.MethodPost, "/api/v1/admin/servers/1/configs/import", bytes.NewReader(body))
+	context.Request.Header.Set("Content-Type", "application/json")
+
+	NewAdminHandler(db, &config.Config{}).ImportServerConfigs(context)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected import status 200, got %d body=%s", recorder.Code, recorder.Body.String())
+	}
+
+	var template models.VLESSServerTemplate
+	if err := db.Where("server_id = ?", server.ID).First(&template).Error; err != nil {
+		t.Fatalf("load VLESS template: %v", err)
+	}
+	if template.PublicKey != expectedPublicKey || template.ShortID != "feedface" || template.MLDSA65Verify != "verify-key" {
+		t.Fatalf("VLESS reality fields not derived from server.json: %#v", template)
 	}
 }
 

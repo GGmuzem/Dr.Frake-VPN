@@ -78,7 +78,7 @@ type ConfirmDialogState = {
   message: string;
   actionLabel: string;
   danger?: boolean;
-  onConfirm: () => Promise<void> | void;
+  onConfirm: () => Promise<unknown> | unknown;
 };
 
 type DigestDialogState = {
@@ -598,6 +598,7 @@ export function AdminPanel({ adminEmail, initialOverview }: { adminEmail: string
                   onLoadLegacy={loadLegacyResource}
                   onExport={exportCSV}
                   onUploadDownload={uploadDownload}
+                  onConfirm={setConfirmDialog}
                 />
               </motion.div>
             </AnimatePresence>
@@ -865,6 +866,7 @@ function SectionFocus({
   onLoadLegacy,
   onExport,
   onUploadDownload,
+  onConfirm,
 }: {
   section: AdminSection;
   fleetHealth: number;
@@ -888,6 +890,7 @@ function SectionFocus({
   onLoadLegacy: (resource: "users" | "payments" | "promo-codes" | "downloads") => Promise<void>;
   onExport: (entity: "users" | "servers" | "payments" | "promo-codes") => Promise<void>;
   onUploadDownload: (platform: string, file: File) => Promise<void>;
+  onConfirm: (state: ConfirmDialogState) => void;
 }) {
   if (section === "incidents") {
     return (
