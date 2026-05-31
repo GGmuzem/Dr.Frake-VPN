@@ -131,11 +131,7 @@ func buildHappClientJSON(clientID string, server *models.VPNServer, template *mo
 		}
 	}
 
-	return map[string]interface{}{
-		"remarks": description,
-		"meta": map[string]interface{}{
-			"serverDescription": description,
-		},
+	xrayConfig := map[string]interface{}{
 		"dns": map[string]interface{}{
 			"hosts": map[string]interface{}{
 				"cloudflare-dns.com": "1.1.1.1",
