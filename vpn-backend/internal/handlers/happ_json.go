@@ -241,49 +241,63 @@ func buildHappClientJSON(clientID string, server *models.VPNServer, template *mo
 				"statsOutboundUplink":   true,
 			},
 		},
-		"routing": map[string]interface{}{
-			"domainStrategy": "IPIfNonMatch",
-			"rules": []interface{}{
-				map[string]interface{}{
-					"network":     "udp",
-					"port":        443,
-					"outboundTag": "block",
-				},
-				map[string]interface{}{
-					"ip":          []string{"1.1.1.1"},
-					"outboundTag": "proxy",
-					"port":        443,
-				},
-				map[string]interface{}{
-					"ip":          []string{"8.8.8.8"},
-					"outboundTag": "direct",
-					"port":        443,
-				},
-				map[string]interface{}{
-					"inboundTag":  []string{"metrics_in"},
-					"outboundTag": "metrics_out",
-				},
-				map[string]interface{}{
-					"domain": []string{
-						"full:.ru",
-						"full:.xn--p1ai",
-					},
-					"outboundTag": "direct",
-				},
-				map[string]interface{}{
-					"ip": []string{
-						"10.0.0.0/8",
-						"172.16.0.0/12",
-						"192.168.0.0/16",
-						"169.254.0.0/16",
-						"224.0.0.0/4",
-						"255.255.255.255",
-					},
-					"outboundTag": "direct",
-				},
-			},
-		},
 		"stats": map[string]interface{}{},
+	}
+
+	var routingRules []interface{}
+	if !template.HysteriaEnabled {
+		routingRules = append(routingRules, map[string]interface{}{
+			"network":     "udp",
+			"port":        443,
+			"outboundTag": "block",
+		})
+	}
+	routingRules = append(routingRules,
+		map[string]interface{}{
+			"ip":          []string{"1.1.1.1"},
+			"outboundTag": "proxy",
+			"port":        443,
+		},
+		map[string]interface{}{
+			"ip":          []string{"8.8.8.8"},
+			"outboundTag": "direct",
+			"port":        443,
+		},
+		map[string]interface{}{
+			"inboundTag":  []string{"metrics_in"},
+			"outboundTag": "metrics_out",
+		},
+		map[string]interface{}{
+			"domain": []string{
+				"full:.ru",
+				"full:.xn--p1ai",
+			},
+			"outboundTag": "direct",
+		},
+		map[string]interface{}{
+			"ip": []string{
+				"10.0.0.0/8",
+				"172.16.0.0/12",
+				"192.168.0.0/16",
+				"169.254.0.0/16",
+				"224.0.0.0/4",
+				"255.255.255.255",
+			},
+			"outboundTag": "direct",
+		},
+	)
+
+	xrayConfig["routing"] = map[string]interface{}{
+		"domainStrategy": "IPIfNonMatch",
+		"rules":          routingRules,
+	}
+
+	return map[string]interface{}{
+		"remarks": description,
+		"meta": map[string]interface{}{
+			"type": "awg",
+		},
+		"config": xrayConfig,
 	}
 }
 
