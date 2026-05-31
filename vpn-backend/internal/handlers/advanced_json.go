@@ -38,6 +38,12 @@ func applyAdvancedJSON(parsed map[string]interface{}, advancedJSON string, isSer
 		}
 	}
 
+	if isServerConfig {
+		delete(adv, "outbounds")
+	} else {
+		delete(adv, "inbounds")
+	}
+
 	deepMergeMap(parsed, adv)
 }
 
