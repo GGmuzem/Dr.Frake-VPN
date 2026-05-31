@@ -356,13 +356,13 @@ func applyVLESSSnapshot(server *models.VPNServer, template *models.VLESSServerTe
 					if mode, ok := xhttpSettings["mode"].(string); ok {
 						template.XHTTPMode = mode
 					}
+					// extra sub-object (older format)
 					if extra, ok := xhttpSettings["extra"].(map[string]interface{}); ok {
 						if padding, ok := extra["padding"].(string); ok {
 							template.XHTTPPadding = padding
 						} else if padding, ok := extra["xPaddingBytes"].(string); ok {
 							template.XHTTPPadding = padding
 						}
-						
 						if postSize, ok := extra["postSize"].(float64); ok {
 							template.XHTTPPostSize = int(postSize)
 						} else if postSizeStr, ok := extra["scMaxEachPostBytes"].(string); ok {
@@ -370,6 +370,21 @@ func applyVLESSSnapshot(server *models.VPNServer, template *models.VLESSServerTe
 								template.XHTTPPostSize = parsed
 							}
 						} else if postSizeFloat, ok := extra["scMaxEachPostBytes"].(float64); ok {
+							template.XHTTPPostSize = int(postSizeFloat)
+						}
+					}
+					// top-level format used by x-ui / newer xray builds
+					if template.XHTTPPadding == "" {
+						if padding, ok := xhttpSettings["xPaddingBytes"].(string); ok && padding != "" {
+							template.XHTTPPadding = padding
+						}
+					}
+					if template.XHTTPPostSize == 0 {
+						if postSizeStr, ok := xhttpSettings["scMaxEachPostBytes"].(string); ok {
+							if parsed, err := strconv.Atoi(postSizeStr); err == nil {
+								template.XHTTPPostSize = parsed
+							}
+						} else if postSizeFloat, ok := xhttpSettings["scMaxEachPostBytes"].(float64); ok {
 							template.XHTTPPostSize = int(postSizeFloat)
 						}
 					}
@@ -383,6 +398,18 @@ func applyVLESSSnapshot(server *models.VPNServer, template *models.VLESSServerTe
 					}
 					if multiMode, ok := grpcSettings["multiMode"].(bool); ok {
 						template.GrpcMultiMode = multiMode
+					}
+				}
+			}
+			// Use the actual client UUID from server.json as the shared ClientID.
+			// This is the ground truth of what the server accepts, and takes
+			// priority over xray_uuid.key which may be stale after x-ui changes.
+			if settings, ok := inbound["settings"].(map[string]interface{}); ok {
+				if clients, ok := settings["clients"].([]interface{}); ok && len(clients) > 0 {
+					if client, ok := clients[0].(map[string]interface{}); ok {
+						if id, ok := client["id"].(string); ok && strings.TrimSpace(id) != "" {
+							template.ClientID = strings.TrimSpace(id)
+						}
 					}
 				}
 			}

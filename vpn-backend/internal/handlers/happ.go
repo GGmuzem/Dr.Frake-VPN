@@ -568,18 +568,30 @@ func buildHappVLESSURI(clientID string, server *models.VPNServer, template *mode
 		params.Set("spx", template.SpiderX)
 	}
 	if template.Network == "xhttp" {
-		path := strings.TrimSpace(template.GrpcServiceName)
+		path := strings.TrimSpace(template.XHTTPPath)
+		if path == "" {
+			path = strings.TrimSpace(template.GrpcServiceName)
+		}
 		if path == "" {
 			path = "/assets/7d91f0e4"
 		}
 		if !strings.HasPrefix(path, "/") {
 			path = "/" + path
 		}
+		host := strings.TrimSpace(template.XHTTPHost)
+		if host == "" {
+			host = template.ServerName
+		}
 		params.Set("path", path)
-		params.Set("host", template.ServerName)
+		params.Set("host", host)
 		params.Set("mode", "auto")
-		params.Set("x_padding_bytes", "100-1000")
-		params.Set("extra", `{"mode":"auto","scMaxEachPostBytes":"1000000","xPaddingBytes":"100-1000"}`)
+		padding := strings.TrimSpace(template.XHTTPPadding)
+		if padding == "" {
+			padding = "100-1000"
+		}
+		params.Set("x_padding_bytes", padding)
+		extraJSON := fmt.Sprintf(`{"mode":"auto","scMaxEachPostBytes":"1000000","xPaddingBytes":%q}`, padding)
+		params.Set("extra", extraJSON)
 		if template.Security == "tls" {
 			params.Set("alpn", "h3")
 		}
