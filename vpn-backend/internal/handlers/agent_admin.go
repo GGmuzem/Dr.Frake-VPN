@@ -264,8 +264,8 @@ func applyVLESSSnapshot(server *models.VPNServer, template *models.VLESSServerTe
 		return nil
 	}
 
-	var parsed map[string]interface{}
-	if err := json.Unmarshal([]byte(serverConfigRaw), &parsed); err != nil {
+	parsed, err := parseXrayConfigPayload(serverConfigRaw)
+	if err != nil {
 		return err
 	}
 
@@ -296,6 +296,9 @@ func applyVLESSSnapshot(server *models.VPNServer, template *models.VLESSServerTe
 			}
 			protocol, _ := inbound["protocol"].(string)
 			if protocol != "vless" {
+				if protocol == "hysteria" || protocol == "hysteria2" {
+					applyHysteriaInbound(template, inbound)
+				}
 				continue
 			}
 
@@ -348,6 +351,111 @@ func applyVLESSSnapshot(server *models.VPNServer, template *models.VLESSServerTe
 	}
 	xrayTemplateDefaults(template, server)
 	return nil
+}
+
+func parseXrayConfigPayload(raw string) (map[string]interface{}, error) {
+	var parsed interface{}
+	trimmed := strings.TrimSpace(raw)
+	if err := json.Unmarshal([]byte(trimmed), &parsed); err != nil {
+		repaired := repairCommonXrayJSON(trimmed)
+		if repaired == trimmed {
+			return nil, err
+		}
+		if repairErr := json.Unmarshal([]byte(repaired), &parsed); repairErr != nil {
+			return nil, err
+		}
+	}
+	switch value := parsed.(type) {
+	case map[string]interface{}:
+		if _, ok := value["inbounds"]; ok {
+			return value, nil
+		}
+		if _, ok := value["protocol"].(string); ok {
+			return map[string]interface{}{"inbounds": []interface{}{value}}, nil
+		}
+		return value, nil
+	case []interface{}:
+		return map[string]interface{}{"inbounds": value}, nil
+	default:
+		return nil, fmt.Errorf("xray config must be a server object, inbound object, or inbound array")
+	}
+}
+
+func repairCommonXrayJSON(raw string) string {
+	repaired := raw
+	repaired = strings.ReplaceAll(repaired, `}]}],"hysteriaSettings"`, `}]},"hysteriaSettings"`)
+	repaired = strings.ReplaceAll(repaired, `}]}],"finalmask"`, `}]},"finalmask"`)
+	return repaired
+}
+
+func applyHysteriaInbound(template *models.VLESSServerTemplate, inbound map[string]interface{}) {
+	template.HysteriaEnabled = true
+	if port, ok := inbound["port"].(float64); ok && port > 0 {
+		template.HysteriaPort = int(port)
+	}
+	if settings, ok := inbound["settings"].(map[string]interface{}); ok {
+		if password := firstString(settings, "password", "auth", "key"); password != "" {
+			template.HysteriaPassword = password
+		}
+		if users, ok := settings["users"].([]interface{}); ok && len(users) > 0 {
+			if user, ok := users[0].(map[string]interface{}); ok {
+				if password := firstString(user, "password", "auth", "key"); password != "" {
+					template.HysteriaPassword = password
+				}
+			}
+		}
+	}
+	streamSettings, _ := inbound["streamSettings"].(map[string]interface{})
+	if tlsSettings, ok := streamSettings["tlsSettings"].(map[string]interface{}); ok {
+		if sni, ok := tlsSettings["serverName"].(string); ok && strings.TrimSpace(sni) != "" {
+			template.HysteriaSNI = strings.TrimSpace(sni)
+			if strings.TrimSpace(template.ServerName) == "" {
+				template.ServerName = template.HysteriaSNI
+			}
+		}
+		if insecure, ok := tlsSettings["allowInsecure"].(bool); ok {
+			template.HysteriaInsecure = insecure
+		}
+	}
+	if hysteriaSettings, ok := streamSettings["hysteriaSettings"].(map[string]interface{}); ok {
+		if masquerade, ok := hysteriaSettings["masquerade"].(map[string]interface{}); ok {
+			if url, ok := masquerade["url"].(string); ok && strings.TrimSpace(url) != "" {
+				template.HysteriaMasqueradeURL = strings.TrimSpace(url)
+			}
+			if insecure, ok := masquerade["insecure"].(bool); ok {
+				template.HysteriaInsecure = insecure
+			}
+		}
+	}
+	if finalmask, ok := streamSettings["finalmask"].(map[string]interface{}); ok {
+		if udp, ok := finalmask["udp"].([]interface{}); ok {
+			for _, rawMask := range udp {
+				mask, ok := rawMask.(map[string]interface{})
+				if !ok {
+					continue
+				}
+				if maskType, _ := mask["type"].(string); maskType != "salamander" {
+					continue
+				}
+				settings, _ := mask["settings"].(map[string]interface{})
+				if password := firstString(settings, "password"); password != "" {
+					template.HysteriaObfsPassword = password
+					if strings.TrimSpace(template.HysteriaPassword) == "" {
+						template.HysteriaPassword = password
+					}
+				}
+			}
+		}
+	}
+}
+
+func firstString(values map[string]interface{}, keys ...string) string {
+	for _, key := range keys {
+		if value, ok := values[key].(string); ok && strings.TrimSpace(value) != "" {
+			return strings.TrimSpace(value)
+		}
+	}
+	return ""
 }
 
 func xrayRealityPublicKeyFromPrivate(privateKey string) (string, error) {

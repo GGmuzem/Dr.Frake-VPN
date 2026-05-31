@@ -58,8 +58,8 @@ func (h *AdminHandler) ImportServerConfigs(c *gin.Context) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid xray_config_json: " + err.Error()})
 			return
 		}
-		if !hasUsableVLESSTemplate(&template) {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "xray config must include vless reality serverName, public key and short id"})
+		if !hasUsableVLESSTemplate(&template) && !hasUsableHysteriaTemplate(&template) {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "xray config must include VLESS Reality fields or Hysteria2 port/password"})
 			return
 		}
 	}

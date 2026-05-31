@@ -178,6 +178,55 @@ func TestAdminImportServerConfigsDerivesXrayRealityPublicKey(t *testing.T) {
 	}
 }
 
+func TestAdminImportServerConfigsAcceptsHysteriaInboundPackage(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	db := openAdminMonitorDB(t)
+	admin := models.User{Email: "admin@example.com", PasswordHash: "hash", Role: models.RoleAdmin}
+	if err := db.Create(&admin).Error; err != nil {
+		t.Fatalf("create admin: %v", err)
+	}
+	server := models.VPNServer{
+		Name:      "Hysteria-1",
+		Host:      "hy.example.com",
+		Endpoint:  "hy.example.com:443",
+		PublicKey: "server-public-key",
+		Active:    true,
+		H1:        "1",
+		H2:        "2",
+		H3:        "3",
+		H4:        "4",
+	}
+	if err := db.Create(&server).Error; err != nil {
+		t.Fatalf("create server: %v", err)
+	}
+
+	inboundPackage := `{"listen":"0.0.0.0","port":10165,"protocol":"hysteria","settings":{"version":2},"streamSettings":{"network":"hysteria","security":"tls","tlsSettings":{"serverName":"forum.megekko.nl","certificates":[{"certificate":["cert"],"key":["key"]}]}],"hysteriaSettings":{"version":2,"masquerade":{"type":"proxy","url":"https://forum.megekko.nl","insecure":true}},"finalmask":{"udp":[{"type":"salamander","settings":{"password":"hy-secret"}}]}}}`
+	body := []byte(fmt.Sprintf(`{"xray_config_json":%q}`, inboundPackage))
+
+	recorder := httptest.NewRecorder()
+	context, _ := gin.CreateTestContext(recorder)
+	context.Params = gin.Params{{Key: "id", Value: fmt.Sprint(server.ID)}}
+	context.Set("user_id", admin.ID)
+	context.Request = httptest.NewRequest(http.MethodPost, "/api/v1/admin/servers/1/configs/import", bytes.NewReader(body))
+	context.Request.Header.Set("Content-Type", "application/json")
+
+	NewAdminHandler(db, &config.Config{}).ImportServerConfigs(context)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected import status 200, got %d body=%s", recorder.Code, recorder.Body.String())
+	}
+
+	var template models.VLESSServerTemplate
+	if err := db.Where("server_id = ?", server.ID).First(&template).Error; err != nil {
+		t.Fatalf("load VLESS template: %v", err)
+	}
+	if !template.HysteriaEnabled || template.HysteriaPort != 10165 || template.HysteriaSNI != "forum.megekko.nl" || template.HysteriaPassword != "hy-secret" || template.HysteriaObfsPassword != "hy-secret" {
+		t.Fatalf("Hysteria inbound package not imported: %#v", template)
+	}
+	if template.HysteriaMasqueradeURL != "https://forum.megekko.nl" || !template.HysteriaInsecure {
+		t.Fatalf("Hysteria masquerade fields not imported: %#v", template)
+	}
+}
+
 func TestAdminMonitorCreatesDedupesAndResolvesStaleHeartbeatIncident(t *testing.T) {
 	db := openAdminMonitorDB(t)
 	now := time.Date(2026, 5, 30, 12, 0, 0, 0, time.UTC)

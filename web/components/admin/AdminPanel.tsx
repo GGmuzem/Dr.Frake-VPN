@@ -1512,7 +1512,7 @@ function ConfigImportPanel({ server, busyAction, onAction }: { server: AdminServ
   return (
     <div className="space-y-3">
       <div className="rounded-lg border border-amber-300/20 bg-amber-300/[0.05] p-3 text-xs leading-5 text-amber-50/80">
-        Можно вставить обычный Xray server.json. Если внутри есть realitySettings.privateKey и shortIds, public key и short id будут извлечены автоматически.
+        Можно вставить Xray server.json, массив inbounds или один inbound-package. VLESS Reality и Hysteria2 будут разобраны автоматически.
       </div>
       <label className="block">
         <span className="mb-1 block text-xs font-semibold text-zinc-400">AWG config</span>
@@ -1524,11 +1524,11 @@ function ConfigImportPanel({ server, busyAction, onAction }: { server: AdminServ
         />
       </label>
       <label className="block">
-        <span className="mb-1 block text-xs font-semibold text-zinc-400">Xray server.json</span>
+        <span className="mb-1 block text-xs font-semibold text-zinc-400">Xray server.json / inbound package</span>
         <textarea
           value={xrayConfig}
           onChange={(event) => setXrayConfig(event.target.value)}
-          placeholder='{"inbounds":[{"protocol":"vless","port":443,"streamSettings":{"network":"xhttp","security":"reality"}}]}'
+          placeholder='{"inbounds":[{"protocol":"vless","port":443,"streamSettings":{"network":"xhttp","security":"reality"}}]} или {"protocol":"hysteria","port":443,...}'
           className="min-h-40 w-full resize-y rounded-lg border border-white/10 bg-black/35 p-3 font-mono text-xs text-zinc-100 outline-none focus:border-amber-300/60 focus:ring-2 focus:ring-amber-300/20"
           spellCheck={false}
         />
