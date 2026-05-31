@@ -15,7 +15,7 @@ fblink-sc.com, www.fblink-sc.com {
 
 	# FBLink VPN Go backend: REST API, TV device flow, downloads.
 	@vpn_backend {
-		path /api/v1/* /tv /tv/* /download*
+		path /api/v1/* /tv /tv/* /download* /admin /admin/*
 	}
 
 	handle @vpn_backend {
@@ -27,7 +27,7 @@ fblink-sc.com, www.fblink-sc.com {
 
 	# FBLink VPN Next.js frontend: personal cabinet, Next API routes, and the new AAA admin panel.
 	@vpn_frontend {
-		path /admin /admin/* /api /api/* /auth /auth/* /dashboard /dashboard/* /_next/* /favicon.ico /brand-icon.png /legal/* /apple-icon.png /icon*
+		path /api /api/* /auth /auth/* /dashboard /dashboard/* /_next/* /favicon.ico /brand-icon.png /legal/* /apple-icon.png /icon*
 	}
 
 	handle @vpn_frontend {
