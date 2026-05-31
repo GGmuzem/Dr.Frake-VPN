@@ -115,10 +115,26 @@ export function VipSection({ session }: { session: Session }) {
     setLoading(true);
     
     const domainsArray = editDomains.split(/[\s,]+/).filter(Boolean);
+    const domains: string[] = [];
+    const domain_suffixes: string[] = [];
+    const cidrs: string[] = [];
+
+    for (const item of domainsArray) {
+      if (/^(\d{1,3}\.){3}\d{1,3}(\/\d{1,2})?$/.test(item)) {
+        cidrs.push(item);
+      } else if (item.startsWith('.')) {
+        domain_suffixes.push(item);
+      } else {
+        domains.push(item);
+      }
+    }
+
     const body = {
       name: editName,
       action: editAction,
-      domains: domainsArray
+      domains: domains,
+      domain_suffixes: domain_suffixes,
+      cidrs: cidrs
     };
 
     try {
@@ -205,15 +221,23 @@ export function VipSection({ session }: { session: Session }) {
     const happRules = customRules.map(p => {
       const allDomains = [
         ...(p.domains || []),
-        ...(p.domain_suffixes || []),
-        ...(p.cidrs || [])
+        ...(p.domain_suffixes || []).map(s => s.startsWith('.') ? 'domain:' + s.substring(1) : s)
       ];
       
-      return {
+      const rule: any = {
         type: "field",
-        domain: allDomains,
         outboundTag: p.action
       };
+      
+      if (allDomains.length > 0) {
+        rule.domain = allDomains;
+      }
+      
+      if (p.cidrs && p.cidrs.length > 0) {
+        rule.ip = p.cidrs;
+      }
+      
+      return rule;
     });
     
     const happProfile = {
