@@ -80,18 +80,19 @@ func buildHappClientJSON(clientID string, server *models.VPNServer, template *mo
 			sni = template.ServerName
 		}
 		proxyOutbound = map[string]interface{}{
-			"protocol": "hysteria2",
+			"protocol": "hysteria",
 			"settings": map[string]interface{}{
 				"servers": []interface{}{
 					map[string]interface{}{
 						"address":  template.Address,
 						"port":     hysteriaPort,
 						"password": template.HysteriaPassword,
+						"version":  2,
 					},
 				},
 			},
 			"streamSettings": map[string]interface{}{
-				"network":  "tcp",
+				"network":  "hysteria",
 				"security": "tls",
 				"tlsSettings": map[string]interface{}{
 					"serverName":    sni,

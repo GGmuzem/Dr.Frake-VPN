@@ -1022,18 +1022,19 @@ func buildVLESSConfig(clientID string, server *models.VPNServer, template *model
 			sni = template.ServerName
 		}
 		primaryOutbound = map[string]interface{}{
-			"protocol": "hysteria2",
+			"protocol": "hysteria",
 			"settings": map[string]interface{}{
 				"servers": []interface{}{
 					map[string]interface{}{
 						"address":  template.Address,
 						"port":     hysteriaPort,
 						"password": template.HysteriaPassword,
+						"version":  2,
 					},
 				},
 			},
 			"streamSettings": map[string]interface{}{
-				"network":  "tcp",
+				"network":  "hysteria",
 				"security": "tls",
 				"tlsSettings": map[string]interface{}{
 					"serverName":    sni,
