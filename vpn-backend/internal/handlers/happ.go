@@ -192,12 +192,17 @@ func (h *HappHandler) Subscription(c *gin.Context) {
 		return
 	}
 
-	configs, err := h.happJSONConfigs(token.UserID, sub)
+	lines, err := h.happVLESSLinks(token.UserID, sub)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to build happ subscription"})
 		return
 	}
-	if len(configs) == 0 {
+	routingLink, err := h.happRoutingLink(token.UserID, sub)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to build happ routing profile"})
+		return
+	}
+	if len(lines) == 0 {
 		go func() {
 			if err := h.ensureHappCredentials(token.UserID, sub); err != nil {
 				// pass
@@ -210,8 +215,8 @@ func (h *HappHandler) Subscription(c *gin.Context) {
 	now := time.Now()
 	_ = h.db.Model(&models.HappSubscriptionToken{}).Where("id = ?", token.ID).Update("last_used_at", &now).Error
 
-	c.Header("Content-Type", "application/json; charset=utf-8")
-	c.Header("Content-Disposition", `attachment; filename="fblink-happ.json"`)
+	c.Header("Content-Type", "text/plain; charset=utf-8")
+	c.Header("Content-Disposition", `attachment; filename="fblink-happ.txt"`)
 	c.Header("Cache-Control", "no-store")
 
 	totalBytes := int64(100) * 1024 * 1024 * 1024 * 1024 // 100 TB to represent unlimited
@@ -220,12 +225,12 @@ func (h *HappHandler) Subscription(c *gin.Context) {
 	c.Header("profile-update-interval", "24")
 	c.Header("profile-web-page-url", h.publicBaseURL(c))
 	c.Header("profile-title", happSubscriptionTitle)
+	if routingLink != "" {
+		c.Header("routing", routingLink)
+		lines = append([]string{routingLink}, lines...)
+	}
 
-	// Instruct Happ to use the auth settings directly from the JSON (which is noauth)
-	c.Header("socks-auth-mode", "from-json")
-	c.Header("http-auth-mode", "from-json")
-
-	c.JSON(http.StatusOK, configs)
+	c.String(http.StatusOK, strings.Join(lines, "\n"))
 }
 
 func (h *HappHandler) happRoutingLink(userID uint, sub models.Subscription) (string, error) {
