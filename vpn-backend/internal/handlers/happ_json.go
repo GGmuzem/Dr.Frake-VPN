@@ -100,6 +100,7 @@ func buildHappClientJSON(clientID string, server *models.VPNServer, template *mo
 				"tlsSettings": map[string]interface{}{
 					"serverName":    sni,
 					"allowInsecure": template.HysteriaInsecure,
+					"insecure":      template.HysteriaInsecure,
 					"alpn":          []string{"h3"},
 				},
 			},

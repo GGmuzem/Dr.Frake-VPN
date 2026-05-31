@@ -1042,6 +1042,7 @@ func buildVLESSConfig(clientID string, server *models.VPNServer, template *model
 				"tlsSettings": map[string]interface{}{
 					"serverName":    sni,
 					"allowInsecure": template.HysteriaInsecure,
+					"insecure":      template.HysteriaInsecure,
 					"alpn":          []string{"h3"},
 				},
 				"sockopt": map[string]interface{}{
