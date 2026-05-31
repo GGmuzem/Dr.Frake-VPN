@@ -529,7 +529,7 @@ func buildHappHysteria2URI(server *models.VPNServer, template *models.VLESSServe
 		query = "?" + query
 	}
 
-	return fmt.Sprintf("hy2://%s@%s:%d/%s#%s",
+	return fmt.Sprintf("hy2://%s@%s:%d%s#%s",
 		url.PathEscape(strings.TrimSpace(template.HysteriaPassword)),
 		address,
 		template.HysteriaPort,

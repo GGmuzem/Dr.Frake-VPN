@@ -109,6 +109,7 @@ export type AdminServer = {
       hysteria_obfs_password?: string;
       hysteria_masquerade_url?: string;
       container_name?: string;
+      advanced_json?: string;
     };
   };
 };

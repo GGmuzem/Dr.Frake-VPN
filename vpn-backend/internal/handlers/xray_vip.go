@@ -670,7 +670,7 @@ func addXrayClient(server *models.VPNServer, template *models.VLESSServerTemplat
 			continue
 		}
 		protocol, _ := inbound["protocol"].(string)
-		if protocol != "vless" {
+		if protocol != "vless" && protocol != "hysteria" && protocol != "hysteria2" {
 			continue
 		}
 		settings, ok := inbound["settings"].(map[string]interface{})
@@ -682,19 +682,26 @@ func addXrayClient(server *models.VPNServer, template *models.VLESSServerTemplat
 
 		alreadyExists := false
 		for _, item := range clients {
-			if client, ok := item.(map[string]interface{}); ok && client["id"] == clientID {
-				alreadyExists = true
-				break
+			if client, ok := item.(map[string]interface{}); ok {
+				if client["id"] == clientID || client["auth"] == clientID || client["password"] == clientID {
+					alreadyExists = true
+					break
+				}
 			}
 		}
 
 		if !alreadyExists {
-			clientConfig := map[string]interface{}{
-				"id": clientID,
+			clientConfig := make(map[string]interface{})
+			if protocol == "vless" {
+				clientConfig["id"] = clientID
+			} else {
+				clientConfig["auth"] = clientID // Use auth for Hysteria
+				clientConfig["email"] = clientID
 			}
+			
 			streamSettings, _ := inbound["streamSettings"].(map[string]interface{})
 			netw, _ := streamSettings["network"].(string)
-			if i == 0 && netw != "xhttp" && template.Network != "xhttp" && strings.TrimSpace(template.Flow) != "" {
+			if protocol == "vless" && i == 0 && netw != "xhttp" && template.Network != "xhttp" && strings.TrimSpace(template.Flow) != "" {
 				clientConfig["flow"] = template.Flow
 			}
 			clients = append(clients, clientConfig)
@@ -752,7 +759,7 @@ func removeXrayClient(server *models.VPNServer, template *models.VLESSServerTemp
 			continue
 		}
 		protocol, _ := inbound["protocol"].(string)
-		if protocol != "vless" {
+		if protocol != "vless" && protocol != "hysteria" && protocol != "hysteria2" {
 			continue
 		}
 		settings, ok := inbound["settings"].(map[string]interface{})
@@ -765,7 +772,7 @@ func removeXrayClient(server *models.VPNServer, template *models.VLESSServerTemp
 		inboundChanged := false
 		for _, item := range clients {
 			client, ok := item.(map[string]interface{})
-			if ok && client["id"] == clientID {
+			if ok && (client["id"] == clientID || client["auth"] == clientID || client["password"] == clientID) {
 				inboundChanged = true
 			} else {
 				filtered = append(filtered, item)
@@ -1030,17 +1037,23 @@ func buildVLESSConfig(clientID string, server *models.VPNServer, template *model
 		if sni == "" {
 			sni = template.ServerName
 		}
+		serverConfig := map[string]interface{}{
+			"address":  template.Address,
+			"port":     hysteriaPort,
+			"password": template.HysteriaPassword,
+			"version":  2,
+		}
+		if template.HysteriaObfsPassword != "" {
+			serverConfig["obfs"] = map[string]interface{}{
+				"type":     "salamander",
+				"password": template.HysteriaObfsPassword,
+			}
+		}
+
 		primaryOutbound = map[string]interface{}{
 			"protocol": "hysteria2",
 			"settings": map[string]interface{}{
-				"servers": []interface{}{
-					map[string]interface{}{
-						"address":  template.Address,
-						"port":     hysteriaPort,
-						"password": template.HysteriaPassword,
-						"version":  2,
-					},
-				},
+				"servers": []interface{}{serverConfig},
 			},
 			"streamSettings": map[string]interface{}{
 				"network":  "hysteria2",
@@ -1051,6 +1064,19 @@ func buildVLESSConfig(clientID string, server *models.VPNServer, template *model
 					"alpn":          []string{"h3"},
 				},
 			},
+		}
+
+		if template.HysteriaObfsPassword != "" {
+			primaryOutbound["finalmask"] = map[string]interface{}{
+				"udp": []interface{}{
+					map[string]interface{}{
+						"type": "salamander",
+						"settings": map[string]interface{}{
+							"password": template.HysteriaObfsPassword,
+						},
+					},
+				},
+			}
 		}
 	} else {
 		primaryOutbound = map[string]interface{}{

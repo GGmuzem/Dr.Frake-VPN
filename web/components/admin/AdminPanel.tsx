@@ -1536,6 +1536,7 @@ function ConfigDirectEditPanel({ server, busyAction, onAction }: { server: Admin
   const [hysteriaInsecure, setHysteriaInsecure] = useState(xray?.hysteria_insecure ?? true);
   const [hysteriaObfsPassword, setHysteriaObfsPassword] = useState(xray?.hysteria_obfs_password ?? "");
   const [hysteriaMasqueradeUrl, setHysteriaMasqueradeUrl] = useState(xray?.hysteria_masquerade_url ?? "https://www.microsoft.com");
+  const [advancedJson, setAdvancedJson] = useState(xray?.advanced_json ?? "{}");
 
   const busy = busyAction === `config-update-${server.id}`;
 
@@ -1572,7 +1573,8 @@ function ConfigDirectEditPanel({ server, busyAction, onAction }: { server: Admin
     setHysteriaInsecure(x?.hysteria_insecure ?? true);
     setHysteriaObfsPassword(x?.hysteria_obfs_password ?? "");
     setHysteriaMasqueradeUrl(x?.hysteria_masquerade_url ?? "https://www.microsoft.com");
-  }, [server.id, server.config_summary]);
+    setAdvancedJson(x?.advanced_json ?? "{}");
+  }, [server.id]);
 
   return (
     <div className="space-y-4">
@@ -1693,6 +1695,17 @@ function ConfigDirectEditPanel({ server, busyAction, onAction }: { server: Admin
         </div>
       )}
 
+      <label className="block">
+        <span className="mb-1 block text-xs font-semibold text-zinc-400">Advanced JSON Override</span>
+        <textarea
+          value={advancedJson}
+          onChange={(event) => setAdvancedJson(event.target.value)}
+          className="min-h-36 w-full resize-y rounded-lg border border-white/10 bg-black/35 p-3 font-mono text-xs text-zinc-100 outline-none focus:border-amber-300/60 focus:ring-2 focus:ring-amber-300/20"
+          spellCheck={false}
+          placeholder="{}"
+        />
+      </label>
+
       <Button
         size="sm"
         className="w-full"
@@ -1727,6 +1740,7 @@ function ConfigDirectEditPanel({ server, busyAction, onAction }: { server: Admin
             hysteria_insecure: hysteriaInsecure,
             hysteria_obfs_password: hysteriaObfsPassword,
             hysteria_masquerade_url: hysteriaMasqueradeUrl,
+            advanced_json: advancedJson,
           }, "PUT");
         }}
       >

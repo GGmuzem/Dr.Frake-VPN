@@ -533,5 +533,25 @@ func bootstrapSelfHostedXray(server *models.VPNServer, template *models.VLESSSer
 		return nil, output, fetchErr
 	}
 
-	return mergeFetchedBootstrapTemplate(fetchedTemplate, template), output, nil
+	mergedTemplate := mergeFetchedBootstrapTemplate(fetchedTemplate, template)
+
+	if template != nil && template.AdvancedJSON != "" {
+		container := template.ContainerName
+		if container == "" {
+			container = defaultXrayContainer
+		}
+		configPath := detectXrayConfigPath(server, container)
+		if raw, err := readXrayFile(server, container, configPath); err == nil {
+			var parsed map[string]interface{}
+			if err := json.Unmarshal([]byte(raw), &parsed); err == nil {
+				applyAdvancedJSON(parsed, template.AdvancedJSON, true)
+				if updatedJSON, err := json.Marshal(parsed); err == nil {
+					_ = writeXrayFile(server, container, configPath, string(updatedJSON))
+					_ = ensureXrayRuntimeReady(server, container, configPath, template.Port)
+				}
+			}
+		}
+	}
+
+	return mergedTemplate, output, nil
 }

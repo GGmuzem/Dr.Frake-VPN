@@ -182,6 +182,7 @@ type updateVLESSServerTemplateRequest struct {
 	HysteriaInsecure      bool   `json:"hysteria_insecure"`
 	HysteriaObfsPassword  string `json:"hysteria_obfs_password"`
 	HysteriaMasqueradeURL string `json:"hysteria_masquerade_url"`
+	AdvancedJSON          string `json:"advanced_json"`
 }
 
 func (h *AdminHandler) UpdateVLESSServerTemplate(c *gin.Context) {
@@ -236,6 +237,7 @@ func (h *AdminHandler) UpdateVLESSServerTemplate(c *gin.Context) {
 	template.HysteriaInsecure = req.HysteriaInsecure
 	template.HysteriaObfsPassword = req.HysteriaObfsPassword
 	template.HysteriaMasqueradeURL = req.HysteriaMasqueradeURL
+	template.AdvancedJSON = req.AdvancedJSON
 
 	if err := h.db.Transaction(func(tx *gorm.DB) error {
 		if err := tx.Save(&server).Error; err != nil {

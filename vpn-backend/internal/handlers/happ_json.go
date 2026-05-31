@@ -86,17 +86,23 @@ func buildHappClientJSON(clientID string, server *models.VPNServer, template *mo
 		if sni == "" {
 			sni = template.ServerName
 		}
+		serverConfig := map[string]interface{}{
+			"address":  template.Address,
+			"port":     hysteriaPort,
+			"password": template.HysteriaPassword,
+			"version":  2,
+		}
+		if template.HysteriaObfsPassword != "" {
+			serverConfig["obfs"] = map[string]interface{}{
+				"type":     "salamander",
+				"password": template.HysteriaObfsPassword,
+			}
+		}
+
 		proxyOutbound = map[string]interface{}{
 			"protocol": "hysteria2",
 			"settings": map[string]interface{}{
-				"servers": []interface{}{
-					map[string]interface{}{
-						"address":  template.Address,
-						"port":     hysteriaPort,
-						"password": template.HysteriaPassword,
-						"version":  2,
-					},
-				},
+				"servers": []interface{}{serverConfig},
 			},
 			"streamSettings": map[string]interface{}{
 				"network":  "hysteria2",
@@ -108,6 +114,19 @@ func buildHappClientJSON(clientID string, server *models.VPNServer, template *mo
 				},
 			},
 			"tag": "proxy",
+		}
+		
+		if template.HysteriaObfsPassword != "" {
+			proxyOutbound["finalmask"] = map[string]interface{}{
+				"udp": []interface{}{
+					map[string]interface{}{
+						"type": "salamander",
+						"settings": map[string]interface{}{
+							"password": template.HysteriaObfsPassword,
+						},
+					},
+				},
+			}
 		}
 	} else {
 		proxyOutbound = map[string]interface{}{
