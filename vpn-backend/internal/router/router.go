@@ -143,6 +143,7 @@ func New(db *gorm.DB, cfg *config.Config) *gin.Engine {
 			adminGrp.GET("/servers/:id/agent/status", adminH.AgentStatus)
 			adminGrp.GET("/servers/:id/health", adminH.GetServerHealth)
 			adminGrp.POST("/servers/:id/configs/import", adminH.ImportServerConfigs)
+			adminGrp.PUT("/servers/:id/vless-template", adminH.UpdateVLESSServerTemplate)
 			adminGrp.DELETE("/servers/:id", adminH.DeleteServer)
 			adminGrp.GET("/notifications", adminH.GetNotifications)
 			adminGrp.POST("/notifications/:id/ack", adminH.AckNotification)

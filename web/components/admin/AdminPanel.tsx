@@ -1474,7 +1474,7 @@ function ServerDrawer({ server, tab, setTab, auditLogs, busyAction, onAction, on
           </dl>
         ) : null}
         {tab === "Config" ? (
-          <ConfigImportPanel server={server} busyAction={busyAction} onAction={onAction} />
+          <ConfigDirectEditPanel server={server} busyAction={busyAction} onAction={onAction} />
         ) : null}
         {tab === "Actions" ? (
           <div className="space-y-3">
@@ -1501,29 +1501,79 @@ function ServerDrawer({ server, tab, setTab, auditLogs, busyAction, onAction, on
   );
 }
 
-function ConfigImportPanel({ server, busyAction, onAction }: { server: AdminServer; busyAction: string | null; onAction: (label: string, url: string, body?: unknown, method?: string) => Promise<boolean> }) {
+function ConfigDirectEditPanel({ server, busyAction, onAction }: { server: AdminServer; busyAction: string | null; onAction: (label: string, url: string, body?: unknown, method?: string) => Promise<boolean> }) {
   const [awgConfig, setAwgConfig] = useState(() => seedAWGConfig(server));
-  const [xrayConfig, setXrayConfig] = useState("");
-  const [xrayPublicKey, setXrayPublicKey] = useState(server.config_summary?.xray?.public_key ?? "");
-  const [xrayShortID, setXrayShortID] = useState(server.config_summary?.xray?.short_id ?? "");
-  const [xrayClientID, setXrayClientID] = useState("");
-  const [xrayMLDSA65, setXrayMLDSA65] = useState(server.config_summary?.xray?.mldsa65_verify ?? "");
-  const busy = busyAction === `config-import-${server.id}`;
+  const xray = server.config_summary?.xray;
+  
+  const [address, setAddress] = useState(xray?.address ?? "");
+  const [port, setPort] = useState(String(xray?.port ?? 443));
+  const [serverName, setServerName] = useState(xray?.server_name ?? "");
+  const [clientId, setClientId] = useState(xray?.client_id ?? "");
+  
+  const [network, setNetwork] = useState(xray?.network ?? "xhttp");
+  const [security, setSecurity] = useState(xray?.security ?? "reality");
+  const [flow, setFlow] = useState(xray?.flow ?? "");
+  
+  const [publicKey, setPublicKey] = useState(xray?.public_key ?? "");
+  const [shortId, setShortId] = useState(xray?.short_id ?? "");
+  const [spiderX, setSpiderX] = useState(xray?.spider_x ?? "/");
+  const [fingerprint, setFingerprint] = useState(xray?.fingerprint ?? "chrome");
+  const [mldsa65Verify, setMldsa65Verify] = useState(xray?.mldsa65_verify ?? "");
+  
+  const [xhttpPath, setXhttpPath] = useState(xray?.x_http_path ?? "");
+  const [xhttpHost, setXhttpHost] = useState(xray?.x_http_host ?? "");
+  const [xhttpMode, setXhttpMode] = useState(xray?.x_http_mode ?? "auto");
+  const [xhttpPadding, setXhttpPadding] = useState(xray?.x_http_padding ?? "");
+  const [xhttpPostSize, setXhttpPostSize] = useState(String(xray?.x_http_post_size ?? 0));
+  
+  const [grpcServiceName, setGrpcServiceName] = useState(xray?.grpc_service_name ?? "");
+  const [grpcAuthority, setGrpcAuthority] = useState(xray?.grpc_authority ?? "");
+  const [grpcMultiMode, setGrpcMultiMode] = useState(xray?.grpc_multi_mode ?? true);
+
+  const [hysteriaEnabled, setHysteriaEnabled] = useState(xray?.hysteria_enabled ?? false);
+  const [hysteriaPort, setHysteriaPort] = useState(String(xray?.hysteria_port ?? 443));
+  const [hysteriaPassword, setHysteriaPassword] = useState(xray?.hysteria_password ?? "");
+  const [hysteriaSni, setHysteriaSni] = useState(xray?.hysteria_sni ?? "");
+  const [hysteriaInsecure, setHysteriaInsecure] = useState(xray?.hysteria_insecure ?? true);
+  const [hysteriaObfsPassword, setHysteriaObfsPassword] = useState(xray?.hysteria_obfs_password ?? "");
+  const [hysteriaMasqueradeUrl, setHysteriaMasqueradeUrl] = useState(xray?.hysteria_masquerade_url ?? "https://www.microsoft.com");
+
+  const busy = busyAction === `config-update-${server.id}`;
 
   useEffect(() => {
     setAwgConfig(seedAWGConfig(server));
-    setXrayPublicKey(server.config_summary?.xray?.public_key ?? "");
-    setXrayShortID(server.config_summary?.xray?.short_id ?? "");
-    setXrayMLDSA65(server.config_summary?.xray?.mldsa65_verify ?? "");
-    setXrayClientID("");
-    setXrayConfig("");
-  }, [server.id]);
+    const x = server.config_summary?.xray;
+    setAddress(x?.address ?? "");
+    setPort(String(x?.port ?? 443));
+    setServerName(x?.server_name ?? "");
+    setClientId(x?.client_id ?? "");
+    setNetwork(x?.network ?? "xhttp");
+    setSecurity(x?.security ?? "reality");
+    setFlow(x?.flow ?? "");
+    setPublicKey(x?.public_key ?? "");
+    setShortId(x?.short_id ?? "");
+    setSpiderX(x?.spider_x ?? "/");
+    setFingerprint(x?.fingerprint ?? "chrome");
+    setMldsa65Verify(x?.mldsa65_verify ?? "");
+    setXhttpPath(x?.x_http_path ?? "");
+    setXhttpHost(x?.x_http_host ?? "");
+    setXhttpMode(x?.x_http_mode ?? "auto");
+    setXhttpPadding(x?.x_http_padding ?? "");
+    setXhttpPostSize(String(x?.x_http_post_size ?? 0));
+    setGrpcServiceName(x?.grpc_service_name ?? "");
+    setGrpcAuthority(x?.grpc_authority ?? "");
+    setGrpcMultiMode(x?.grpc_multi_mode ?? true);
+    setHysteriaEnabled(x?.hysteria_enabled ?? false);
+    setHysteriaPort(String(x?.hysteria_port ?? 443));
+    setHysteriaPassword(x?.hysteria_password ?? "");
+    setHysteriaSni(x?.hysteria_sni ?? "");
+    setHysteriaInsecure(x?.hysteria_insecure ?? true);
+    setHysteriaObfsPassword(x?.hysteria_obfs_password ?? "");
+    setHysteriaMasqueradeUrl(x?.hysteria_masquerade_url ?? "https://www.microsoft.com");
+  }, [server.id, server.config_summary]);
 
   return (
-    <div className="space-y-3">
-      <div className="rounded-lg border border-amber-300/20 bg-amber-300/[0.05] p-3 text-xs leading-5 text-amber-50/80">
-        Можно вставить Xray server.json, массив inbounds или один inbound-package. VLESS Reality и Hysteria2 будут разобраны автоматически.
-      </div>
+    <div className="space-y-4">
       <label className="block">
         <span className="mb-1 block text-xs font-semibold text-zinc-400">AWG config</span>
         <textarea
@@ -1533,50 +1583,164 @@ function ConfigImportPanel({ server, busyAction, onAction }: { server: AdminServ
           spellCheck={false}
         />
       </label>
-      <label className="block">
-        <span className="mb-1 block text-xs font-semibold text-zinc-400">Xray server.json / inbound package</span>
-        <textarea
-          value={xrayConfig}
-          onChange={(event) => setXrayConfig(event.target.value)}
-          placeholder='{"inbounds":[{"protocol":"vless","port":443,"streamSettings":{"network":"xhttp","security":"reality"}}]} или {"protocol":"hysteria","port":443,...}'
-          className="min-h-40 w-full resize-y rounded-lg border border-white/10 bg-black/35 p-3 font-mono text-xs text-zinc-100 outline-none focus:border-amber-300/60 focus:ring-2 focus:ring-amber-300/20"
-          spellCheck={false}
-        />
-      </label>
-      <div className="grid gap-2 sm:grid-cols-2">
-        <ConfigInput label="Reality public key (опционально)" value={xrayPublicKey} onChange={setXrayPublicKey} />
-        <ConfigInput label="Short ID (опционально)" value={xrayShortID} onChange={setXrayShortID} />
-        <ConfigInput label="Template client ID" value={xrayClientID} onChange={setXrayClientID} />
-        <ConfigInput label="MLDSA65 verify" value={xrayMLDSA65} onChange={setXrayMLDSA65} />
+
+      <div className="rounded-lg border border-white/10 bg-black/20 p-3">
+        <div className="mb-3 text-sm font-semibold text-zinc-300">Базовые настройки VLESS</div>
+        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+          <ConfigInput label="Address" value={address} onChange={setAddress} />
+          <ConfigInput label="Port" value={port} onChange={setPort} />
+          <ConfigInput label="Server Name (SNI)" value={serverName} onChange={setServerName} />
+          <ConfigInput label="Client ID (UUID)" value={clientId} onChange={setClientId} />
+        </div>
       </div>
+
+      <div className="rounded-lg border border-white/10 bg-black/20 p-3">
+        <div className="mb-3 text-sm font-semibold text-zinc-300">Транспорт и безопасность</div>
+        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+          <label className="block">
+            <span className="mb-1 block text-xs font-semibold text-zinc-500">Network</span>
+            <select
+              value={network}
+              onChange={(e) => setNetwork(e.target.value)}
+              className="h-9 w-full rounded-lg border border-white/10 bg-black/35 px-2 font-mono text-xs text-zinc-100 outline-none focus:border-amber-300/60 focus:ring-2 focus:ring-amber-300/20"
+            >
+              <option value="tcp">tcp</option>
+              <option value="xhttp">xhttp</option>
+              <option value="grpc">grpc</option>
+              <option value="ws">ws</option>
+            </select>
+          </label>
+          <label className="block">
+            <span className="mb-1 block text-xs font-semibold text-zinc-500">Security</span>
+            <select
+              value={security}
+              onChange={(e) => setSecurity(e.target.value)}
+              className="h-9 w-full rounded-lg border border-white/10 bg-black/35 px-2 font-mono text-xs text-zinc-100 outline-none focus:border-amber-300/60 focus:ring-2 focus:ring-amber-300/20"
+            >
+              <option value="reality">reality</option>
+              <option value="tls">tls</option>
+              <option value="none">none</option>
+            </select>
+          </label>
+          <ConfigInput label="Flow" value={flow} onChange={setFlow} placeholder="xtls-rprx-vision" />
+        </div>
+      </div>
+
+      {security === "reality" && (
+        <div className="rounded-lg border border-white/10 bg-black/20 p-3">
+          <div className="mb-3 text-sm font-semibold text-zinc-300">Reality</div>
+          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            <ConfigInput label="Public Key" value={publicKey} onChange={setPublicKey} />
+            <ConfigInput label="Short ID" value={shortId} onChange={setShortId} />
+            <ConfigInput label="Fingerprint" value={fingerprint} onChange={setFingerprint} />
+            <ConfigInput label="Spider X" value={spiderX} onChange={setSpiderX} />
+            <ConfigInput label="MLDSA65 Verify" value={mldsa65Verify} onChange={setMldsa65Verify} />
+          </div>
+        </div>
+      )}
+
+      {network === "xhttp" && (
+        <div className="rounded-lg border border-white/10 bg-black/20 p-3">
+          <div className="mb-3 text-sm font-semibold text-zinc-300">XHTTP Settings</div>
+          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            <ConfigInput label="Path" value={xhttpPath} onChange={setXhttpPath} />
+            <ConfigInput label="Host" value={xhttpHost} onChange={setXhttpHost} />
+            <ConfigInput label="Mode" value={xhttpMode} onChange={setXhttpMode} placeholder="auto" />
+            <ConfigInput label="Padding" value={xhttpPadding} onChange={setXhttpPadding} placeholder="100-1000" />
+            <ConfigInput label="Post Size" value={xhttpPostSize} onChange={setXhttpPostSize} />
+          </div>
+        </div>
+      )}
+
+      {network === "grpc" && (
+        <div className="rounded-lg border border-white/10 bg-black/20 p-3">
+          <div className="mb-3 text-sm font-semibold text-zinc-300">GRPC Settings</div>
+          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            <ConfigInput label="Service Name" value={grpcServiceName} onChange={setGrpcServiceName} />
+            <ConfigInput label="Authority" value={grpcAuthority} onChange={setGrpcAuthority} />
+            <label className="flex items-center space-x-2 pt-6">
+              <input type="checkbox" checked={grpcMultiMode} onChange={(e) => setGrpcMultiMode(e.target.checked)} className="rounded border-white/10 bg-black/35 text-amber-400" />
+              <span className="text-xs font-semibold text-zinc-300">Multi Mode</span>
+            </label>
+          </div>
+        </div>
+      )}
+
+      <div className="rounded-lg border border-indigo-400/20 bg-indigo-500/5 p-3">
+        <div className="mb-3 flex items-center justify-between">
+          <div className="text-sm font-semibold text-indigo-300">Hysteria 2 (VIP Only)</div>
+          <label className="flex items-center space-x-2">
+            <span className="text-xs font-semibold text-zinc-300">Enabled</span>
+            <input type="checkbox" checked={hysteriaEnabled} onChange={(e) => setHysteriaEnabled(e.target.checked)} className="rounded border-white/10 bg-black/35 text-indigo-400 focus:ring-indigo-400/50" />
+          </label>
+        </div>
+        
+        {hysteriaEnabled && (
+          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            <ConfigInput label="Port" value={hysteriaPort} onChange={setHysteriaPort} />
+            <ConfigInput label="Password" value={hysteriaPassword} onChange={setHysteriaPassword} />
+            <ConfigInput label="SNI" value={hysteriaSni} onChange={setHysteriaSni} />
+            <ConfigInput label="Obfs Password" value={hysteriaObfsPassword} onChange={setHysteriaObfsPassword} />
+            <ConfigInput label="Masquerade URL" value={hysteriaMasqueradeUrl} onChange={setHysteriaMasqueradeUrl} />
+            <label className="flex items-center space-x-2 pt-6">
+              <input type="checkbox" checked={hysteriaInsecure} onChange={(e) => setHysteriaInsecure(e.target.checked)} className="rounded border-white/10 bg-black/35 text-indigo-400" />
+              <span className="text-xs font-semibold text-zinc-300">Allow Insecure</span>
+            </label>
+          </div>
+        )}
+      </div>
+
       <Button
         size="sm"
         className="w-full"
-        disabled={busy || (!awgConfig.trim() && !xrayConfig.trim())}
-        onClick={() =>
-          onAction(`config-import-${server.id}`, `/api/admin/servers/${server.id}/configs/import`, {
+        disabled={busy}
+        onClick={() => {
+          onAction(`config-update-${server.id}`, `/api/admin/servers/${server.id}/vless-template`, {
             awg_config: awgConfig,
-            xray_config_json: xrayConfig,
-            xray_public_key: xrayPublicKey,
-            xray_short_id: xrayShortID,
-            xray_client_id: xrayClientID,
-            xray_mldsa65_verify: xrayMLDSA65,
-          })
-        }
+            client_id: clientId,
+            address: address,
+            port: parseInt(port) || 0,
+            server_name: serverName,
+            public_key: publicKey,
+            short_id: shortId,
+            fingerprint: fingerprint,
+            flow: flow,
+            network: network,
+            security: security,
+            spider_x: spiderX,
+            mldsa65_verify: mldsa65Verify,
+            grpc_service_name: grpcServiceName,
+            grpc_authority: grpcAuthority,
+            grpc_multi_mode: grpcMultiMode,
+            x_http_path: xhttpPath,
+            x_http_host: xhttpHost,
+            x_http_mode: xhttpMode,
+            x_http_padding: xhttpPadding,
+            x_http_post_size: parseInt(xhttpPostSize) || 0,
+            hysteria_enabled: hysteriaEnabled,
+            hysteria_port: parseInt(hysteriaPort) || 0,
+            hysteria_password: hysteriaPassword,
+            hysteria_sni: hysteriaSni,
+            hysteria_insecure: hysteriaInsecure,
+            hysteria_obfs_password: hysteriaObfsPassword,
+            hysteria_masquerade_url: hysteriaMasqueradeUrl,
+          }, "PUT");
+        }}
       >
-        <DatabaseBackup size={14} /> {busy ? "Импорт..." : "Импортировать конфиги"}
+        <DatabaseBackup size={14} /> {busy ? "Сохранение..." : "Сохранить конфигурацию"}
       </Button>
     </div>
   );
 }
 
-function ConfigInput({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
+function ConfigInput({ label, value, onChange, placeholder }: { label: string; value: string; onChange: (value: string) => void; placeholder?: string }) {
   return (
     <label className="block">
       <span className="mb-1 block text-xs font-semibold text-zinc-500">{label}</span>
       <input
         value={value}
         onChange={(event) => onChange(event.target.value)}
+        placeholder={placeholder}
         className="h-9 w-full rounded-lg border border-white/10 bg-black/35 px-2 font-mono text-xs text-zinc-100 outline-none focus:border-amber-300/60 focus:ring-2 focus:ring-amber-300/20"
       />
     </label>

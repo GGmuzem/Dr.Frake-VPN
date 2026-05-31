@@ -90,14 +90,24 @@ func xrayTemplateDefaults(template *models.VLESSServerTemplate, server *models.V
 	}
 	if template.Network == "xhttp" {
 		template.Flow = ""
-		path := strings.TrimSpace(template.GrpcServiceName)
+		path := strings.TrimSpace(template.XHTTPPath)
+		if path == "" {
+			path = strings.TrimSpace(template.GrpcServiceName)
+		}
 		if path == "" {
 			path = "/assets/7d91f0e4"
 		}
 		if !strings.HasPrefix(path, "/") {
 			path = "/" + path
 		}
-		template.GrpcServiceName = path
+		template.XHTTPPath = path
+		
+		if template.XHTTPHost == "" {
+			template.XHTTPHost = template.ServerName
+		}
+		if template.XHTTPMode == "" {
+			template.XHTTPMode = "auto"
+		}
 	}
 	if template.Flow == "" && template.Network != xrayNetworkGRPC && template.Network != "xhttp" {
 		template.Flow = "xtls-rprx-vision"
@@ -973,17 +983,10 @@ func buildVLESSConfig(clientID string, server *models.VPNServer, template *model
 		},
 	}
 	if template.Network == "xhttp" {
-		path := strings.TrimSpace(template.GrpcServiceName)
-		if path == "" {
-			path = "/assets/7d91f0e4"
-		}
-		if !strings.HasPrefix(path, "/") {
-			path = "/" + path
-		}
 		streamSettings["xhttpSettings"] = map[string]interface{}{
-			"path":               path,
-			"host":               template.ServerName,
-			"mode":               "auto",
+			"path":               template.XHTTPPath,
+			"host":               template.XHTTPHost,
+			"mode":               template.XHTTPMode,
 			"xPaddingBytes":      "100-1000",
 			"scMaxEachPostBytes": 1000000,
 		}

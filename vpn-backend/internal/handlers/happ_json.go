@@ -52,15 +52,22 @@ func buildHappClientJSON(clientID string, server *models.VPNServer, template *mo
 			},
 		}
 	case "xhttp":
-		streamSettings["xhttpSettings"] = map[string]interface{}{
+		xhttpSettings := map[string]interface{}{
 			"path": template.XHTTPPath,
 			"host": template.XHTTPHost,
 			"mode": template.XHTTPMode,
-			"extra": map[string]interface{}{
-				"padding":  template.XHTTPPadding,
-				"postSize": template.XHTTPPostSize,
-			},
 		}
+		if template.XHTTPPadding != "" || template.XHTTPPostSize > 0 {
+			extra := map[string]interface{}{}
+			if template.XHTTPPadding != "" {
+				extra["padding"] = template.XHTTPPadding
+			}
+			if template.XHTTPPostSize > 0 {
+				extra["postSize"] = template.XHTTPPostSize
+			}
+			xhttpSettings["extra"] = extra
+		}
+		streamSettings["xhttpSettings"] = xhttpSettings
 	case "grpc":
 		streamSettings["grpcSettings"] = map[string]interface{}{
 			"serviceName": template.GrpcServiceName,
