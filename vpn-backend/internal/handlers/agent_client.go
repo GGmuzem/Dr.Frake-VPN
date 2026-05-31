@@ -57,6 +57,31 @@ func newNodeAgentClient(rawURL, signingKey string) (*nodeAgentClient, error) {
 	return newNodeAgentClientWithProxy(rawURL, signingKey, "")
 }
 
+func newNodeAgentHealthClientWithProxy(rawURL, proxyRawURL string) (*nodeAgentClient, error) {
+	if strings.TrimSpace(rawURL) == "" {
+		return nil, fmt.Errorf("agent_url is not configured")
+	}
+	parsed, err := url.Parse(rawURL)
+	if err != nil {
+		return nil, err
+	}
+	if parsed.Scheme != "http" && parsed.Scheme != "https" {
+		return nil, fmt.Errorf("agent_url must be http or https")
+	}
+	httpClient := &http.Client{Timeout: 5 * time.Second}
+	if strings.TrimSpace(proxyRawURL) != "" {
+		proxyURL, err := url.Parse(proxyRawURL)
+		if err != nil {
+			return nil, err
+		}
+		httpClient.Transport = &http.Transport{Proxy: http.ProxyURL(proxyURL)}
+	}
+	return &nodeAgentClient{
+		baseURL:    strings.TrimRight(rawURL, "/"),
+		httpClient: httpClient,
+	}, nil
+}
+
 func newNodeAgentClientWithProxy(rawURL, signingKey, proxyRawURL string) (*nodeAgentClient, error) {
 	if strings.TrimSpace(rawURL) == "" {
 		return nil, fmt.Errorf("agent_url is not configured")

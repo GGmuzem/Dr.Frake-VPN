@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 	"vpn-backend/internal/models"
 
@@ -90,14 +91,47 @@ func (h *AdminHandler) GetServerHealth(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "server not found"})
 		return
 	}
+	healthError := ""
+	if strings.TrimSpace(server.AgentURL) != "" {
+		h.refreshAgentHealth(&server)
+		if err := h.db.Preload("VLESSTemplate").First(&server, id).Error; err != nil {
+			c.JSON(http.StatusNotFound, gin.H{"error": "server not found"})
+			return
+		}
+		if server.AgentLastHealthStatus == "failed" {
+			healthError = server.AgentLastUpdateError
+		}
+	}
 	var notifications []models.AdminNotification
 	h.db.Where("server_id = ? AND status = ?", server.ID, models.AdminNotificationStatusOpen).
 		Order("created_at desc").
 		Find(&notifications)
-	c.JSON(http.StatusOK, gin.H{
+	response := gin.H{
 		"server":        adminServerHealthResponse(server),
 		"notifications": adminNotificationResponseList(notifications),
-	})
+	}
+	if healthError != "" {
+		response["health_error"] = healthError
+	}
+	c.JSON(http.StatusOK, response)
+}
+
+func (h *AdminHandler) refreshAgentHealth(server *models.VPNServer) {
+	proxyURL := ""
+	if server.AgentLocalPort > 0 {
+		proxyURL = fmt.Sprintf("http://127.0.0.1:%d", server.AgentLocalPort)
+	}
+	client, err := newNodeAgentHealthClientWithProxy(server.AgentURL, proxyURL)
+	if err != nil {
+		h.persistAgentHealth(server, nodeAgentHealth{}, err)
+		return
+	}
+	health, err := client.Health()
+	h.persistAgentHealth(server, health, err)
+	if err == nil {
+		fingerprint := fmt.Sprintf("server:%d:agent-heartbeat-stale", server.ID)
+		_ = resolveAdminNotification(h.db, fingerprint, time.Now().UTC())
+	}
 }
 
 func (h *AdminHandler) AdminEvents(c *gin.Context) {

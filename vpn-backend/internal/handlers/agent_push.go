@@ -54,7 +54,7 @@ func (h *AdminHandler) AgentPushHeartbeat(c *gin.Context) {
 		return
 	}
 
-	h.db.Model(&server).Updates(map[string]interface{}{
+	if err := h.db.Model(&server).Updates(map[string]interface{}{
 		"agent_node_id":            payload.NodeID,
 		"agent_last_heartbeat_at":  time.Now().UTC(),
 		"agent_docker_available":   payload.DockerAvailable,
@@ -66,7 +66,12 @@ func (h *AdminHandler) AgentPushHeartbeat(c *gin.Context) {
 		"agent_previous_digest":    payload.PreviousDigest,
 		"agent_last_update_status": payload.UpdateStatus,
 		"agent_last_update_error":  payload.UpdateError,
-	})
+	}).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	fingerprint := fmt.Sprintf("server:%d:agent-heartbeat-stale", server.ID)
+	_ = resolveAdminNotification(h.db, fingerprint, time.Now().UTC())
 	c.JSON(http.StatusOK, gin.H{"status": "ok"})
 }
 
