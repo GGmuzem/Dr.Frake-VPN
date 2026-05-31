@@ -52,15 +52,40 @@ func buildHappClientJSON(clientID string, server *models.VPNServer, template *mo
 			},
 		}
 	case "xhttp":
-		streamSettings["xhttpSettings"] = map[string]interface{}{
-			"path": template.XHTTPPath,
-			"host": template.XHTTPHost,
-			"mode": template.XHTTPMode,
-			"extra": map[string]interface{}{
-				"padding":  template.XHTTPPadding,
-				"postSize": template.XHTTPPostSize,
-			},
+		xhttpPath := strings.TrimSpace(template.XHTTPPath)
+		if xhttpPath == "" {
+			xhttpPath = strings.TrimSpace(template.GrpcServiceName)
 		}
+		if xhttpPath == "" {
+			xhttpPath = "/assets/7d91f0e4"
+		}
+		if !strings.HasPrefix(xhttpPath, "/") {
+			xhttpPath = "/" + xhttpPath
+		}
+		xhttpHost := strings.TrimSpace(template.XHTTPHost)
+		if xhttpHost == "" {
+			xhttpHost = template.ServerName
+		}
+		xhttpMode := strings.TrimSpace(template.XHTTPMode)
+		if xhttpMode == "" {
+			xhttpMode = "auto"
+		}
+		xhttpSettings := map[string]interface{}{
+			"path": xhttpPath,
+			"host": xhttpHost,
+			"mode": xhttpMode,
+		}
+		if padding := strings.TrimSpace(template.XHTTPPadding); padding != "" || template.XHTTPPostSize > 0 {
+			extra := map[string]interface{}{}
+			if padding != "" {
+				extra["xPaddingBytes"] = padding
+			}
+			if template.XHTTPPostSize > 0 {
+				extra["scMaxEachPostBytes"] = fmt.Sprintf("%d", template.XHTTPPostSize)
+			}
+			xhttpSettings["extra"] = extra
+		}
+		streamSettings["xhttpSettings"] = xhttpSettings
 	case "grpc":
 		streamSettings["grpcSettings"] = map[string]interface{}{
 			"serviceName": template.GrpcServiceName,
