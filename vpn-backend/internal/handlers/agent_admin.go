@@ -289,6 +289,7 @@ func applyVLESSSnapshot(server *models.VPNServer, template *models.VLESSServerTe
 	template.ContainerName = "amnezia-xray"
 
 	if inbounds, ok := parsed["inbounds"].([]interface{}); ok && len(inbounds) > 0 {
+		template.HysteriaEnabled = false // сброс перед разбором
 		for _, rawInbound := range inbounds {
 			inbound, ok := rawInbound.(map[string]interface{})
 			if !ok {
@@ -343,6 +344,36 @@ func applyVLESSSnapshot(server *models.VPNServer, template *models.VLESSServerTe
 					template.MLDSA65Verify = ""
 					if verify, ok := realitySettings["mldsa65Verify"].(string); ok && strings.TrimSpace(verify) != "" {
 						template.MLDSA65Verify = strings.TrimSpace(verify)
+					}
+				}
+				if xhttpSettings, ok := streamSettings["xhttpSettings"].(map[string]interface{}); ok {
+					if path, ok := xhttpSettings["path"].(string); ok {
+						template.XHTTPPath = path
+					}
+					if host, ok := xhttpSettings["host"].(string); ok {
+						template.XHTTPHost = host
+					}
+					if mode, ok := xhttpSettings["mode"].(string); ok {
+						template.XHTTPMode = mode
+					}
+					if extra, ok := xhttpSettings["extra"].(map[string]interface{}); ok {
+						if padding, ok := extra["padding"].(string); ok {
+							template.XHTTPPadding = padding
+						}
+						if postSize, ok := extra["postSize"].(float64); ok {
+							template.XHTTPPostSize = int(postSize)
+						}
+					}
+				}
+				if grpcSettings, ok := streamSettings["grpcSettings"].(map[string]interface{}); ok {
+					if serviceName, ok := grpcSettings["serviceName"].(string); ok {
+						template.GrpcServiceName = serviceName
+					}
+					if authority, ok := grpcSettings["authority"].(string); ok {
+						template.GrpcAuthority = authority
+					}
+					if multiMode, ok := grpcSettings["multiMode"].(bool); ok {
+						template.GrpcMultiMode = multiMode
 					}
 				}
 			}

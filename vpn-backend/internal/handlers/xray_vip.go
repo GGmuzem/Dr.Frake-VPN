@@ -140,6 +140,12 @@ func hasUsableVLESSTemplate(template *models.VLESSServerTemplate) bool {
 		return false
 	}
 
+	if template.HysteriaEnabled {
+		return strings.TrimSpace(template.Address) != "" &&
+			template.HysteriaPort > 0 &&
+			strings.TrimSpace(template.HysteriaPassword) != ""
+	}
+
 	return strings.TrimSpace(template.Address) != "" &&
 		template.Port > 0 &&
 		strings.TrimSpace(template.ServerName) != "" &&
