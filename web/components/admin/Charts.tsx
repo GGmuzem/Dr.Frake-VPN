@@ -23,7 +23,7 @@ export function SparkAreaChart({ title, points, color = "#22c55e" }: { title: st
   const area = `0,${height} ${line} ${width},${height}`;
 
   return (
-    <figure className="rounded-lg border border-white/10 bg-white/[0.035] p-4">
+    <figure className="rounded-[20px] border border-white/10 bg-[rgba(19,24,35,.82)] p-4 shadow-[0_18px_50px_rgba(0,0,0,.22)] backdrop-blur">
       <figcaption className="mb-3 flex items-center justify-between gap-3">
         <span className="text-sm font-semibold text-zinc-100">{title}</span>
         <span className="font-mono text-xs text-zinc-400">{max.toLocaleString("ru-RU")} max</span>
@@ -54,7 +54,7 @@ export function SparkAreaChart({ title, points, color = "#22c55e" }: { title: st
 
 export function UtilizationBars({ items }: { items: Array<{ name: string; utilization?: number; active?: boolean }> }) {
   return (
-    <div className="rounded-lg border border-white/10 bg-white/[0.035] p-4">
+    <div className="rounded-[20px] border border-white/10 bg-[rgba(19,24,35,.82)] p-4 shadow-[0_18px_50px_rgba(0,0,0,.22)] backdrop-blur">
       <div className="mb-3 flex items-center justify-between">
         <h3 className="text-sm font-semibold text-zinc-100">Нагрузка VPS</h3>
         <span className="font-mono text-xs text-zinc-500">utilization</span>
@@ -62,7 +62,7 @@ export function UtilizationBars({ items }: { items: Array<{ name: string; utiliz
       <div className="space-y-3">
         {items.slice(0, 6).map((server) => {
           const value = Math.max(0, Math.min(100, Math.round(server.utilization ?? 0)));
-          const color = value > 85 ? "bg-red-400" : value > 70 ? "bg-amber-300" : "bg-emerald-400";
+          const color = value > 85 ? "bg-red-400" : value > 70 ? "bg-[#f59e0b]" : "bg-[#10b981]";
           return (
             <div key={server.name} className="grid grid-cols-[minmax(90px,1fr)_minmax(120px,2fr)_42px] items-center gap-3 text-xs">
               <span className="truncate text-zinc-300">{server.name}</span>

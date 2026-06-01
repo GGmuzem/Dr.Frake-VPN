@@ -34,8 +34,10 @@ func (h *WebConfigHandler) Get(c *gin.Context) {
 			"happ":    h.configValue("happ", "https://apps.apple.com/search?term=happ%20proxy"),
 		},
 		"support": gin.H{
-			"email":    h.configValue("support_email", "support@frakebit.com"),
+			"email":    h.configValue("support_email", "fbapps.help@yandex.ru"),
 			"telegram": h.configValue("support_telegram", "https://t.me/+79966732628"),
+			"whatsapp": h.configValue("support_whatsapp", "https://wa.me/79966732628"),
+			"max":      h.configValue("support_max", "https://max.ru/fblinkvpn"),
 		},
 	})
 }
@@ -70,6 +72,10 @@ func (h *WebConfigHandler) configValue(key, fallback string) string {
 		value = h.cfg.SupportEmail
 	case "support_telegram":
 		value = h.cfg.SupportTelegramURL
+	case "support_whatsapp":
+		value = h.cfg.SupportWhatsAppURL
+	case "support_max":
+		value = h.cfg.SupportMaxURL
 	}
 	if value == "" {
 		return fallback

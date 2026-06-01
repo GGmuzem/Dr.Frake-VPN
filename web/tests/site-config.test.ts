@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { defaultSiteConfig, normalizeSiteConfig, visiblePlanIds } from "../lib/site-config";
+import { defaultSiteConfig, normalizeSiteConfig, supportChannels, visiblePlanIds } from "../lib/site-config";
 
 describe("site config", () => {
   it("uses FBLink VPN branding only", () => {
@@ -36,5 +36,10 @@ describe("site config", () => {
     expect(config.plans[0].description).toBe(defaultSiteConfig.plans[0].description);
     expect(config.plans[0].features).toEqual(defaultSiteConfig.plans[0].features);
     expect(visiblePlanIds(config)).toEqual(["basic", "basic_3m", "vip", "vip_3m"]);
+  });
+
+  it("uses the current support email and exposes messenger channels", () => {
+    expect(defaultSiteConfig.support.email).toBe("fbapps.help@yandex.ru");
+    expect(supportChannels(defaultSiteConfig).map((channel) => channel.id)).toEqual(["telegram", "whatsapp", "max"]);
   });
 });

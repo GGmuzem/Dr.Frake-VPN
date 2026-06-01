@@ -215,6 +215,8 @@ PageType {
 
     property list<QtObject> contacts: [
         telegramSupport,
+        whatsappSupport,
+        maxSupport,
         mailSupport
     ]
 
@@ -223,24 +225,49 @@ PageType {
 
         readonly property string title: qsTr("Поддержка в мессенджерах")
         readonly property string description: "8 (996) 673-26-28"
+        readonly property string imageSource: "qrc:/images/controls/telegram.svg"
+        readonly property int iconSize: 28
+        readonly property string rightImage: "qrc:/images/controls/external-link.svg"
+        readonly property var handler: function() {
+            Qt.openUrlExternally("https://t.me/+79966732628")
+        }
+    }
+
+    QtObject {
+        id: whatsappSupport
+
+        readonly property string title: qsTr("WhatsApp")
+        readonly property string description: "8 (996) 673-26-28"
         readonly property string imageSource: "qrc:/images/operator.png"
         readonly property int iconSize: 32
-        readonly property string rightImage: "qrc:/images/controls/copy.svg"
+        readonly property string rightImage: "qrc:/images/controls/external-link.svg"
         readonly property var handler: function() {
-            GC.copyToClipBoard("89966732628")
-            PageController.showNotificationMessage(qsTr("Номер скопирован"))
+            Qt.openUrlExternally("https://wa.me/79966732628")
+        }
+    }
+
+    QtObject {
+        id: maxSupport
+
+        readonly property string title: qsTr("MAX")
+        readonly property string description: qsTr("Поддержка FBLink VPN")
+        readonly property string imageSource: "qrc:/images/controls/help-circle.svg"
+        readonly property int iconSize: 28
+        readonly property string rightImage: "qrc:/images/controls/external-link.svg"
+        readonly property var handler: function() {
+            Qt.openUrlExternally("https://max.ru/fblinkvpn")
         }
     }
 
     QtObject {
         id: mailSupport
 
-        readonly property string title: qsTr("support@frakebit.com")
+        readonly property string title: qsTr("fbapps.help@yandex.ru")
         readonly property string description: qsTr("По вопросам и жалобам")
         readonly property string imageSource: "qrc:/images/controls/mail.svg"
         readonly property int iconSize: 28
         readonly property var handler: function() {
-            Qt.openUrlExternally("mailto:support@frakebit.com")
+            Qt.openUrlExternally("mailto:fbapps.help@yandex.ru")
         }
     }
 }

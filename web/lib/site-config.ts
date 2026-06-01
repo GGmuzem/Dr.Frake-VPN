@@ -23,10 +23,20 @@ export type SiteConfig = {
   support: {
     email: string;
     telegram: string;
+    whatsapp: string;
+    max: string;
   };
 };
 
-type SiteConfigInput = Partial<Omit<SiteConfig, "plans">> & {
+export type SupportChannel = {
+  id: "telegram" | "whatsapp" | "max";
+  label: string;
+  href: string;
+  description: string;
+};
+
+type SiteConfigInput = Partial<Omit<SiteConfig, "plans" | "support">> & {
+  support?: Partial<SiteConfig["support"]>;
   plans?: Array<Partial<Omit<Plan, "periods">> & {
     code?: Plan["code"];
     periods?: Array<Partial<PlanPeriod> & { id?: PlanId }>;
@@ -66,10 +76,36 @@ export const defaultSiteConfig: SiteConfig = {
     androidtv: "https://fblink-sc.com/download/androidtv",
   },
   support: {
-    email: "support@frakebit.com",
+    email: "fbapps.help@yandex.ru",
     telegram: "https://t.me/+79966732628",
+    whatsapp: "https://wa.me/79966732628",
+    max: "https://max.ru/fblinkvpn",
   },
 };
+
+export function supportChannels(config: SiteConfig): SupportChannel[] {
+  const channels: SupportChannel[] = [
+    {
+      id: "telegram",
+      label: "Telegram",
+      href: config.support.telegram,
+      description: "Быстрый чат",
+    },
+    {
+      id: "whatsapp",
+      label: "WhatsApp",
+      href: config.support.whatsapp,
+      description: "Поддержка в мессенджере",
+    },
+    {
+      id: "max",
+      label: "MAX",
+      href: config.support.max,
+      description: "Российский мессенджер",
+    },
+  ];
+  return channels.filter((channel) => channel.href.trim() !== "");
+}
 
 export function visiblePlanIds(config: SiteConfig): PlanId[] {
   return config.plans.flatMap((plan) => plan.periods.map((period) => period.id));

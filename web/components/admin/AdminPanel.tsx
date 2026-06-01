@@ -30,7 +30,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { useEffect, useMemo, useState } from "react";
+import { type ReactNode, useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   type AdminAuditLog,
@@ -49,6 +49,14 @@ type AdminStats = {
   users_series?: Array<{ label: string; value: number }>;
   revenue_series?: Array<{ label: string; value: number }>;
 };
+
+type AdminActionModal =
+  | { kind: "update"; server: AdminServer }
+  | { kind: "rollback"; server: AdminServer }
+  | { kind: "toggle"; server: AdminServer }
+  | null;
+
+const immutableDigestPattern = /^[a-zA-Z0-9][a-zA-Z0-9._:/-]+@sha256:[a-fA-F0-9]{64}$/;
 
 const navItems = [
   { id: "overview", label: "Обзор", hint: "Состояние продукта", icon: Gauge },
@@ -76,6 +84,10 @@ export function AdminPanel({ adminEmail, initialOverview }: { adminEmail: string
   const [auditLogs, setAuditLogs] = useState<AdminAuditLog[]>([]);
   const [busyAction, setBusyAction] = useState<string | null>(null);
   const [toast, setToast] = useState<string>("");
+  const [actionModal, setActionModal] = useState<AdminActionModal>(null);
+  const [pendingDigest, setPendingDigest] = useState("");
+  const [modalError, setModalError] = useState("");
+  const [relativeNow, setRelativeNow] = useState<number | null>(null);
   const reduceMotion = useReducedMotion();
 
   const servers = overview.servers;
@@ -90,6 +102,13 @@ export function AdminPanel({ adminEmail, initialOverview }: { adminEmail: string
     () => [...new Set(servers.map((server) => server.region).filter(Boolean) as string[])].sort(),
     [servers],
   );
+
+  useEffect(() => {
+    const refreshClock = () => setRelativeNow(Date.now());
+    refreshClock();
+    const interval = window.setInterval(refreshClock, 30_000);
+    return () => window.clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     setSelectedServerID((current) => preserveSelectedServer(current, visibleServers));
@@ -145,7 +164,7 @@ export function AdminPanel({ adminEmail, initialOverview }: { adminEmail: string
       setOverview(data);
       setNotifications(data.notifications);
     } catch (error) {
-      setToast(error instanceof Error ? error.message : "Не удалось обновить обзор");
+      setToast(safeAdminErrorMessage(error, "Не удалось обновить обзор"));
     }
   }
 
@@ -183,8 +202,10 @@ export function AdminPanel({ adminEmail, initialOverview }: { adminEmail: string
       setToast("Команда выполнена");
       await refreshOverview();
       if (selectedServer) await refreshAudit(selectedServer.id);
+      return true;
     } catch (error) {
-      setToast(error instanceof Error ? error.message : "Ошибка команды");
+      setToast(safeAdminErrorMessage(error, "Ошибка команды"));
+      return false;
     } finally {
       setBusyAction(null);
     }
@@ -202,7 +223,7 @@ export function AdminPanel({ adminEmail, initialOverview }: { adminEmail: string
       }));
       setNotifications((current) => mergeNotificationEvent(current, data.notifications ?? []));
     } catch (error) {
-      setToast(error instanceof Error ? error.message : "Ошибка health refresh");
+      setToast(safeAdminErrorMessage(error, "Ошибка health refresh"));
     } finally {
       setBusyAction(null);
     }
@@ -216,31 +237,73 @@ export function AdminPanel({ adminEmail, initialOverview }: { adminEmail: string
     await postAction(`mute-${id}`, `/api/admin/notifications/${id}/mute`, { minutes: 30 });
   }
 
+  function openActionModal(next: AdminActionModal) {
+    setActionModal(next);
+    setPendingDigest("");
+    setModalError("");
+  }
+
+  function closeActionModal() {
+    if (busyAction?.startsWith("modal-")) return;
+    setActionModal(null);
+    setPendingDigest("");
+    setModalError("");
+  }
+
+  async function submitActionModal() {
+    if (!actionModal) return;
+    const server = actionModal.server;
+    if (actionModal.kind === "update") {
+      const digest = pendingDigest.trim();
+      if (!immutableDigestPattern.test(digest)) {
+        setModalError("Use an immutable image digest in the form repo/name@sha256:<64 hex chars>.");
+        return;
+      }
+      if (await postAction(`modal-update-${server.id}`, `/api/admin/servers/${server.id}/agent/update`, { image_digest: digest })) closeActionModal();
+      return;
+    }
+    if (actionModal.kind === "rollback") {
+      if (await postAction(`modal-rollback-${server.id}`, `/api/admin/servers/${server.id}/agent/rollback`)) closeActionModal();
+      return;
+    }
+    if (actionModal.kind === "toggle") {
+      if (await postAction(`modal-toggle-${server.id}`, `/api/admin/servers/${server.id}/toggle`)) closeActionModal();
+    }
+  }
+
   const kpis = overview.kpis;
   const userPoints = stats.users_series?.length ? stats.users_series : [{ label: "сейчас", value: kpis.total_users }];
   const revenuePoints = stats.revenue_series?.length ? stats.revenue_series : [{ label: "месяц", value: Math.round(kpis.monthly_revenue) }];
 
   return (
-    <div className="min-h-screen bg-[#050608] text-zinc-100">
-      <a href="#admin-main" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-amber-300 focus:px-3 focus:py-2 focus:text-black">
+    <div
+      className="min-h-screen text-[#eef4ff]"
+      style={{
+        background:
+          "radial-gradient(circle at top left, rgba(0,200,255,.16), transparent 28%), radial-gradient(circle at top right, rgba(16,185,129,.10), transparent 24%), linear-gradient(180deg, #0b0d12 0%, #10141d 100%)",
+      }}
+    >
+      <a href="#admin-main" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-[#00c8ff] focus:px-3 focus:py-2 focus:text-[#02131a]">
         Перейти к содержимому
       </a>
+      <AnimatePresence>
       {toast ? (
-        <div role="status" aria-live="polite" className="fixed right-4 top-4 z-50 rounded-lg border border-amber-300/35 bg-zinc-950 px-4 py-3 text-sm shadow-2xl">
+        <motion.div role="status" aria-live="polite" initial={reduceMotion ? false : { opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={reduceMotion ? undefined : { opacity: 0, y: -8 }} className="fixed right-4 top-4 z-50 rounded-[14px] border border-[#00c8ff]/35 bg-[#0c111a]/95 px-4 py-3 text-sm shadow-[0_18px_50px_rgba(0,0,0,.35)] backdrop-blur">
           {toast}
           <button className="ml-3 text-zinc-400 hover:text-white" onClick={() => setToast("")} aria-label="Закрыть уведомление">
             <X size={14} />
           </button>
-        </div>
+        </motion.div>
       ) : null}
+      </AnimatePresence>
 
-      <aside className="fixed inset-y-0 left-0 hidden w-64 border-r border-white/10 bg-black/70 p-4 backdrop-blur xl:block">
-        <div className="mb-6 rounded-lg border border-amber-300/20 bg-amber-300/[0.06] p-4">
+      <aside className="fixed inset-y-0 left-0 hidden w-72 border-r border-white/10 bg-[rgba(8,11,18,.9)] p-4 backdrop-blur xl:block">
+        <div className="mb-6 rounded-[20px] border border-white/[0.06] bg-[linear-gradient(180deg,rgba(0,200,255,.08),rgba(255,255,255,.02))] p-4">
           <div className="flex items-center gap-3">
             <img src="/brand-icon.png" alt="FBLink VPN" className="h-9 w-9" />
             <div>
               <div className="text-lg font-bold">FBLink VPN</div>
-              <div className="text-xs text-amber-100/65">Admin cockpit</div>
+              <div className="text-xs text-[#96a0b8]">Admin cockpit</div>
             </div>
           </div>
         </div>
@@ -254,12 +317,13 @@ export function AdminPanel({ adminEmail, initialOverview }: { adminEmail: string
                 type="button"
                 aria-current={active ? "page" : undefined}
                 onClick={() => setActiveSection(item.id)}
-                className={`group relative flex min-h-12 w-full cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition ${active ? "bg-amber-300 text-black shadow-[0_10px_32px_rgba(250,204,21,0.22)]" : "text-zinc-400 hover:bg-white/5 hover:text-white"}`}
+                className={`group relative flex min-h-12 w-full cursor-pointer items-center gap-3 rounded-2xl px-3 py-2.5 text-left text-sm transition ${active ? "bg-[linear-gradient(135deg,#00c8ff,#6ce7ff)] text-[#061018] shadow-[0_10px_32px_rgba(0,200,255,0.18)]" : "text-[#96a0b8] hover:bg-white/5 hover:text-white"}`}
               >
-                <Icon size={16} />
-                <span className="min-w-0">
+                {active && !reduceMotion ? <motion.span layoutId="admin-nav-active" className="absolute inset-0 rounded-2xl bg-[linear-gradient(135deg,#00c8ff,#6ce7ff)]" /> : null}
+                <Icon size={16} className="relative" />
+                <span className="relative min-w-0">
                   <span className="block font-semibold leading-4">{item.label}</span>
-                  <span className={`block truncate text-[11px] leading-4 ${active ? "text-black/60" : "text-zinc-600 group-hover:text-zinc-400"}`}>{item.hint}</span>
+                  <span className={`block truncate text-[11px] leading-4 ${active ? "text-[#061018]/60" : "text-zinc-600 group-hover:text-zinc-400"}`}>{item.hint}</span>
                 </span>
               </button>
             );
@@ -267,15 +331,15 @@ export function AdminPanel({ adminEmail, initialOverview }: { adminEmail: string
         </nav>
       </aside>
 
-      <main id="admin-main" className="xl:pl-64">
-        <header className="sticky top-0 z-30 border-b border-white/10 bg-[#050608]/92 px-4 py-3 backdrop-blur">
+      <main id="admin-main" className="xl:pl-72">
+        <header className="sticky top-0 z-30 border-b border-white/10 bg-[#0b0d12]/92 px-4 py-3 backdrop-blur">
           <div className="flex flex-wrap items-center gap-3">
             <div className="relative min-w-[220px] flex-1">
               <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" size={16} />
               <input
                 value={filters.query}
                 onChange={(event) => setFilters((current) => ({ ...current, query: event.target.value }))}
-                className="h-10 w-full rounded-lg border border-white/10 bg-white/[0.035] pl-9 pr-3 text-sm outline-none transition focus:border-amber-300/60 focus:ring-2 focus:ring-amber-300/20"
+                className="h-10 w-full rounded-[14px] border border-white/10 bg-white/[0.035] pl-9 pr-3 text-sm outline-none transition focus:border-[#00c8ff]/60 focus:ring-2 focus:ring-[#00c8ff]/20"
                 placeholder="Поиск VPS, endpoint, регион"
               />
             </div>
@@ -374,7 +438,7 @@ export function AdminPanel({ adminEmail, initialOverview }: { adminEmail: string
                   </thead>
                   <tbody>
                     {visibleServers.map((server) => (
-                      <tr key={server.id} className={`border-b border-white/[0.06] hover:bg-white/[0.03] ${selectedServer?.id === server.id ? "bg-amber-300/[0.04]" : ""}`}>
+                      <tr key={server.id} className={`border-b border-white/[0.06] hover:bg-white/[0.03] ${selectedServer?.id === server.id ? "bg-[#00c8ff]/[0.06]" : ""}`}>
                         <td className="px-4 py-3">
                           <button className="text-left" onClick={() => setSelectedServerID(server.id)}>
                             <span className="block font-semibold text-zinc-100">{server.name}</span>
@@ -384,7 +448,7 @@ export function AdminPanel({ adminEmail, initialOverview }: { adminEmail: string
                         <td className="px-4 py-3 font-mono text-xs text-zinc-400">{server.agent_mode || "manual"}</td>
                         <td className="px-4 py-3 text-zinc-300">{server.active_awg ?? 0} AWG / {server.active_vless ?? 0} VLESS</td>
                         <td className="px-4 py-3"><MiniMeter value={server.utilization ?? 0} /></td>
-                        <td className="px-4 py-3 text-xs text-zinc-400">{formatRelative(server.agent_last_heartbeat_at)}</td>
+                        <td className="px-4 py-3 text-xs text-zinc-400">{formatRelative(server.agent_last_heartbeat_at, relativeNow)}</td>
                         <td className="px-4 py-3"><StatusBadge server={server} /></td>
                         <td className="px-4 py-3">
                           <div className="flex gap-2">
@@ -401,14 +465,14 @@ export function AdminPanel({ adminEmail, initialOverview }: { adminEmail: string
             </div>
 
             <div className="grid gap-4 xl:grid-cols-3">
-              <SparkAreaChart title="Новые пользователи" points={userPoints} color="#facc15" />
+              <SparkAreaChart title="Новые пользователи" points={userPoints} color="#00c8ff" />
               <SparkAreaChart title="Выручка" points={revenuePoints} color="#22c55e" />
               <UtilizationBars items={servers} />
             </div>
           </section>
 
           <aside className="space-y-4">
-            <NotificationInbox notifications={notifications} onAck={ackNotification} onMute={muteNotification} />
+            <NotificationInbox notifications={notifications} relativeNow={relativeNow} onAck={ackNotification} onMute={muteNotification} />
             {selectedServer ? (
               <ServerDrawer
                 server={selectedServer}
@@ -416,21 +480,142 @@ export function AdminPanel({ adminEmail, initialOverview }: { adminEmail: string
                 setTab={setDrawerTab}
                 auditLogs={auditLogs}
                 busyAction={busyAction}
+                relativeNow={relativeNow}
                 onAction={postAction}
+                onRequestAction={openActionModal}
                 onRefreshHealth={refreshServerHealth}
               />
             ) : null}
           </aside>
         </div>
       </main>
+      <ActionModal
+        modal={actionModal}
+        digest={pendingDigest}
+        error={modalError}
+        busyAction={busyAction}
+        reduceMotion={Boolean(reduceMotion)}
+        onDigestChange={(value) => {
+          setPendingDigest(value);
+          if (modalError) setModalError("");
+        }}
+        onClose={closeActionModal}
+        onSubmit={submitActionModal}
+      />
     </div>
+  );
+}
+
+function ActionModal({
+  modal,
+  digest,
+  error,
+  busyAction,
+  reduceMotion,
+  onDigestChange,
+  onClose,
+  onSubmit,
+}: {
+  modal: AdminActionModal;
+  digest: string;
+  error: string;
+  busyAction: string | null;
+  reduceMotion: boolean;
+  onDigestChange: (value: string) => void;
+  onClose: () => void;
+  onSubmit: () => Promise<void>;
+}) {
+  const busy = Boolean(modal && busyAction === `modal-${modal.kind}-${modal.server.id}`);
+  const title =
+    modal?.kind === "update"
+      ? "Update agent image"
+      : modal?.kind === "rollback"
+        ? "Rollback agent image"
+        : "Toggle server active state";
+  const description =
+    modal?.kind === "update"
+      ? "Only immutable image digests are accepted. The backend will send the command through the existing signed agent API."
+      : modal?.kind === "rollback"
+        ? "This rolls the agent back to the previous recorded digest. Current user VPN access is not changed directly."
+        : "This changes whether the server is eligible for users. Existing direct SSH or Docker access is never exposed to the UI.";
+  const submitLabel = modal?.kind === "update" ? "Update by digest" : modal?.kind === "rollback" ? "Rollback" : modal?.server.active ? "Disable server" : "Enable server";
+  const destructive = modal?.kind === "toggle" || modal?.kind === "rollback";
+  const digestValid = modal?.kind !== "update" || immutableDigestPattern.test(digest.trim());
+
+  return (
+    <AnimatePresence>
+      {modal ? (
+        <motion.div
+          className="fixed inset-0 z-50 grid place-items-center bg-black/60 p-4 backdrop-blur-sm"
+          initial={reduceMotion ? false : { opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={reduceMotion ? undefined : { opacity: 0 }}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="admin-action-title"
+        >
+          <motion.div
+            className="w-full max-w-lg rounded-[20px] border border-white/10 bg-[#131823]/95 p-5 shadow-[0_18px_50px_rgba(0,0,0,.45)]"
+            initial={reduceMotion ? false : { opacity: 0, y: 16, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={reduceMotion ? undefined : { opacity: 0, y: 12, scale: 0.98 }}
+            transition={{ duration: 0.18, ease: "easeOut" }}
+          >
+            <div className="mb-4 flex items-start justify-between gap-4">
+              <div>
+                <h2 id="admin-action-title" className="text-lg font-bold text-white">{title}</h2>
+                <p className="mt-1 text-sm leading-6 text-[#96a0b8]">{modal.server.name} · {description}</p>
+              </div>
+              <button type="button" onClick={onClose} className="rounded-[12px] border border-white/10 bg-white/[0.035] p-2 text-[#96a0b8] hover:text-white" aria-label="Close action modal">
+                <X size={16} />
+              </button>
+            </div>
+
+            {modal.kind === "update" ? (
+              <label className="block">
+                <span className="mb-2 block text-xs font-semibold uppercase tracking-wide text-[#96a0b8]">Immutable image digest</span>
+                <input
+                  value={digest}
+                  onChange={(event) => onDigestChange(event.target.value)}
+                  placeholder="registry.example/fblink-node-agent@sha256:..."
+                  className="h-11 w-full rounded-[14px] border border-white/10 bg-black/35 px-3 font-mono text-xs text-white outline-none focus:border-[#00c8ff]/60 focus:ring-2 focus:ring-[#00c8ff]/20"
+                  autoFocus
+                />
+                {!digestValid ? (
+                  <span className="mt-2 block text-xs text-red-200">Use an immutable image@sha256 digest. Mutable tags like :latest are blocked.</span>
+                ) : null}
+              </label>
+            ) : (
+              <div className={`rounded-[14px] border p-3 text-sm ${destructive ? "border-[#f59e0b]/35 bg-[#f59e0b]/10 text-[#ffe5b3]" : "border-[#00c8ff]/30 bg-[#00c8ff]/10 text-[#d7f5ff]"}`}>
+                Confirm this controlled action for <span className="font-semibold">{modal.server.name}</span>.
+              </div>
+            )}
+
+            {error ? <div className="mt-3 rounded-[14px] border border-red-400/30 bg-red-500/10 p-3 text-sm text-red-100">{error}</div> : null}
+
+            <div className="mt-5 flex flex-wrap justify-end gap-2">
+              <Button type="button" variant="secondary" onClick={onClose} disabled={busy}>Cancel</Button>
+              <Button
+                type="button"
+                variant={destructive ? "destructive" : "default"}
+                className={destructive ? undefined : "bg-[linear-gradient(135deg,#00c8ff,#6ce7ff)] text-[#02131a] hover:opacity-90"}
+                onClick={() => void onSubmit()}
+                disabled={busy || !digestValid}
+              >
+                {busy ? "Working..." : submitLabel}
+              </Button>
+            </div>
+          </motion.div>
+        </motion.div>
+      ) : null}
+    </AnimatePresence>
   );
 }
 
 function Kpi({ icon: Icon, label, value, hint }: { icon: LucideIcon; label: string; value: string; hint: string }) {
   return (
     <div className="rounded-lg border border-white/10 bg-white/[0.035] p-4">
-      <Icon size={18} className="mb-4 text-amber-200" />
+      <Icon size={18} className="mb-4 text-[#6ce7ff]" />
       <div className="text-xs uppercase tracking-wide text-zinc-500">{label}</div>
       <div className="mt-1 text-2xl font-bold text-zinc-50">{value}</div>
       <div className="mt-1 text-xs text-zinc-500">{hint}</div>
@@ -492,13 +677,13 @@ function SectionFocus({
                 key={notification.id}
                 type="button"
                 onClick={() => notification.server_id && onSelectServer(notification.server_id)}
-                className="flex min-h-12 w-full cursor-pointer items-center justify-between gap-3 rounded-lg border border-white/10 bg-black/20 px-3 text-left transition hover:border-amber-300/35 hover:bg-amber-300/[0.06]"
+                className="flex min-h-12 w-full cursor-pointer items-center justify-between gap-3 rounded-[14px] border border-white/10 bg-black/20 px-3 text-left transition hover:border-[#00c8ff]/35 hover:bg-[#00c8ff]/[0.06]"
               >
                 <span className="min-w-0">
                   <span className="block truncate text-sm font-semibold">{notification.title}</span>
                   <span className="block truncate text-xs text-zinc-500">{notification.server?.name ?? "Fleet"} · {notification.status}</span>
                 </span>
-                <span className={notification.severity === "critical" ? "text-red-300" : "text-amber-200"}>{notification.severity}</span>
+                <span className={notification.severity === "critical" ? "text-red-300" : "text-[#6ce7ff]"}>{notification.severity}</span>
               </button>
             ))}
             {notifications.length === 0 ? <div className="rounded-lg border border-white/10 bg-black/20 p-4 text-sm text-zinc-500">Инцидентов нет.</div> : null}
@@ -522,7 +707,7 @@ function SectionFocus({
     return (
       <div className="grid gap-4 xl:grid-cols-[1fr_1fr_0.8fr]">
         <SparkAreaChart title="Выручка по дням" points={revenuePoints} color="#22c55e" />
-        <SparkAreaChart title="Рост пользователей" points={userPoints} color="#facc15" />
+        <SparkAreaChart title="Рост пользователей" points={userPoints} color="#00c8ff" />
         <PanelHeader icon={WalletCards} title="Финансовый контроль" text="Платежные риски выводятся рядом с инцидентами, чтобы не терять связь между выручкой и доступностью сети." />
       </div>
     );
@@ -567,14 +752,14 @@ function SectionFocus({
 
   return (
     <div className="grid gap-4 xl:grid-cols-[1fr_1fr_1fr]">
-      <div className="rounded-lg border border-amber-300/25 bg-[radial-gradient(circle_at_top_left,rgba(250,204,21,0.16),transparent_42%),rgba(255,255,255,0.035)] p-5">
+      <div className="rounded-[20px] border border-[#00c8ff]/25 bg-[radial-gradient(circle_at_top_left,rgba(0,200,255,0.16),transparent_42%),rgba(255,255,255,0.035)] p-5 shadow-[0_18px_50px_rgba(0,0,0,.25)]">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <div className="text-xs uppercase tracking-wide text-amber-200/70">Fleet health</div>
+            <div className="text-xs uppercase tracking-wide text-[#6ce7ff]/70">Fleet health</div>
             <div className="mt-2 text-4xl font-black text-zinc-50">{fleetHealth}%</div>
             <p className="mt-2 text-sm text-zinc-400">Сводный индекс по heartbeat, Docker, активности VPS и открытым инцидентам.</p>
           </div>
-          <Gauge className="text-amber-200" size={28} />
+          <Gauge className="text-[#6ce7ff]" size={28} />
         </div>
         <div className="mt-5"><MiniMeter value={fleetHealth} /></div>
       </div>
@@ -587,7 +772,7 @@ function SectionFocus({
 function PanelHeader({ icon: Icon, title, text }: { icon: LucideIcon; title: string; text: string }) {
   return (
     <div className="rounded-lg border border-white/10 bg-white/[0.035] p-5">
-      <Icon className="mb-4 text-amber-200" size={22} />
+      <Icon className="mb-4 text-[#6ce7ff]" size={22} />
       <h2 className="text-lg font-bold">{title}</h2>
       <p className="mt-2 text-sm leading-6 text-zinc-400">{text}</p>
     </div>
@@ -600,9 +785,9 @@ function StatusCard({ icon: Icon, label, value, detail, danger = false, onClick 
     <Comp
       type={onClick ? "button" : undefined}
       onClick={onClick}
-      className={`rounded-lg border p-5 text-left transition ${danger ? "border-red-400/35 bg-red-500/10" : "border-white/10 bg-white/[0.035]"} ${onClick ? "min-h-32 w-full cursor-pointer hover:border-amber-300/35 hover:bg-amber-300/[0.06]" : ""}`}
+      className={`rounded-[20px] border p-5 text-left transition ${danger ? "border-red-400/35 bg-red-500/10" : "border-white/10 bg-white/[0.035]"} ${onClick ? "min-h-32 w-full cursor-pointer hover:border-[#00c8ff]/35 hover:bg-[#00c8ff]/[0.06]" : ""}`}
     >
-      <Icon className={danger ? "mb-4 text-red-200" : "mb-4 text-amber-200"} size={22} />
+      <Icon className={danger ? "mb-4 text-red-200" : "mb-4 text-[#6ce7ff]"} size={22} />
       <div className="text-xs uppercase tracking-wide text-zinc-500">{label}</div>
       <div className="mt-1 text-3xl font-black text-zinc-50">{value}</div>
       <div className="mt-1 text-sm text-zinc-500">{detail}</div>
@@ -617,7 +802,7 @@ function FilterSelect<T extends string>({ label, value, onChange, options }: { l
       <select
         value={value}
         onChange={(event) => onChange(event.target.value as T)}
-        className="h-9 rounded-lg border border-white/10 bg-zinc-950 px-3 text-sm text-zinc-200 outline-none transition focus:border-amber-300/60 focus:ring-2 focus:ring-amber-300/20"
+        className="h-9 rounded-[14px] border border-white/10 bg-[#111722] px-3 text-sm text-zinc-200 outline-none transition focus:border-[#00c8ff]/60 focus:ring-2 focus:ring-[#00c8ff]/20"
       >
         {options.map(([optionValue, optionLabel]) => (
           <option key={optionValue} value={optionValue}>{optionLabel}</option>
@@ -629,7 +814,7 @@ function FilterSelect<T extends string>({ label, value, onChange, options }: { l
 
 function MiniMeter({ value }: { value: number }) {
   const normalized = Math.max(0, Math.min(100, Math.round(value)));
-  const color = normalized > 85 ? "bg-red-400" : normalized > 70 ? "bg-amber-300" : "bg-emerald-400";
+  const color = normalized > 85 ? "bg-red-400" : normalized > 70 ? "bg-[#f59e0b]" : "bg-[#10b981]";
   return (
     <div className="flex min-w-[120px] items-center gap-2">
       <span className="h-2 flex-1 overflow-hidden rounded-full bg-white/10">
@@ -652,13 +837,23 @@ function StatusBadge({ server }: { server: AdminServer }) {
 
 function IconButton({ label, icon: Icon, onClick, active = false }: { label: string; icon: LucideIcon; onClick: () => void; active?: boolean }) {
   return (
-    <button title={label} aria-label={label} onClick={onClick} disabled={active} className="rounded-lg border border-white/10 bg-white/[0.035] p-2 text-zinc-300 transition hover:border-amber-300/40 hover:text-amber-100 disabled:opacity-60">
+    <button title={label} aria-label={label} onClick={onClick} disabled={active} className="rounded-[12px] border border-white/10 bg-white/[0.035] p-2 text-zinc-300 transition hover:border-[#00c8ff]/40 hover:text-[#6ce7ff] disabled:opacity-60">
       <Icon size={15} className={active ? "animate-spin" : ""} />
     </button>
   );
 }
 
-function NotificationInbox({ notifications, onAck, onMute }: { notifications: AdminNotification[]; onAck: (id: number) => void; onMute: (id: number) => void }) {
+function NotificationInbox({
+  notifications,
+  relativeNow,
+  onAck,
+  onMute,
+}: {
+  notifications: AdminNotification[];
+  relativeNow: number | null;
+  onAck: (id: number) => void;
+  onMute: (id: number) => void;
+}) {
   return (
     <section className="rounded-lg border border-white/10 bg-zinc-950/70">
       <div className="flex items-center justify-between border-b border-white/10 p-4">
@@ -672,11 +867,11 @@ function NotificationInbox({ notifications, onAck, onMute }: { notifications: Ad
             <div className="mb-2 flex items-start justify-between gap-2">
               <div>
                 <div className="text-sm font-semibold">{notification.title}</div>
-                <div className="text-xs text-zinc-500">{notification.server?.name ?? "Fleet"} · {formatRelative(notification.created_at)}</div>
+                <div className="text-xs text-zinc-500">{notification.server?.name ?? "Fleet"} · {formatRelative(notification.created_at, relativeNow)}</div>
               </div>
-              <span className={`rounded-full px-2 py-1 text-[11px] font-bold ${notification.severity === "critical" ? "bg-red-500/15 text-red-100" : "bg-amber-300/15 text-amber-100"}`}>{notification.severity}</span>
+              <span className={`rounded-full px-2 py-1 text-[11px] font-bold ${notification.severity === "critical" ? "bg-red-500/15 text-red-100" : "bg-[#00c8ff]/15 text-[#d7f5ff]"}`}>{notification.severity}</span>
             </div>
-            <p className="text-sm text-zinc-400">{notification.message}</p>
+            <p className="text-sm text-zinc-400">{safeAdminText(notification.message, "")}</p>
             <div className="mt-3 flex gap-2">
               <Button size="sm" variant="secondary" onClick={() => onAck(notification.id)}>Принять</Button>
               <Button size="sm" variant="ghost" onClick={() => onMute(notification.id)}>Mute 30м</Button>
@@ -688,7 +883,27 @@ function NotificationInbox({ notifications, onAck, onMute }: { notifications: Ad
   );
 }
 
-function ServerDrawer({ server, tab, setTab, auditLogs, busyAction, onAction, onRefreshHealth }: { server: AdminServer; tab: DrawerTab; setTab: (tab: DrawerTab) => void; auditLogs: AdminAuditLog[]; busyAction: string | null; onAction: (label: string, url: string, body?: unknown, method?: string) => Promise<void>; onRefreshHealth: (serverID: number) => Promise<void> }) {
+function ServerDrawer({
+  server,
+  tab,
+  setTab,
+  auditLogs,
+  busyAction,
+  relativeNow,
+  onAction,
+  onRequestAction,
+  onRefreshHealth,
+}: {
+  server: AdminServer;
+  tab: DrawerTab;
+  setTab: (tab: DrawerTab) => void;
+  auditLogs: AdminAuditLog[];
+  busyAction: string | null;
+  relativeNow: number | null;
+  onAction: (label: string, url: string, body?: unknown, method?: string) => Promise<boolean>;
+  onRequestAction: (modal: AdminActionModal) => void;
+  onRefreshHealth: (serverID: number) => Promise<void>;
+}) {
   return (
     <section className="rounded-lg border border-white/10 bg-zinc-950/70">
       <div className="border-b border-white/10 p-4">
@@ -701,7 +916,7 @@ function ServerDrawer({ server, tab, setTab, auditLogs, busyAction, onAction, on
         </div>
         <div className="mt-4 grid grid-cols-3 gap-1 sm:grid-cols-6">
           {drawerTabs.map((item) => (
-            <button key={item} onClick={() => setTab(item)} className={`rounded-md px-2 py-1.5 text-xs ${tab === item ? "bg-amber-300 text-black" : "bg-white/[0.035] text-zinc-400 hover:text-white"}`}>
+            <button key={item} onClick={() => setTab(item)} className={`relative rounded-md px-2 py-1.5 text-xs transition ${tab === item ? "bg-[linear-gradient(135deg,#00c8ff,#6ce7ff)] text-[#061018]" : "bg-white/[0.035] text-zinc-400 hover:text-white"}`}>
               {item}
             </button>
           ))}
@@ -712,10 +927,10 @@ function ServerDrawer({ server, tab, setTab, auditLogs, busyAction, onAction, on
           <div className="space-y-4">
             <HealthSignalGrid server={server} />
             <dl className="space-y-3 text-sm">
-              <InfoRow label="Heartbeat" value={formatRelative(server.agent_last_heartbeat_at)} />
+              <InfoRow label="Heartbeat" value={formatRelative(server.agent_last_heartbeat_at, relativeNow)} />
               <InfoRow label="Docker" value={server.agent_docker_available ? "available" : "unavailable"} />
               <InfoRow label="Uptime" value={formatDuration(server.agent_uptime_seconds ?? 0)} />
-              <InfoRow label="Pi-hole" value={server.pihole_last_sync_error || (server.pihole_enabled ? "enabled" : "disabled")} />
+              <InfoRow label="Pi-hole" value={server.pihole_last_sync_error ? safeAdminText(server.pihole_last_sync_error) : server.pihole_enabled ? "enabled" : "disabled"} />
               <Button size="sm" variant="secondary" onClick={() => onRefreshHealth(server.id)} disabled={busyAction === `health-${server.id}`}><RefreshCw size={14} /> Refresh health</Button>
             </dl>
           </div>
@@ -726,15 +941,15 @@ function ServerDrawer({ server, tab, setTab, auditLogs, busyAction, onAction, on
             <InfoRow label="Commit" value={server.agent_last_commit || "—"} />
             <InfoRow label="Active digest" value={server.agent_active_digest || "—"} mono />
             <InfoRow label="Previous digest" value={server.agent_previous_digest || "—"} mono />
-            <InfoRow label="Update" value={server.agent_last_update_error || server.agent_last_update_status || "—"} />
+            <InfoRow label="Update" value={server.agent_last_update_error ? safeAdminText(server.agent_last_update_error) : server.agent_last_update_status || "—"} />
           </dl>
         ) : null}
         {tab === "Snapshot" ? (
           <dl className="space-y-3 text-sm">
             <InfoRow label="Hash" value={server.agent_last_snapshot_hash || "—"} mono />
-            <InfoRow label="Snapshot at" value={formatRelative(server.agent_last_snapshot_at)} />
+            <InfoRow label="Snapshot at" value={formatRelative(server.agent_last_snapshot_at, relativeNow)} />
             <InfoRow label="Status" value={server.agent_last_snapshot_status || "—"} />
-            <Button size="sm" onClick={() => onAction(`snapshot-${server.id}`, `/api/admin/servers/${server.id}/agent/snapshot`)} disabled={busyAction === `snapshot-${server.id}`}><DatabaseBackup size={14} /> Import snapshot</Button>
+            <Button size="sm" className="bg-[linear-gradient(135deg,#00c8ff,#6ce7ff)] text-[#02131a] hover:opacity-90" onClick={() => onAction(`snapshot-${server.id}`, `/api/admin/servers/${server.id}/agent/snapshot`)} disabled={busyAction === `snapshot-${server.id}`}><DatabaseBackup size={14} /> Import snapshot</Button>
           </dl>
         ) : null}
         {tab === "Config" ? (
@@ -742,17 +957,17 @@ function ServerDrawer({ server, tab, setTab, auditLogs, busyAction, onAction, on
         ) : null}
         {tab === "Actions" ? (
           <div className="space-y-3">
-            <Button className="w-full justify-start" variant="secondary" onClick={() => onAction(`status-${server.id}`, `/api/admin/servers/${server.id}/agent/status`, undefined, "GET")} disabled={busyAction === `status-${server.id}`}><RefreshCw size={14} /> Agent status</Button>
-            <Button className="w-full justify-start" variant="secondary" onClick={() => {
-              const digest = window.prompt("Immutable image digest");
-              if (digest) void onAction(`update-${server.id}`, `/api/admin/servers/${server.id}/agent/update`, { image_digest: digest });
-            }}><Zap size={14} /> Update by digest</Button>
-            <Button className="w-full justify-start" variant="secondary" onClick={() => {
-              if (window.confirm("Rollback agent image?")) void onAction(`rollback-${server.id}`, `/api/admin/servers/${server.id}/agent/rollback`);
-            }}><RotateCcw size={14} /> Rollback</Button>
-            <Button className="w-full justify-start" variant="destructive" onClick={() => {
-              if (window.confirm("Toggle server active state?")) void onAction(`toggle-${server.id}`, `/api/admin/servers/${server.id}/toggle`);
-            }}><AlertTriangle size={14} /> Toggle active</Button>
+            <ActionGroup title="Safe checks">
+              <Button className="w-full justify-start" variant="secondary" onClick={() => onAction(`status-${server.id}`, `/api/admin/servers/${server.id}/agent/status`, undefined, "GET")} disabled={busyAction === `status-${server.id}`}><RefreshCw size={14} /> Agent status</Button>
+              <Button className="w-full justify-start" variant="secondary" onClick={() => onRefreshHealth(server.id)} disabled={busyAction === `health-${server.id}`}><Activity size={14} /> Refresh health</Button>
+            </ActionGroup>
+            <ActionGroup title="Maintenance">
+              <Button className="w-full justify-start" variant="secondary" onClick={() => onRequestAction({ kind: "update", server })}><Zap size={14} /> Update by digest</Button>
+              <Button className="w-full justify-start" variant="secondary" onClick={() => onRequestAction({ kind: "rollback", server })}><RotateCcw size={14} /> Rollback</Button>
+            </ActionGroup>
+            <ActionGroup title="Destructive">
+              <Button className="w-full justify-start" variant="destructive" onClick={() => onRequestAction({ kind: "toggle", server })}><AlertTriangle size={14} /> {server.active ? "Disable server" : "Enable server"}</Button>
+            </ActionGroup>
           </div>
         ) : null}
         {tab === "Audit" ? (
@@ -761,7 +976,7 @@ function ServerDrawer({ server, tab, setTab, auditLogs, busyAction, onAction, on
             {auditLogs.map((log) => (
               <div key={log.id} className="rounded-lg border border-white/10 bg-white/[0.03] p-3 text-xs">
                 <div className="flex items-center gap-2 text-zinc-200"><History size={13} /> {log.action} · {log.result}</div>
-                <div className="mt-1 text-zinc-500">{formatRelative(log.created_at)} {log.message ? `· ${log.message}` : ""}</div>
+                <div className="mt-1 text-zinc-500">{formatRelative(log.created_at, relativeNow)} {log.message ? `· ${safeAdminText(log.message, "")}` : ""}</div>
               </div>
             ))}
           </div>
@@ -771,7 +986,16 @@ function ServerDrawer({ server, tab, setTab, auditLogs, busyAction, onAction, on
   );
 }
 
-function ConfigImportPanel({ server, busyAction, onAction }: { server: AdminServer; busyAction: string | null; onAction: (label: string, url: string, body?: unknown, method?: string) => Promise<void> }) {
+function ActionGroup({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <div className="rounded-[14px] border border-white/10 bg-white/[0.025] p-3">
+      <div className="mb-2 text-[11px] font-bold uppercase tracking-wide text-[#96a0b8]">{title}</div>
+      <div className="space-y-2">{children}</div>
+    </div>
+  );
+}
+
+function ConfigImportPanel({ server, busyAction, onAction }: { server: AdminServer; busyAction: string | null; onAction: (label: string, url: string, body?: unknown, method?: string) => Promise<boolean> }) {
   const [awgConfig, setAwgConfig] = useState(() => seedAWGConfig(server));
   const [xrayConfig, setXrayConfig] = useState("");
   const [xrayPublicKey, setXrayPublicKey] = useState(server.config_summary?.xray?.public_key ?? "");
@@ -789,7 +1013,7 @@ function ConfigImportPanel({ server, busyAction, onAction }: { server: AdminServ
 
   return (
     <div className="space-y-3">
-      <div className="rounded-lg border border-amber-300/20 bg-amber-300/[0.05] p-3 text-xs leading-5 text-amber-50/80">
+      <div className="rounded-[14px] border border-[#00c8ff]/20 bg-[#00c8ff]/[0.05] p-3 text-xs leading-5 text-[#d7f5ff]/80">
         Импорт сохраняет шаблон в базе и не пишет напрямую в файлы VPS. Для применения на ноде используйте snapshot/agent действия отдельно.
       </div>
       <label className="block">
@@ -797,7 +1021,7 @@ function ConfigImportPanel({ server, busyAction, onAction }: { server: AdminServ
         <textarea
           value={awgConfig}
           onChange={(event) => setAwgConfig(event.target.value)}
-          className="min-h-36 w-full resize-y rounded-lg border border-white/10 bg-black/35 p-3 font-mono text-xs text-zinc-100 outline-none focus:border-amber-300/60 focus:ring-2 focus:ring-amber-300/20"
+          className="min-h-36 w-full resize-y rounded-[14px] border border-white/10 bg-black/35 p-3 font-mono text-xs text-zinc-100 outline-none focus:border-[#00c8ff]/60 focus:ring-2 focus:ring-[#00c8ff]/20"
           spellCheck={false}
         />
       </label>
@@ -807,7 +1031,7 @@ function ConfigImportPanel({ server, busyAction, onAction }: { server: AdminServ
           value={xrayConfig}
           onChange={(event) => setXrayConfig(event.target.value)}
           placeholder='{"inbounds":[{"protocol":"vless","port":443,"streamSettings":{"network":"xhttp","security":"reality"}}]}'
-          className="min-h-40 w-full resize-y rounded-lg border border-white/10 bg-black/35 p-3 font-mono text-xs text-zinc-100 outline-none focus:border-amber-300/60 focus:ring-2 focus:ring-amber-300/20"
+          className="min-h-40 w-full resize-y rounded-[14px] border border-white/10 bg-black/35 p-3 font-mono text-xs text-zinc-100 outline-none focus:border-[#00c8ff]/60 focus:ring-2 focus:ring-[#00c8ff]/20"
           spellCheck={false}
         />
       </label>
@@ -818,7 +1042,7 @@ function ConfigImportPanel({ server, busyAction, onAction }: { server: AdminServ
       </div>
       <Button
         size="sm"
-        className="w-full"
+        className="w-full bg-[linear-gradient(135deg,#00c8ff,#6ce7ff)] text-[#02131a] hover:opacity-90"
         disabled={busy || (!awgConfig.trim() && !xrayConfig.trim())}
         onClick={() =>
           onAction(`config-import-${server.id}`, `/api/admin/servers/${server.id}/configs/import`, {
@@ -843,7 +1067,7 @@ function ConfigInput({ label, value, onChange }: { label: string; value: string;
       <input
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="h-9 w-full rounded-lg border border-white/10 bg-black/35 px-2 font-mono text-xs text-zinc-100 outline-none focus:border-amber-300/60 focus:ring-2 focus:ring-amber-300/20"
+        className="h-9 w-full rounded-[14px] border border-white/10 bg-black/35 px-2 font-mono text-xs text-zinc-100 outline-none focus:border-[#00c8ff]/60 focus:ring-2 focus:ring-[#00c8ff]/20"
       />
     </label>
   );
@@ -914,11 +1138,12 @@ function InfoRow({ label, value, mono = false }: { label: string; value: string;
   );
 }
 
-function formatRelative(value?: string | null) {
+function formatRelative(value?: string | null, now: number | null = Date.now()) {
   if (!value) return "never";
   const timestamp = Date.parse(value);
   if (!Number.isFinite(timestamp)) return "—";
-  const seconds = Math.max(0, Math.round((Date.now() - timestamp) / 1000));
+  if (now === null) return new Date(timestamp).toLocaleString("ru-RU");
+  const seconds = Math.max(0, Math.round((now - timestamp) / 1000));
   if (seconds < 60) return `${seconds}s назад`;
   const minutes = Math.round(seconds / 60);
   if (minutes < 60) return `${minutes}м назад`;
@@ -935,4 +1160,19 @@ function formatDuration(seconds: number) {
   if (days > 0) return `${days}д ${hours}ч`;
   if (hours > 0) return `${hours}ч ${minutes}м`;
   return `${minutes}м`;
+}
+function safeAdminText(value: string | null | undefined, fallback = "—") {
+  if (!value) return fallback;
+  return redactAdminSecrets(value);
+}
+
+function safeAdminErrorMessage(error: unknown, fallback: string) {
+  const raw = error instanceof Error ? error.message : typeof error === "string" ? error : fallback;
+  return redactAdminSecrets(raw);
+}
+
+function redactAdminSecrets(value: string) {
+  return value
+    .replace(/(password|secret|token|private[_ -]?key|ssh[_ -]?password)=?[^,\s"']*/gi, "$1=[redacted]")
+    .replace(/(Bearer\s+)[A-Za-z0-9._~+/-]+=*/gi, "$1[redacted]");
 }

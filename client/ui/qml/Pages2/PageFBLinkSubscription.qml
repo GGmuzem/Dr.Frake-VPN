@@ -1411,7 +1411,7 @@ PageType {
                     MouseArea {
                         anchors.fill: parent
                         cursorShape: Qt.PointingHandCursor
-                        onClicked: Qt.openUrlExternally("https://fblink.com/terms")
+                        onClicked: Qt.openUrlExternally("https://fblink-sc.com/legal/terms.pdf")
                     }
                 }
 
@@ -1429,7 +1429,7 @@ PageType {
                     MouseArea {
                         anchors.fill: parent
                         cursorShape: Qt.PointingHandCursor
-                        onClicked: Qt.openUrlExternally("https://fblink.com/privacy")
+                        onClicked: Qt.openUrlExternally("https://fblink-sc.com/policy")
                     }
                 }
             }

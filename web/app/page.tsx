@@ -9,6 +9,8 @@ import {
   Laptop,
   Lock,
   MailQuestion,
+  MessageCircle,
+  MessagesSquare,
   MonitorDown,
   Send,
   ShieldCheck,
@@ -22,7 +24,7 @@ import { DitheringShader } from "@/components/ui/dithering-shader";
 import Pricing04 from "@/components/ui/ruixen-pricing-04";
 import { Topbar } from "../components/Topbar";
 import { Faq } from "../components/Faq";
-import { loadSiteConfig } from "../lib/site-config";
+import { loadSiteConfig, supportChannels } from "../lib/site-config";
 
 const reveal = {
   hidden: { opacity: 0, y: 18 },
@@ -90,6 +92,7 @@ const FEATURES = [
 
 export default async function HomePage() {
   const config = await loadSiteConfig();
+  const support = supportChannels(config);
   const platforms = [
     { label: "Android", icon: Smartphone, href: config.downloads.android },
     { label: "TV", icon: Tv, href: config.downloads.androidtv },
@@ -148,6 +151,20 @@ export default async function HomePage() {
             </span>
             <span>Безлимит устройств</span>
             <span>Оплата по РФ</span>
+          </motion.div>
+          <motion.div className="support-ribbon" variants={reveal}>
+            <span className="support-ribbon-label">
+              <MailQuestion size={15} /> Поддержка
+            </span>
+            {support.map((channel) => {
+              const Icon = channel.id === "telegram" ? Send : channel.id === "whatsapp" ? MessageCircle : MessagesSquare;
+              return (
+                <a className={`support-chip support-chip-${channel.id}`} href={channel.href} key={channel.id} rel="noreferrer" target="_blank">
+                  <Icon size={16} />
+                  <span>{channel.label}</span>
+                </a>
+              );
+            })}
           </motion.div>
         </motion.div>
 
@@ -364,9 +381,15 @@ export default async function HomePage() {
             <a href={`mailto:${config.support.email}`}>
               <MailQuestion size={14} /> {config.support.email}
             </a>
-            <a href={config.support.telegram} rel="noreferrer" target="_blank">
-              <Send size={14} /> Telegram
-            </a>
+            {support.map((channel) => {
+              const Icon = channel.id === "telegram" ? Send : channel.id === "whatsapp" ? MessageCircle : MessagesSquare;
+              return (
+                <a href={channel.href} key={channel.id} rel="noreferrer" target="_blank">
+                  <Icon size={14} /> {channel.label}
+                </a>
+              );
+            })}
+            <a href="/policy">Политика</a>
           </div>
           <span className="site-footer-copy">© {new Date().getFullYear()} FBLink VPN</span>
         </div>

@@ -42,6 +42,8 @@ type Config struct {
 	DownloadsDir       string
 	SupportEmail       string
 	SupportTelegramURL string
+	SupportWhatsAppURL string
+	SupportMaxURL      string
 
 	// Client Updater
 	ClientLatestVersion  string
@@ -92,8 +94,10 @@ func Load() *Config {
 		HappAppURL:                 getEnv("HAPP_APP_URL", "https://apps.apple.com/search?term=happ%20proxy"),
 		HappCryptoAPIURL:           getEnv("HAPP_CRYPTO_API_URL", "https://crypto.happ.su/api-v2.php"),
 		DownloadsDir:               getEnv("DOWNLOADS_DIR", "data/downloads"),
-		SupportEmail:               getEnv("SUPPORT_EMAIL", "support@frakebit.com"),
+		SupportEmail:               getEnv("SUPPORT_EMAIL", "fbapps.help@yandex.ru"),
 		SupportTelegramURL:         getEnv("SUPPORT_TELEGRAM_URL", "https://t.me/+79966732628"),
+		SupportWhatsAppURL:         getEnv("SUPPORT_WHATSAPP_URL", "https://wa.me/79966732628"),
+		SupportMaxURL:              getEnv("SUPPORT_MAX_URL", "https://max.ru/fblinkvpn"),
 
 		ClientLatestVersion:  getEnv("CLIENT_LATEST_VERSION", "1.0.0"),
 		ClientDownloadURL:    getEnv("CLIENT_DOWNLOAD_URL", "https://frakebit.com/download"),

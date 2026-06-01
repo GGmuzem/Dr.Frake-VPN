@@ -36,6 +36,8 @@ public slots:
     QJsonArray getIssuedConfigsInfo();
 
     QString getTelegramBotLink();
+    QString getWhatsAppLink();
+    QString getMaxLink();
     QString getEmailLink();
     QString getBillingEmailLink();
     QString getSiteLink();

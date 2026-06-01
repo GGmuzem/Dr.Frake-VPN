@@ -1,7 +1,28 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-CONFIG_FILE="${1:-/etc/fblink-backup/backup.env}"
+MODE="run"
+CONFIG_FILE="/etc/fblink-backup/backup.env"
+
+case "${1:-}" in
+  --validate-config)
+    MODE="validate"
+    CONFIG_FILE="${2:-$CONFIG_FILE}"
+    ;;
+  --help|-h)
+    cat <<USAGE
+Usage:
+  fblink-backup [CONFIG_FILE]
+  fblink-backup --validate-config [CONFIG_FILE]
+USAGE
+    exit 0
+    ;;
+  "")
+    ;;
+  *)
+    CONFIG_FILE="$1"
+    ;;
+esac
 
 if [[ ! -r "$CONFIG_FILE" ]]; then
   echo "backup config is not readable: $CONFIG_FILE" >&2
@@ -21,6 +42,65 @@ set +a
 : "${COMPOSE_DIR:=/opt/fblink/vpn-backend}"
 : "${LOCK_FILE:=/var/lock/fblink-backup.lock}"
 : "${WORK_ROOT:=/var/tmp/fblink-backup}"
+: "${BACKUP_RECEIVER_HOST:=srv.frakebit.com}"
+
+validate_private_file() {
+  local name="$1"
+  local path="$2"
+  local mode
+  if [[ ! -r "$path" ]]; then
+    echo "$name is not readable: $path" >&2
+    exit 2
+  fi
+
+  case "$(uname -s 2>/dev/null || true)" in
+    MINGW*|MSYS*|CYGWIN*) return ;;
+  esac
+
+  if mode="$(stat -c '%a' "$path" 2>/dev/null)"; then
+    mode=$((8#$mode))
+    if (( mode & 077 )); then
+      echo "$name must not be group/world readable: $path" >&2
+      exit 2
+    fi
+  fi
+}
+
+validate_backup_config() {
+  local authority expected_prefix
+  if [[ "$RESTIC_REPOSITORY" =~ ^rest:https?://([^/]+) ]]; then
+    authority="${BASH_REMATCH[1]}"
+    if [[ "$authority" == *"@"* ]]; then
+      echo "RESTIC_REPOSITORY must not contain credentials; use RESTIC_REST_USERNAME and RESTIC_REST_PASSWORD_FILE" >&2
+      exit 2
+    fi
+  fi
+
+  expected_prefix="rest:https://${BACKUP_RECEIVER_HOST}/"
+  if [[ "$RESTIC_REPOSITORY" != "$expected_prefix"* ]]; then
+    echo "RESTIC_REPOSITORY must use ${expected_prefix}" >&2
+    exit 2
+  fi
+
+  if [[ -z "${RESTIC_REST_USERNAME:-}" ]]; then
+    echo "RESTIC_REST_USERNAME is required for the backup receiver" >&2
+    exit 2
+  fi
+  if [[ -z "${RESTIC_REST_PASSWORD_FILE:-}" ]]; then
+    echo "RESTIC_REST_PASSWORD_FILE is required for the backup receiver" >&2
+    exit 2
+  fi
+
+  validate_private_file RESTIC_PASSWORD_FILE "$RESTIC_PASSWORD_FILE"
+  validate_private_file RESTIC_REST_PASSWORD_FILE "$RESTIC_REST_PASSWORD_FILE"
+}
+
+validate_backup_config
+
+if [[ "$MODE" == "validate" ]]; then
+  echo "backup config ok: $RESTIC_REPOSITORY"
+  exit 0
+fi
 
 if [[ -n "${RESTIC_REST_PASSWORD_FILE:-}" ]]; then
   export RESTIC_REST_PASSWORD

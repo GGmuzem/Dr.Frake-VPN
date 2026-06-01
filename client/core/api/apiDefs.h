@@ -62,6 +62,8 @@ namespace apiDefs
         constexpr QLatin1String website("website");
         constexpr QLatin1String websiteName("website_name");
         constexpr QLatin1String telegram("telegram");
+        constexpr QLatin1String whatsapp("whatsapp");
+        constexpr QLatin1String max("max");
 
         constexpr QLatin1String id("id");
         constexpr QLatin1String orderId("order_id");

@@ -1,5 +1,5 @@
-backup.example.com {
-	@vds remote_ip 203.0.113.10
+srv.frakebit.com {
+	@vds remote_ip 77.221.155.238
 	handle @vds {
 		reverse_proxy 127.0.0.1:8000
 	}

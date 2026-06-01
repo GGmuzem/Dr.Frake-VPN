@@ -123,8 +123,8 @@ QString LanguageModel::getCurrentSiteUrl(const QString &path)
     auto language = static_cast<LanguageSettings::AvailableLanguageEnum>(getCurrentLanguageIndex());
     switch (language) {
     case LanguageSettings::AvailableLanguageEnum::Russian:
-        return "https://frakebit.com" + (path.isEmpty() ? "" : (QString("/%1").arg(path)));
-    default: return QString("https://fblink.org") + (path.isEmpty() ? "" : (QString("/%1").arg(path)));
+        return "https://fblink-sc.com" + (path.isEmpty() ? "" : (QString("/%1").arg(path)));
+    default: return QString("https://fblink-sc.com") + (path.isEmpty() ? "" : (QString("/%1").arg(path)));
     }
 }
 

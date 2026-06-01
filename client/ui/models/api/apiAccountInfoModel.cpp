@@ -131,17 +131,27 @@ QJsonArray ApiAccountInfoModel::getIssuedConfigsInfo()
 
 QString ApiAccountInfoModel::getTelegramBotLink()
 {
-    return m_supportInfo.value(apiDefs::key::telegram).toString();
+    return m_supportInfo.value(apiDefs::key::telegram).toString("+79966732628");
+}
+
+QString ApiAccountInfoModel::getWhatsAppLink()
+{
+    return m_supportInfo.value(apiDefs::key::whatsapp).toString("https://wa.me/79966732628");
+}
+
+QString ApiAccountInfoModel::getMaxLink()
+{
+    return m_supportInfo.value(apiDefs::key::max).toString("https://max.ru/fblinkvpn");
 }
 
 QString ApiAccountInfoModel::getEmailLink()
 {
-    return m_supportInfo.value(apiDefs::key::email).toString();
+    return m_supportInfo.value(apiDefs::key::email).toString("fbapps.help@yandex.ru");
 }
 
 QString ApiAccountInfoModel::getBillingEmailLink()
 {
-    return m_supportInfo.value(apiDefs::key::billingEmail).toString();
+    return m_supportInfo.value(apiDefs::key::billingEmail).toString("fbapps.help@yandex.ru");
 }
 
 QString ApiAccountInfoModel::getSiteLink()

@@ -33,6 +33,22 @@ PageType {
     }
 
     QtObject {
+        id: whatsApp
+
+        readonly property string title: qsTr("WhatsApp")
+        readonly property string description: qsTr("Написать в WhatsApp")
+        readonly property string link: ApiAccountInfoModel.getWhatsAppLink()
+    }
+
+    QtObject {
+        id: maxMessenger
+
+        readonly property string title: qsTr("MAX")
+        readonly property string description: qsTr("Написать в MAX")
+        readonly property string link: ApiAccountInfoModel.getMaxLink()
+    }
+
+    QtObject {
         id: paymentSupport
 
         readonly property string title: qsTr("Email Billing & Orders")
@@ -50,6 +66,8 @@ PageType {
 
     property list<QtObject> supportModel: [
         telegram,
+        whatsApp,
+        maxMessenger,
         techSupport,
         paymentSupport,
         site
