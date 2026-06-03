@@ -43,9 +43,12 @@ AndroidController::AndroidController() : QObject()
 
     connect(
         this, &AndroidController::serviceError, this,
-        [this]() {
-            qDebug() << "Android event: service error";
-            // todo: add error message
+        [this](const QString &errorMessage) {
+            if (errorMessage.isEmpty()) {
+                qDebug() << "Android event: service error";
+            } else {
+                qDebug() << "Android event: service error:" << errorMessage;
+            }
             emit connectionStateChanged(Vpn::ConnectionState::Error);
         },
         Qt::QueuedConnection);
@@ -91,7 +94,7 @@ bool AndroidController::initialize()
     const JNINativeMethod methods[] = {
         {"onStatus", "(I)V", reinterpret_cast<void *>(onStatus)},
         {"onServiceDisconnected", "()V", reinterpret_cast<void *>(onServiceDisconnected)},
-        {"onServiceError", "()V", reinterpret_cast<void *>(onServiceError)},
+        {"onServiceError", "(Ljava/lang/String;)V", reinterpret_cast<void *>(onServiceError)},
         {"onVpnPermissionRejected", "()V", reinterpret_cast<void *>(onVpnPermissionRejected)},
         {"onNotificationStateChanged", "()V", reinterpret_cast<void *>(onNotificationStateChanged)},
         {"onVpnStateChanged", "(I)V", reinterpret_cast<void *>(onVpnStateChanged)},
@@ -466,12 +469,12 @@ void AndroidController::onServiceDisconnected(JNIEnv *env, jobject thiz)
 }
 
 // static
-void AndroidController::onServiceError(JNIEnv *env, jobject thiz)
+void AndroidController::onServiceError(JNIEnv *env, jobject thiz, jstring error)
 {
-    Q_UNUSED(env);
     Q_UNUSED(thiz);
 
-    emit AndroidController::instance()->serviceError();
+    QString errorStr = AndroidUtils::convertJString(env, error);
+    emit AndroidController::instance()->serviceError(errorStr);
 }
 
 // static

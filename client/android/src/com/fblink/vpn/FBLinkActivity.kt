@@ -126,11 +126,11 @@ class FBLinkActivity : QtActivity() {
                     }
 
                     ServiceEvent.ERROR -> {
-                        msg.data?.getString(MSG_ERROR)?.let { error ->
-                            Log.e(TAG, "From VpnService: $error")
+                        val errorMessage = msg.data?.getString(MSG_ERROR) ?: ""
+                        if (errorMessage.isNotEmpty()) {
+                            Log.e(TAG, "From VpnService: $errorMessage")
                         }
-                        // todo: add error reporting to Qt
-                        QtAndroidController.onServiceError()
+                        QtAndroidController.onServiceError(errorMessage)
                     }
                 }
             }
@@ -624,7 +624,7 @@ class FBLinkActivity : QtActivity() {
             isWaitingStatus = false
             startVpnService(vpnConfig, proto)
             doBindService()
-        } ?: QtAndroidController.onServiceError()
+        } ?: QtAndroidController.onServiceError("Invalid VPN config or protocol not found")
     }
 
     private fun getVpnProto(vpnConfig: String): VpnProto? = try {
@@ -656,7 +656,7 @@ class FBLinkActivity : QtActivity() {
                 ContextCompat.startForegroundService(this, it)
             } catch (e: SecurityException) {
                 Log.e(TAG, "Failed to start ${proto.serviceClass.simpleName}: $e")
-                QtAndroidController.onServiceError()
+                QtAndroidController.onServiceError(e.message ?: "Failed to start VPN service")
             }
         }
     }

@@ -64,7 +64,7 @@ signals:
     void connectionStateChanged(Vpn::ConnectionState state);
     void status(ConnectionState state);
     void serviceDisconnected();
-    void serviceError();
+    void serviceError(const QString &errorMessage = "");
     void vpnPermissionRejected();
     void notificationStateChanged();
     void vpnStateChanged(ConnectionState state);
@@ -95,7 +95,7 @@ private:
     // JNI functions called by Android
     static void onStatus(JNIEnv *env, jobject thiz, jint stateCode);
     static void onServiceDisconnected(JNIEnv *env, jobject thiz);
-    static void onServiceError(JNIEnv *env, jobject thiz);
+    static void onServiceError(JNIEnv *env, jobject thiz, jstring error);
     static void onVpnPermissionRejected(JNIEnv *env, jobject thiz);
     static void onNotificationStateChanged(JNIEnv *env, jobject thiz);
     static void onVpnStateChanged(JNIEnv *env, jobject thiz, jint stateCode);
